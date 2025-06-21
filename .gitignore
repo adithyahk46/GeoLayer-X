@@ -1,54 +1,49 @@
-# C++ objects and libs
-*.slo
-*.lo
-*.o
-*.a
-*.la
-*.lai
-*.so
-*.so.*
-*.dll
-*.dylib
-
-# Qt-es
-object_script.*.Release
-object_script.*.Debug
-*_plugin_import.cpp
-/.qmake.cache
-/.qmake.stash
+# Qt build folders
+build/
+debug/
+release/
 *.pro.user
 *.pro.user.*
-*.qbs.user
-*.qbs.user.*
-*.moc
-moc_*.cpp
-moc_*.h
-qrc_*.cpp
-ui_*.h
-*.qmlc
-*.jsc
-Makefile*
-*build-*
-*.qm
-*.prl
+*.qmake.stash
+*.qmake.cache
 
-# Qt unit tests
-target_wrapper.*
-
-# QtCreator
+# Qt Creator specific
 *.autosave
+*.creator.*
+*.creator
+*.user
+*.user.*
 
-# QtCreator Qml
-*.qmlproject.user
-*.qmlproject.user.*
+# CMake build folders (if used)
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
 
-# QtCreator CMake
-CMakeLists.txt.user*
+# Compiled object files and binaries
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
 
-# QtCreator 4.8< compilation database
-compile_commands.json
+# MOC, UIC, RCC generated files
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
 
-# QtCreator local machine specific files for imported projects
-*creator.user*
+# Backup and temporary files
+*~
+*.swp
+*.bak
+*.tmp
 
-*_qmlcache.qrc
+# Crash reports
+*.dmp
+
+# Other
+.DS_Store
+Thumbs.db
