@@ -7,6 +7,13 @@ release/
 *.qmake.stash
 *.qmake.cache
 
+
+# Build directories
+build-*/
+*.build
+*.build-Debug
+*.build-Release
+
 # Qt Creator specific
 *.autosave
 *.creator.*
@@ -19,6 +26,8 @@ CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
+*.Debug
+*.Release
 
 # Compiled object files and binaries
 *.o
