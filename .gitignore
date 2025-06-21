@@ -32,6 +32,7 @@ Makefile
 
 # MOC, UIC, RCC generated files
 moc_*.cpp
+moc_*.obj
 ui_*.h
 qrc_*.cpp
 
