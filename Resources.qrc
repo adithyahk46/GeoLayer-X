@@ -1,0 +1,22 @@
+<RCC>
+    <qresource prefix="/new/prefix1">
+        <file>icons/splashScreen.jpg</file>
+        <file>icons/ApplicationIcon.png</file>
+        <file>icons/Layers/3D Scene Layer.png</file>
+        <file>icons/Layers/elevationLayer.png</file>
+        <file>icons/Layers/elevationLayerColor.png</file>
+        <file>icons/Layers/layers.png</file>
+        <file>icons/Layers/rasterLayer.png</file>
+        <file>icons/Layers/vectorLayer.png</file>
+        <file>icons/Layers/vectorLayer2.png</file>
+        <file>icons/Model.png</file>
+        <file>icons/drawTools/icons8-line-64.png</file>
+        <file>icons/drawTools/Polygon.png</file>
+        <file>icons/drawTools/Polygon2.png</file>
+        <file>icons/drawTools/Rectangle.png</file>
+        <file>icons/drawTools/circle.png</file>
+        <file>icons/drawTools/scribble.png</file>
+        <file>icons/Area measure.png</file>
+        <file>icons/Distance Measurement.png</file>
+    </qresource>
+</RCC>

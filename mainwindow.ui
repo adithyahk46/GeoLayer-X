@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1270</width>
+    <height>929</height>
+   </rect>
+  </property>
+  <property name="cursor">
+   <cursorShape>ArrowCursor</cursorShape>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <property name="toolTipDuration">
+   <number>1</number>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <property name="toolButtonStyle">
+   <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1270</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>16777215</width>
+     <height>50</height>
+    </size>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionLoad_Layers"/>
+    <addaction name="actionRemove_File"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionLeft_Panel"/>
+    <addaction name="actionLegends"/>
+   </widget>
+   <widget class="QMenu" name="menutools">
+    <property name="title">
+     <string>tools</string>
+    </property>
+    <addaction name="actiongui"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuView"/>
+   <addaction name="menutools"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="maximumSize">
+    <size>
+     <width>16777215</width>
+     <height>50</height>
+    </size>
+   </property>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget">
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QStackedWidget" name="stackedWidget">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="lineWidth">
+        <number>1</number>
+       </property>
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <widget class="QWidget" name="legengs_page">
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_legends"/>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="Controls">
+        <widget class="QPushButton" name="pushButton">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>90</y>
+           <width>161</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>PushButton</string>
+         </property>
+        </widget>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QToolBar" name="toolBar_2">
+   <property name="windowTitle">
+    <string>toolBar_2</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionLoad_Layers"/>
+   <addaction name="actionRaster_Layer"/>
+   <addaction name="actionElevation_Layer"/>
+   <addaction name="actionVector_Layer"/>
+   <addaction name="action3d_Scene_Layer"/>
+  </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionDrawLine"/>
+   <addaction name="actionDrawPolygon"/>
+   <addaction name="actionDrawRectangle"/>
+   <addaction name="actionDrawCircle"/>
+   <addaction name="actionDrawScribble"/>
+   <addaction name="separator"/>
+   <addaction name="actionDIstanceCalculator"/>
+   <addaction name="actionAreaMeasurment"/>
+  </widget>
+  <action name="actionLeft_Panel">
+   <property name="text">
+    <string>Left Panel</string>
+   </property>
+  </action>
+  <action name="actionLegends">
+   <property name="text">
+    <string>Legends</string>
+   </property>
+  </action>
+  <action name="actionRaster_Layer">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/Layers/rasterLayer.png</normaloff>:/new/prefix1/icons/Layers/rasterLayer.png</iconset>
+   </property>
+   <property name="text">
+    <string>Raster</string>
+   </property>
+  </action>
+  <action name="actionElevation_Layer">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/Layers/elevationLayerColor.png</normaloff>:/new/prefix1/icons/Layers/elevationLayerColor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Elevation</string>
+   </property>
+   <property name="toolTip">
+    <string>Load Elevation Layer</string>
+   </property>
+  </action>
+  <action name="actionVector_Layer">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/Layers/vectorLayer.png</normaloff>:/new/prefix1/icons/Layers/vectorLayer.png</iconset>
+   </property>
+   <property name="text">
+    <string>Vector</string>
+   </property>
+   <property name="toolTip">
+    <string>Load Vector Layer</string>
+   </property>
+  </action>
+  <action name="actiongui">
+   <property name="text">
+    <string>gui</string>
+   </property>
+  </action>
+  <action name="action3d_Scene_Layer">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/Layers/3D Scene Layer.png</normaloff>:/new/prefix1/icons/Layers/3D Scene Layer.png</iconset>
+   </property>
+   <property name="text">
+    <string>CityModel</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
+   </property>
+  </action>
+  <action name="actionRemove_File">
+   <property name="text">
+    <string>Remove File</string>
+   </property>
+  </action>
+  <action name="actionLoad_Layers">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/Layers/layers.png</normaloff>:/new/prefix1/icons/Layers/layers.png</iconset>
+   </property>
+   <property name="text">
+    <string>Layers</string>
+   </property>
+  </action>
+  <action name="actionDrawLine">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/drawTools/icons8-line-64.png</normaloff>:/new/prefix1/icons/drawTools/icons8-line-64.png</iconset>
+   </property>
+   <property name="text">
+    <string>Line</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw Line</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionDrawPolygon">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/drawTools/Polygon.png</normaloff>:/new/prefix1/icons/drawTools/Polygon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Polygon</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw Polygon</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionDrawRectangle">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/drawTools/Rectangle.png</normaloff>:/new/prefix1/icons/drawTools/Rectangle.png</iconset>
+   </property>
+   <property name="text">
+    <string>Rectangle</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw Rectangle</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionDrawCircle">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/drawTools/circle.png</normaloff>:/new/prefix1/icons/drawTools/circle.png</iconset>
+   </property>
+   <property name="text">
+    <string>Circle</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw Circle</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionDrawScribble">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/drawTools/scribble.png</normaloff>:/new/prefix1/icons/drawTools/scribble.png</iconset>
+   </property>
+   <property name="text">
+    <string>Scribble</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw Scribble</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionDIstanceCalculator">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/Distance Measurement.png</normaloff>icons/Distance Measurement.png</iconset>
+   </property>
+   <property name="text">
+    <string>DIstance</string>
+   </property>
+   <property name="toolTip">
+    <string>Measure Distance</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionAreaMeasurment">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/Area measure.png</normaloff>icons/Area measure.png</iconset>
+   </property>
+   <property name="text">
+    <string>Area</string>
+   </property>
+   <property name="toolTip">
+    <string>Area Measurment</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="Resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
