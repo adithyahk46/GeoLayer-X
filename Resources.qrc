@@ -1,0 +1,32 @@
+<RCC>
+    <qresource prefix="/new/prefix1">
+        <file>icons/Layers/3D Scene Layer.png</file>
+        <file>icons/Layers/elevationLayer.png</file>
+        <file>icons/Layers/elevationLayerColor.png</file>
+        <file>icons/Layers/layers.png</file>
+        <file>icons/Layers/rasterLayer.png</file>
+        <file>icons/Layers/vectorLayer.png</file>
+        <file>icons/Layers/vectorLayer2.png</file>
+        <file>icons/drawTools/icons8-line-64.png</file>
+        <file>icons/drawTools/Polygon.png</file>
+        <file>icons/drawTools/Polygon2.png</file>
+        <file>icons/drawTools/Rectangle.png</file>
+        <file>icons/drawTools/circle.png</file>
+        <file>icons/drawTools/scribble.png</file>
+        <file>icons/Area measure.png</file>
+        <file>icons/Distance Measurement.png</file>
+        <file>icons/GeoLayer-X_SplashScreen.jpg</file>
+        <file>icons/ApplicationIcon.png</file>
+        <file>icons/Layers/XYZ.png</file>
+        <file>icons/missile.png</file>
+        <file>icons/Layers/world-map-icon.jpg</file>
+        <file>icons/Layers/world-globe.png</file>
+        <file>icons/pathFinder.png</file>
+        <file>icons/goto.png</file>
+        <file>icons/drawTools/AddLabel.png</file>
+        <file>icons/drawTools/add-text.png</file>
+        <file>icons/drawTools/LocationMarker.png</file>
+        <file>icons/Layers/3d-model.png</file>
+        <file>icons/radar.png</file>
+    </qresource>
+</RCC>
