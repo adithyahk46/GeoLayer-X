@@ -1,8 +1,11 @@
 # GeoLayer-X
 3D Maps and terrain application
 
-<img width="300" height=auto alt="image" src="https://github.com/user-attachments/assets/721a2fba-db1d-46fa-90b4-90e6f1a177ef" />
+<img width="500" height=auto alt="image" src="https://github.com/user-attachments/assets/721a2fba-db1d-46fa-90b4-90e6f1a177ef" />
 
+<img width="500" height=auto alt="image" src="https://github.com/user-attachments/assets/7a898ef3-43d2-4db8-8b20-7311cc533e8b" />
+
+<img width="500" height=auto alt="image" src="https://github.com/user-attachments/assets/8b74db1f-898f-4226-a49e-cbccfba63ce2" />
 
 <h1>2D Map Rendering</h1>
 
