@@ -39,17 +39,11 @@
 
 #include "MapLoadModule/LoadLayersOnMap.h"
 #include "MapLoadModule/MyMapCallback.h"
-#include "Simulation/tcpclient.h"
 #include "legends.h"
-#include "Simulation/FlightSimulator.h"
-#include "RouteFinder/RoutingWidget.h"
 #include "MouseEventHandler.h"
-#include "Annotation/Annotation.h"
-#include "Annotation/DrawPolygonTool.h"
-#include "Annotation/DrawCircle.h"
-#include "Annotation/LabelingDialog.h"
-#include "Annotation/CreateShapeFileDialog.h"
 
+#include <osgEarth/PlaceNode>
+#include <osgEarth/FeatureNode>
 
 using namespace osgEarth;
 
@@ -65,8 +59,6 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    void zoomToLayer(Layer *layer);
-
 
 //user defined Private Slots:
 private slots:
@@ -74,45 +66,9 @@ private slots:
 
     void OnMapLoaded(osgEarth::Layer* layer = nullptr);
 
-    void createTempShapeFile(const QString &outputPath,
-                              const QString &encoding,
-                              const QString &geometryType,
-                              const QString &srs,
-                              const osgEarth::AnnotationLayer* Layer);
-
-
-//Application Defined Slots
+ //Application Defined Slots
 private slots:
-    void on_actionMissileTracker_triggered();
-
-//user defined member functions
-    void on_actionBaseMaps_triggered();
-
-    void on_actionFind_Path_triggered();
-
-    void on_actionGoTo_triggered();
-
-    void on_pushButton_clicked();
-
-    void on_actionCreate_Shape_File_triggered();
-
-    void on_actionClear_Annotations_triggered();
-
-    void on_actionDrawPolygon_triggered(bool checked);
-
-    void on_actionDrawCircle_triggered();
-
-    void on_actionAddLabel_triggered();
-
-    void on_actionLoad3D_Model_triggered();
-
-    void on_actionRadar_dome_triggered();
-
-    void on_action3D_Volume_triggered();
-
-    void on_actionDistanceCalculator_triggered();
-
-    void on_actionLineOfSight_triggered();
+    void on_actionViewshed_triggered();
 
 private:
     void _initConnections();
@@ -124,12 +80,7 @@ private:
     osgViewer::Viewer *viewer{nullptr};
     EarthManipulator* manip = nullptr;
     MapNode* mapNode = nullptr;
-
-
-    osg::Group* annoGroup;
-    osg::Group* PolygonGroup = nullptr;
-    osg::Group* LabelGroup = nullptr;
-
+    osg::Group* root = nullptr;
 
 
     MouseEventHandler* mouseControlle = nullptr;
@@ -139,30 +90,5 @@ private:
     QComboBox* _CRS;
     QLabel* _label;
 
-
-    UdpClient* clientDialog = NULL;
-    FlightSimulator* udpClientDialog = NULL;
-    QDockWidget* goToWidgwt = nullptr;
-    osgEarth::PlaceNode* locationMarker = nullptr;
-
-    Annotation* annotationWidget = nullptr;
-
-    RoutingWidget* findpath =nullptr;
-
-
-    osg::ref_ptr<osgEarth::AnnotationLayer> annotationLayer{nullptr};
-    QList<osgEarth::FeatureNode*> listFeatureNode;
-    void collectNodes(osg::Group *group, std::vector<osg::Node *> &nodes);
-
-    struct ShapefileInfo {
-            QString outputPath;
-            QString encoding;
-            QString geometryType;
-            QString srs;
-            QList<QVariantMap> fields;
-        };
-        ShapefileInfo m_currentShapefileInfo;
-
-        bool toggleCreateShapeFile = false;
 };
 #endif // MAINWINDOW_H

@@ -28,5 +28,9 @@
         <file>icons/drawTools/LocationMarker.png</file>
         <file>icons/Layers/3d-model.png</file>
         <file>icons/radar.png</file>
+        <file>icons/radarPlatter.png</file>
+        <file>icons/radarDom.png</file>
+        <file>icons/viewshed.png</file>
+        <file>icons/lineofsight.png</file>
     </qresource>
 </RCC>

@@ -23,7 +23,7 @@
    <string notr="true"/>
   </property>
   <property name="toolButtonStyle">
-   <enum>Qt::ToolButtonTextUnderIcon</enum>
+   <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -85,7 +85,6 @@
     <property name="title">
      <string>Edit</string>
     </property>
-    <addaction name="actionClear_Annotations"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -102,7 +101,7 @@
   </widget>
   <widget class="QDockWidget" name="dockWidget">
    <property name="allowedAreas">
-    <set>Qt::BottomDockWidgetArea|Qt::LeftDockWidgetArea|Qt::TopDockWidgetArea</set>
+    <set>Qt::DockWidgetArea::BottomDockWidgetArea|Qt::DockWidgetArea::LeftDockWidgetArea|Qt::DockWidgetArea::TopDockWidgetArea</set>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -194,15 +193,16 @@
     <enum>LeftToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>true</bool>
+    <bool>false</bool>
    </attribute>
    <addaction name="actionAddLabel"/>
    <addaction name="actionDrawPolygon"/>
    <addaction name="actionDrawCircle"/>
    <addaction name="actionRadar_dome"/>
    <addaction name="actionDistanceCalculator"/>
-   <addaction name="action3D_Volume"/>
+   <addaction name="actionRadar_Platter"/>
    <addaction name="actionLineOfSight"/>
+   <addaction name="actionViewshed"/>
   </widget>
   <action name="actionLeft_Panel">
    <property name="text">
@@ -235,7 +235,7 @@
     <string>Draw Line</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionDrawPolygon">
@@ -253,7 +253,7 @@
     <string>Draw Polygon</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionDrawRectangle">
@@ -268,7 +268,7 @@
     <string>Draw Rectangle</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionDrawCircle">
@@ -283,7 +283,7 @@
     <string>Draw Circle</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionDrawScribble">
@@ -298,7 +298,7 @@
     <string>Draw Scribble</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionAreaMeasurement">
@@ -313,7 +313,7 @@
     <string>Area Meaurement</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionDistanceCalculate">
@@ -328,7 +328,7 @@
     <string>Distance Calculation</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionMissileTracker">
@@ -343,7 +343,7 @@
     <string>Missile Tracker</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionBaseMaps">
@@ -358,7 +358,7 @@
     <string>change/Load Base Map</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionFind_Path">
@@ -373,7 +373,7 @@
     <string>Find Path between two points</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionGoTo">
@@ -388,7 +388,7 @@
     <string>Navigate to location</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionAddLabel">
@@ -403,12 +403,7 @@
     <string>Place Text/Label</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
-   </property>
-  </action>
-  <action name="actionClear_Annotations">
-   <property name="text">
-    <string>Clear Annotations</string>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionCreate_Shape_File">
@@ -438,7 +433,7 @@
     <string>Load 3D Model</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionRadar_dome">
@@ -447,34 +442,64 @@
    </property>
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/radar.png</normaloff>:/new/prefix1/icons/radar.png</iconset>
+     <normaloff>:/new/prefix1/icons/radarDom.png</normaloff>:/new/prefix1/icons/radarDom.png</iconset>
    </property>
    <property name="text">
     <string>Radar dome</string>
    </property>
   </action>
-  <action name="action3D_Volume">
+  <action name="actionRadar_Platter">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/radarPlatter.png</normaloff>:/new/prefix1/icons/radarPlatter.png</iconset>
+   </property>
    <property name="text">
-    <string>3D Volume</string>
+    <string>Radar Platter</string>
+   </property>
+   <property name="toolTip">
+    <string>Radar Platter</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionDistanceCalculator">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/Distance Measurement.png</normaloff>:/new/prefix1/icons/Distance Measurement.png</iconset>
+   </property>
    <property name="text">
     <string>Distance</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionLineOfSight">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/lineofsight.png</normaloff>:/new/prefix1/icons/lineofsight.png</iconset>
+   </property>
    <property name="text">
-    <string>LineOfSight</string>
+    <string>Line Of Sight</string>
+   </property>
+   <property name="toolTip">
+    <string>Line Of Sight</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionViewshed">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/new/prefix1/icons/viewshed.png</normaloff>:/new/prefix1/icons/viewshed.png</iconset>
+   </property>
+   <property name="text">
+    <string>Viewshed</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
  </widget>

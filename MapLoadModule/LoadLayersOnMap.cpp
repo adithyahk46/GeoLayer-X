@@ -29,13 +29,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QDebug>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
-#include <QUrl>
-#include <QTimer>
 #include <QtConcurrent>
-#include <QTcpServer>
-#include "XYZServerManager.h"
 
 LoadLayersOnMap::LoadLayersOnMap(QWidget* parent, osgEarth::MapNode* mapNode , osgEarth::EarthManipulator* ManIp)
     :QDialog(parent)
