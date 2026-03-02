@@ -69,9 +69,9 @@ private:
     int _verticalFOV = 90;
     int _horizontalFOV = 90;
 
-    float near_plane = 1.0f;
+    float near_plane = 10.0f;
     float far_plane ;
-    float _farPlanOffSet = 10.0f;
+    float _farPlanOffSet = 100.0f;
 
 
     osg::Vec4  visibleColor   = osg::Vec4(159.0f / 255.0f, 255.0f / 255.0f, 61.0f / 255.0f, 0.5f);

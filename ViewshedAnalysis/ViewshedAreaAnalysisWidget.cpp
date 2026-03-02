@@ -142,7 +142,7 @@ const osgEarth::SpatialReference* geoSRS = mapSRS->getGeographicSRS();
     osgEarth::GeoPoint geoPoint(mapSRS, lon, lat, alt, osgEarth::ALTMODE_ABSOLUTE);
         // Convert to world coordinates
         osg::Vec3d worldPos;
-        geoPoint.toWorld(worldPos);
+        geoPoint.toWorld(worldPos,_mapNode->getTerrain());
 
         osg::Vec3 localepoints = osg::Vec3(worldPos);
 

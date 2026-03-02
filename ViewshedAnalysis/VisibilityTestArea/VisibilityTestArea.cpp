@@ -33,18 +33,15 @@ static const char* debugVert =
 static const char* debugFrag =
     "#version 330\n"
     "uniform samplerCube depthMap;\n"
-    "uniform float far_plane;\n"
-    "uniform float near_plane;\n"
     "in vec2 texCoord;\n"
     "out vec4 color;\n"
     "void main() {\n"
-    "  // Convert 2D quad UVs to a 3D direction for the +Z face (Face 4)\n"
     "  vec3 dir = vec3(texCoord.x * 2.0 - 1.0, texCoord.y * 2.0 - 1.0, 1.0);\n"
-    "  float depth = texture(depthMap, dir).r;\n"
-    "  // Linearize depth for visualization\n"
-    "  float z = depth * 2.0 - 1.0;\n"
-    "  float linearDepth = (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));\n"
-    "  color = vec4(vec3(linearDepth / far_plane), 1.0);\n"
+    "  float rawDepth = texture(depthMap, dir).r;\n"
+    "  \n"
+    "  // If it's all white, try raising it to a power to see the contrast\n"
+    "  float visualized = pow(rawDepth, 50.0);\n"
+    "  color = vec4(vec3(visualized), 1.0);\n"
     "}\n";
 
 
@@ -106,18 +103,12 @@ osg::Camera * VisibilityTestArea::generateCubeCamera(osg::ref_ptr<osg::TextureCu
     camera->setClearMask(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
     camera->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
-    camera->setRenderOrder(osg::Camera::POST_RENDER);
+    camera->setRenderOrder(osg::Camera::PRE_RENDER);
     camera->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
     camera->setViewport(0, 0, SM_TEXTURE_WIDTH, SM_TEXTURE_WIDTH);
     camera->getOrCreateStateSet()->setMode(GL_DEPTH_TEST, osg::StateAttribute::ON);
-
-    // camera->setDrawBuffer(GL_NONE);
-    // camera->setReadBuffer(GL_NONE);
-    // camera->setClearDepth(1.0);
-
     camera->attach(component, cubeMap, 0, face);
-    // camera->setNodeMask(0xffffffff);
-       // camera->setSmallFeatureCullingPixelSize(-1.0f);
+
     camera->setNodeMask(0xffffffff & (~INTERSECT_IGNORE));
     return camera.release();
 }
@@ -173,7 +164,7 @@ void  VisibilityTestArea::buildModel()
 
     depthMap = new osg::TextureCubeMap;
     depthMap->setTextureSize(SM_TEXTURE_WIDTH, SM_TEXTURE_WIDTH);
-    depthMap->setInternalFormat(GL_DEPTH_COMPONENT24);
+    depthMap->setInternalFormat(GL_DEPTH_COMPONENT);
     depthMap->setSourceFormat(GL_DEPTH_COMPONENT);
     depthMap->setSourceType(GL_FLOAT);
     depthMap->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
@@ -213,14 +204,12 @@ void  VisibilityTestArea::buildModel()
 #else
 
     osgEarth::VirtualProgram* _depthCamerasVP = new osgEarth::VirtualProgram();
-    _depthCamerasVP->setFunction("depthMapVertex",depthMapVertVP,osgEarth::VirtualProgram::LOCATION_VERTEX_MODEL);
+    _depthCamerasVP->setFunction("depthMapVertex",depthMapVertVP,osgEarth::VirtualProgram::LOCATION_VERTEX_VIEW);
     _depthCamerasVP->setFunction("depthMapFragment",depthMapFragVP,osgEarth::VirtualProgram::LOCATION_FRAGMENT_COLORING);
-    _depthCamerasVP->setShaderLogging(true, "shaders1.txt");
 
     osgEarth::VirtualProgram* _visibilityShaderVP = new osgEarth::VirtualProgram();
     _visibilityShaderVP->setFunction("visibilityVertex",visibilityShaderVertVP,osgEarth::VirtualProgram::LOCATION_VERTEX_VIEW);
     _visibilityShaderVP->setFunction("visibilityFragment",visibilityShaderFragVP,osgEarth::VirtualProgram::LOCATION_FRAGMENT_COLORING);
-    _visibilityShaderVP->setShaderLogging(true, "shaders2.txt");
 
 #endif
 
