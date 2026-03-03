@@ -111,7 +111,7 @@ void MainWindow::initOsg()
     viewer->setCameraManipulator(manip);
 
     viewer->setSceneData(root);
-    viewer->getCamera()->setClearColor(osg::Vec4(1.0,1.0,1.0,1.0));
+    viewer->getCamera()->setClearColor(osg::Vec4(0.3,0.3,0.3,1.0));
 
     // viewer->realize();
 

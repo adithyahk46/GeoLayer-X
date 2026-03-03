@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
       lightPalette.setColor(QPalette::Highlight, QColor(76, 163, 224));  // Blue highlight
       lightPalette.setColor(QPalette::HighlightedText, Qt::white);
 
-      a.setPalette(lightPalette);
+      // a.setPalette(lightPalette);
 
 
     QFile  styleFile("Atlas.qss");

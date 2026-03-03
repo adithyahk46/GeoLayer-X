@@ -186,7 +186,7 @@ void  VisibilityTestArea::buildModel()
     _invisibleColorUniform = new osg::Uniform("invisibleColor", invisibleColor);
 
     _baseTextureUniform = new osg::Uniform("baseTexture", 0);
-    _shadowMapUniform = new osg::Uniform("shadowMap", 1);
+    _shadowMapUniform = new osg::Uniform("shadowMap", 10);
 
      // Generate shadow map cameras and corresponding textures
     osg::Matrix  shadowProj = osg::Matrix::perspective(_verticalFOV, SM_TEXTURE_WIDTH / SM_TEXTURE_WIDTH, near_plane, far_plane);
@@ -234,7 +234,7 @@ void  VisibilityTestArea::buildModel()
     }
 
 
-    _parentScene->getOrCreateStateSet()->setTextureAttributeAndModes(1, depthMap, osg::StateAttribute::ON);
+    _parentScene->getOrCreateStateSet()->setTextureAttributeAndModes(10, depthMap, osg::StateAttribute::ON);
 #if USE_OSG_PROGRAM
     _parentScene->getOrCreateStateSet()->setAttributeAndModes(_visibilityProgram, osg::StateAttribute::ON);
 #else
@@ -256,7 +256,7 @@ void  VisibilityTestArea::buildModel()
 
 
     // Call the visualizer
-        setupDebugHUD();
+        // setupDebugHUD();
     updateAttributes();
 }
 
