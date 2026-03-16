@@ -1,6 +1,9 @@
-QT       += core gui opengl concurrent svg network openglwidgets
+QT       += core gui concurrent opengl openglwidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+
+DESTDIR = $$PWD/install
 
 CONFIG += c++17
 
@@ -12,6 +15,7 @@ DEFINES += CPL_DEBUG=1
 DEFINES += OSG_NOTIFY_LEVEL=DEBUG_INFO
 DEFINES += OSGEARTH_NOTIFY_LEVEL=INFO
 DEFINES += NOMINMAX
+
 
 
 CONFIG += unity_build
@@ -59,39 +63,59 @@ LIBS += -losgQOpenGL -lopengl32
 
 
 SOURCES += \
-    MapLoadModule/LoadLayersOnMap.cpp \
-    MapLoadModule/MyMapCallback.cpp \
-    MouseEventHandler.cpp \
-    ViewshedAnalysis/ViewshedAreaAnalysisWidget.cpp \
-    ViewshedAnalysis/VisibilityTestArea/VisibilityTestArea.cpp \
-    legends.cpp \
+    app/LayerManagerWidget.cpp \
+    app/MapLoadModule.cpp \
+    app/MouseEventHandler.cpp \
+    app/MyMapCallback.cpp \
+    app/StatusBarHandler.cpp \
+    app/ViewshedAnalysisWidget.cpp \
+    app/VisibilityTestAreaWidget.cpp \
+    app/app.cpp \
+    app/customwidgets/colorpickercheckbox.cpp \
+    app/legends.cpp \
     main.cpp \
-    mainwindow.cpp
-
+    mainwindow.cpp \
+    pluggins/VisibilityTestArea/ViewshedAnalysis.cpp \
+    pluggins/VisibilityTestArea/VisibilityTestArea.cpp
 
 HEADERS += \
-    MapLoadModule/LoadLayersOnMap.h \
-    MapLoadModule/MyMapCallback.h \
-    MouseEventHandler.h \
-    ViewshedAnalysis/ViewshedAreaAnalysisWidget.h \
-    ViewshedAnalysis/VisibilityTestArea/ViewshedShaders.h \
-    ViewshedAnalysis/VisibilityTestArea/VisibilityTestArea.h \
-    legends.h \
+    app/LayerManagerWidget.h \
+    app/MapLoadModule.h \
+    app/MouseEventHandler.h \
+    app/MyMapCallback.h \
+    app/StatusBarHandler.h \
+    app/ViewshedAnalysisWidget.h \
+    app/VisibilityTestAreaWidget.h \
+    app/app.h \
+    app/customwidgets/colorpickercheckbox.h \
+    app/legends.h \
     mainwindow.h \
+    pluggins/VisibilityTestArea/ViewshedAnalysis.h \
+    pluggins/VisibilityTestArea/ViewshedShaders.h \
+    pluggins/VisibilityTestArea/VisibilityTestArea.h
 
 
 FORMS += \
-    MapLoadModule/LoadLayersOnMap.ui \
-    ViewshedAnalysis/ViewshedAreaAnalysisWidget.ui \
+    app/MapLoadModule.ui \
+    app/ViewshedAnalysisWidget.ui \
+    app/VisibilityTestAreaWidget.ui \
     mainwindow.ui
 
 
 RESOURCES += \
     Resources.qrc
 
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+
+
+target.path = $$PWD/install
+INSTALLS += target
+
+config.files = config.ini
+config.path = $$PWD/install/config
+INSTALLS += config
+
+data.files = Data/*
+data.path = $$PWD/install/
+INSTALLS += data
 
 

@@ -123,13 +123,16 @@ const char* visibilityShaderFragVP = R"(
             vec3 lightDir = normalize(lightPos - worldPos);
             float normDif = max(dot(lightDir, normal), 0.0);
 
-            if (normDif > 0.0 && isShadowed(-lightDir) == false)
+            // if (normDif > 0.0 && isShadowed(-lightDir) == false)
+            if (isShadowed(-lightDir) == false)
             {
-                FragColor.rgb *= visibleColor.rgb;
+                // Blends the current FragColor with visibleColor based on its alpha
+                FragColor.rgb = mix(FragColor.rgb, visibleColor.rgb, visibleColor.a);
             }
             else
             {
-                FragColor.rgb *= invisibleColor.rgb;
+                // Blends the current FragColor with invisibleColor based on its alpha
+                FragColor.rgb = mix(FragColor.rgb, invisibleColor.rgb, invisibleColor.a);
             }
         }
     }
@@ -191,7 +194,7 @@ const char* visibilityShaderVert = R"(
 
     out vec3 worldPos;
     out vec3 normal;
-    out vec2 texCoords;
+    // out vec2 texCoords;
     out float lightDistance;
 
     void main()
@@ -207,7 +210,7 @@ const char* visibilityShaderVert = R"(
         lightDistance = length(worldPos - lightPos);
 
         normal = normalize( osg_Normal );
-        texCoords = osg_MultiTexCoord0.xy;
+        // texCoords = osg_MultiTexCoord0.xy;
         gl_Position = osg_ModelViewProjectionMatrix * osg_Vertex;
     }
 )";

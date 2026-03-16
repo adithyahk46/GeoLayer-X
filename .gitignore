@@ -36,6 +36,7 @@ Makefile*
 debug/
 release/
 build-*/
+install/
 
 
 

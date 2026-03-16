@@ -1,4 +1,11 @@
 #include <cstdint>
+
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <stdio.h>
+#endif
+
 #include "mainwindow.h"
 #include <QApplication>
 // #include <proj.h>
@@ -14,18 +21,25 @@
 // QString url = "http://127.0.0.1:8000/{z}/{x}/{y}.png";
 
 // #include <QTextCodec>
+void setUpEnvironments(){
 
+    qputenv("PROJ_LIB", "./share/proj");
+    qputenv("FONTCONFIG_PATH", "./etc/fonts");
+
+}
 
 int main(int argc, char *argv[])
 {
 
-    // osg::setNotifyLevel(osg::WARN);
-    // osgEarth::Registry::instance()->getCapabilities();
+    setUpEnvironments();
+
+    osg::setNotifyLevel(osg::WARN);
+    osgEarth::Registry::instance()->getCapabilities();
 
     QSurfaceFormat format = QSurfaceFormat::defaultFormat();
     // QTextCodec *codec = QTextCodec::codecForLocale();
     #ifdef OSG_GL3_AVAILABLE
-    format.setVersion(3, 3);
+    format.setVersion(3, 2);
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setRenderableType(QSurfaceFormat::OpenGL);
     format.setOption(QSurfaceFormat::DebugContext);
@@ -47,36 +61,6 @@ int main(int argc, char *argv[])
 
     osgEarth::initialize();
     QApplication a(argc, argv);
-
-    QString appDir = QCoreApplication::applicationDirPath();
-
-    // Set FONTCONFIG_PATH
-    // QString fontconfigPath = "C:/Users/pnmt1054/Adithya-working-directory/vcpkg/installed/x64-windows/etc/fonts";
-    QString fontconfigPath = QCoreApplication::applicationDirPath() + "/etc/fonts";
-    qputenv("FONTCONFIG_PATH", fontconfigPath.toStdString().c_str());
-    //qDebug() << "FONTCONFIG_PATH:" << qgetenv("FONTCONFIG_PATH");
-
-    // Set FONTCONFIG_FILE
-    // QString fontconfigFile = "C:/Users/pnmt1054/Adithya-working-directory/vcpkg/installed/x64-windows/etc/fonts/fonts.conf";
-    QString fontconfigFile = QCoreApplication::applicationDirPath() + "/etc/fonts/fonts.conf";
-
-    qputenv("FONTCONFIG_FILE", fontconfigFile.toStdString().c_str());
-    // qDebug() << "FONTCONFIG_FILE:" << qgetenv("FONTCONFIG_FILE");
-
-    // Append plugins directory to PATH
-    // QString pluginPath = QDir(appDir).filePath("plugins");
-    // QByteArray currentPath = qgetenv("PATH");
-    // if (!currentPath.contains(pluginPath.toUtf8())) {
-    // currentPath += ";" + pluginPath.toUtf8();
-    // qputenv("PATH", currentPath);
-    // //qDebug() << "PATH updated with plugin path.";
-    // }
-
-    QString projPath = QCoreApplication::applicationDirPath() +"/share/proj";
-    // QString projPath = "C:/Users/pnmt1054/Adithya-working-directory/vcpkg/installed/x64-windows/share/proj";
-    _putenv_s("PROJ_LIB", projPath.toStdString().c_str());
-    // qDebug() << "[PROJ] PROJ_LIB set to:" << projPath;
-
 
      a.setStyle(QStyleFactory::create("Fusion"));
       // Optional: Set a light palette for the Fusion style

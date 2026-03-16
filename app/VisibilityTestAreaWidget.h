@@ -1,5 +1,5 @@
-#ifndef VIEWSHEDAREAANALYSISWIDGET_H
-#define VIEWSHEDAREAANALYSISWIDGET_H
+#ifndef VISIBILITYTESTAREAWIDGET_H
+#define VISIBILITYTESTAREAWIDGET_H
 
 #include <QDialog>
 #include <osgEarth/MapNode>
@@ -7,20 +7,20 @@
 
 
 
-#include "VisibilityTestArea/VisibilityTestArea.h"
+#include "pluggins/VisibilityTestArea/VisibilityTestArea.h"
 
 
 namespace Ui {
-class ViewshedAreaAnalysisWidget;
+class VisibilityTestAreaWidget;
 }
 
-class ViewshedAreaAnalysisWidget : public QDialog
+class VisibilityTestAreaWidget : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit ViewshedAreaAnalysisWidget(osgEarth::MapNode* mapNode, osgViewer::Viewer *viewer,osg::Group* root,QWidget *parent = nullptr);
-    ~ViewshedAreaAnalysisWidget();
+    explicit VisibilityTestAreaWidget(osgEarth::MapNode* mapNode, osgViewer::Viewer *viewer,osg::Group* root,QWidget *parent = nullptr);
+    ~VisibilityTestAreaWidget();
 
 private slots:
     void on_pb_pickLocation_clicked();
@@ -40,8 +40,14 @@ private slots:
 
     void on_sb_distance_valueChanged(double arg1);
 
+    void on_sb_visibleAreaOpacity_valueChanged(int arg1);
+
+    void on_sb_hiddenAreaOpacity_valueChanged(int arg1);
+
+    void on_sb_boundarylineOpacity_valueChanged(int arg1);
+
 private:
-    Ui::ViewshedAreaAnalysisWidget *ui;
+    Ui::VisibilityTestAreaWidget *ui;
     osgEarth::MapNode* _mapNode = nullptr;
     osgViewer::Viewer* _viewer = nullptr;
     osg::Group* _root = nullptr;
@@ -50,39 +56,10 @@ private:
     osg::ref_ptr<osg::Group> _shadowSceneparent = nullptr;
     osg::ref_ptr<osg::Group>_shadowScene = nullptr;
 
-
-
+    osg::Vec4  visibleColor   = osg::Vec4(159.0f / 255.0f, 255.0f / 255.0f, 61.0f / 255.0f, 1.0f);
+    osg::Vec4  inVisibleColor = osg::Vec4(255.0f / 255.0f, 87.0f / 255.0f, 61.0f / 255.0f, 1.0f);
 
     osg::Vec3 geoPointsToVev3(double lon, double lat, double alt);
 };
 
-
-
-#include <QCheckBox>
-#include <QColor>
-
-class ColorPickerCheckBox : public QCheckBox
-{
-    Q_OBJECT
-
-public:
-    explicit ColorPickerCheckBox(const QColor& color,
-                                 QWidget* parent = nullptr);
-
-    QColor color() const;
-
-signals:
-    void colorChanged(const QColor& color);
-
-private slots:
-    void onClicked();
-
-private:
-
-    QColor m_color;
-
-    void updateAppearance();
-};
-
-
-#endif // VIEWSHEDAREAANALYSISWIDGET_H
+#endif // VISIBILITYTESTAREAWIDGET_H

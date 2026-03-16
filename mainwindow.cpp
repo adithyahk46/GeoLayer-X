@@ -3,7 +3,10 @@
 
 #include <osgEarth/GLUtils>
 
-
+#include <app/app.h>
+#include <app/StatusBarHandler.h>
+#include <app/LayerManagerWidget.h>
+#include <app/MapLoadModule.h>
 
 using namespace osgEarth;
 
@@ -15,11 +18,42 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     setWindowTitle("3D Viewer");
 
+    // // Dock 1
+    // QDockWidget *dock1 = new QDockWidget("Layers", this);
+    // dock1->setWidget(new QListWidget());
+    // addDockWidget(Qt::LeftDockWidgetArea, dock1);
+
+    // // Dock 2
+    // QDockWidget *dock2 = new QDockWidget("Browser", this);
+    // dock2->setWidget(new QTextEdit());
+    // addDockWidget(Qt::LeftDockWidgetArea, dock2);
+
+    // // Dock 3
+    // QDockWidget *dock3 = new QDockWidget("Processing", this);
+    // dock3->setWidget(new QLabel("Processing Tools"));
+    // addDockWidget(Qt::LeftDockWidgetArea, dock3);
+
     osgWidget=new osgQOpenGLWidget();
     osgWidget->setMouseTracking(true);
     QObject::connect(osgWidget, &osgQOpenGLWidget::initialized, [this] {
         initOsg();
+
+        App::getInstance()->setMapNode(mapNode);
+        App::getInstance()->setManipulator(manip);
+        App::getInstance()->setOsgViewer(viewer);
+
+        StatusBarHandler::getInstance()->setStatusbar(ui->statusbar);
+        StatusBarHandler::getInstance()->CreatMapReaders();
+
+
+        QString raster = "C:/Users/pnmt1054/Adithya_working_directory/Data/raster/43J11.tif";
+        MapLoadModule::LoadRasters(mapNode, raster,"kdfkmk");
+        MapLoadModule::LoadElevation(mapNode,"C:/Users/pnmt1054/Adithya_working_directory/Data/Elevation/43J11.dt2","elev");
+
+
     });
+
+    addDockWidget(Qt::LeftDockWidgetArea,LayerManagerWidget::getInstance());
 
     _initConnections();
 
@@ -83,16 +117,16 @@ void printOsgAndOsgEarthInfo(osgViewer::Viewer* viewer)
     // }
 }
 
-
 void MainWindow::initOsg()
 {
-        viewer = osgWidget->getOsgViewer();
-        viewer->setThreadingModel(osgViewer::Viewer::SingleThreaded);
+    viewer = osgWidget->getOsgViewer();
+    viewer->setThreadingModel(osgViewer::Viewer::SingleThreaded);
 
-    //     viewer->setRealizeOperation(new osgEarth::GL3RealizeOperation());
+    osgEarth::Util::LogarithmicDepthBuffer ldb;
+    ldb.install(viewer->getCamera());
+    viewer->setRealizeOperation(new osgEarth::GL3RealizeOperation());
 
-    // osgEarth::Util::LogarithmicDepthBuffer ldb;
-    // ldb.install(viewer->getCamera());
+    viewer->realize();
 
     QString figPath = QCoreApplication::applicationDirPath()
                       + "/Data/earthFiles/simple.earth";
@@ -100,9 +134,16 @@ void MainWindow::initOsg()
     osg::ref_ptr<osg::Node> earthNode =
         osgDB::readRefNodeFile(figPath.toStdString());
 
-    // osg::ref_ptr<osg::Group> mainRoot = new osg::Group;
     root = new osg::Group();
+
+    osgUtil::Optimizer optimizer;
+        optimizer.optimize(earthNode);
+        optimizer.optimize(root);
+        optimizer.reset();
+
+    // osg::ref_ptr<osg::Group> mainRoot = new osg::Group;
     // mainRoot->addChild(root);
+
     root->addChild(earthNode);
     mapNode = osgEarth::MapNode::findMapNode(earthNode);
 
@@ -113,18 +154,16 @@ void MainWindow::initOsg()
     viewer->setSceneData(root);
     viewer->getCamera()->setClearColor(osg::Vec4(0.3,0.3,0.3,1.0));
 
+
     // viewer->realize();
 
     MyMapCallback* mapCallback = new MyMapCallback(manip);
     mapCallback->enableZoomToLayer(true);
-    connect(mapCallback, &MyMapCallback::onMapLoaded,
-            this, &MainWindow::OnMapLoaded);
     mapNode->getMap()->addMapCallback(mapCallback);
 
 
     mouseControlle = MouseEventHandler::Instance(mapNode);
     viewer->addEventHandler(mouseControlle);
-
 
     ui->dockWidget->show();
 
@@ -132,90 +171,51 @@ void MainWindow::initOsg()
 
 void MainWindow::_initConnections()
 {
-}
-
-
-void MainWindow::OnMapLoaded(osgEarth::Layer* layer)
-{
-    //legend view setup
-    {
-    if (!layer) return;
-
-    // Create the legend for this layer
-    Legends* legend = new Legends(layer, mapNode, manip);
-
-    // Determine layer type and add to corresponding category in QTreeWidget
-    QString category;
-
-    if (dynamic_cast<osgEarth::ImageLayer*>(layer))
-    {
-        category = "Raster Layers";
-    }
-    else if (dynamic_cast<osgEarth::ElevationLayer*>(layer))
-    {
-        category = "Elevation Layers";
-    }
-    else if (dynamic_cast<osgEarth::FeatureModelLayer*>(layer))
-    {
-        category = "Vector Layers";
-    }
-    else if (dynamic_cast<osgEarth::XYZImageLayer*>(layer))
-    {
-        category = "Tile Layers";
-    }
-    else if (dynamic_cast<osgEarth::AnnotationLayer*>(layer))
-    {
-        category = "Annotation Layers";
-    }
-    else
-    {
-        category = "Other Layers";
-    }
-
-    // Find or create category item in QTreeWidget
-    QTreeWidgetItem* categoryItem = nullptr;
-    QList<QTreeWidgetItem*> foundItems = ui->treeWidget->findItems(category, Qt::MatchExactly);
-    if (!foundItems.isEmpty())
-    {
-        categoryItem = foundItems.first();
-    }
-    else
-    {
-        categoryItem = new QTreeWidgetItem(ui->treeWidget);
-        categoryItem->setText(0, category);
-        categoryItem->setFlags(Qt::ItemIsEnabled);
-    }
-
-    // Add new layer as a child item under the category
-    QTreeWidgetItem* layerItem = new QTreeWidgetItem(categoryItem);
-    //layerItem->setText(0, QString::fromStdString(layer->getName()));
-
-    // Store pointer to legend widget for later retrieval (optional)
-    ui->treeWidget->setItemWidget(layerItem, 0, legend);
-
-    QObject::connect(legend, &QObject::destroyed, this, [=]() {
-        QTreeWidgetItem* parent = layerItem->parent();
-        delete layerItem;
-        if (parent && parent->childCount() == 0) {
-            delete parent; // remove empty category
-        }
+    connect(ui->actionLegends, &QAction::triggered, this,[=]{
+        LayerManagerWidget::getInstance()->setVisible(!LayerManagerWidget::getInstance()->isVisible());
     });
 
-    // Expand category for visibility
-    ui->treeWidget->expandItem(categoryItem);
+    connect(ui->actionShow_Full_Screen, &QAction::toggled, this,[this](bool check){
+        if(check) this->showFullScreen();
+        else this->showMaximized();
+    });
+
+    QObject::connect(ui->actionLoad_Layers,&QAction::triggered,this,[=](){
+           // LoadLayer("");
+           MapLoadModule* _loadmap = new MapLoadModule(mapNode, this);
+           _loadmap->setAttribute(Qt::WA_DeleteOnClose);
+           _loadmap->show();
+
+       });
+}
+
+#include <app/ViewshedAnalysisWidget.h>
+ViewshedAnalysisWidget* _viewAnalysis = nullptr;
+void MainWindow::on_actionViewshed_triggered()
+{
+    if (!_viewAnalysis)
+    {
+        _viewAnalysis = new ViewshedAnalysisWidget(this);
+
+        connect(_viewAnalysis, &QObject::destroyed,
+                this, [this]()
+        {
+            _viewAnalysis = nullptr;
+        });
 
     }
+    _viewAnalysis->show();
 
 }
 
 
-#include <ViewshedAnalysis/ViewshedAreaAnalysisWidget.h>
-ViewshedAreaAnalysisWidget* viewshedDialog = nullptr;
-void MainWindow::on_actionViewshed_triggered()
+#include <app/VisibilityTestAreaWidget.h>
+VisibilityTestAreaWidget* viewshedDialog = nullptr;
+void MainWindow::on_actionRadar_Platter_triggered()
 {
     if (!viewshedDialog)
     {
-        viewshedDialog = new ViewshedAreaAnalysisWidget(mapNode,viewer, root,this);
+        viewshedDialog = new VisibilityTestAreaWidget(mapNode,viewer, root,this);
 
         connect(viewshedDialog, &QObject::destroyed,
                 this, [this]()
@@ -225,14 +225,6 @@ void MainWindow::on_actionViewshed_triggered()
     }
 
     viewshedDialog->show();
-    // viewshedDialog->raise();
-    // viewshedDialog->activateWindow();
-
-    LoadLayersOnMap load;
-    QString raster = "C:/Users/pnmt1054/Adithya_working_directory/Data/raster/43J11.tif";
-    load.LoadRasters(mapNode, raster,"kdfkmk");
-    load.LoadElevation(mapNode,"C:/Users/pnmt1054/Adithya_working_directory/Data/Elevation/43J11.dt2","elev");
-
 }
 
 

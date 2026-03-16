@@ -1,8 +1,8 @@
 #include "MyMapCallback.h"
 #include <QDebug>
-#include <osgEarth/SpatialReference>
-#include <osgEarth/GeoData>
-#include <osgEarth/Viewpoint>
+
+#include <app/LayerManagerWidget.h>
+
 
 using namespace osgEarth;
 
@@ -14,7 +14,9 @@ MyMapCallback::MyMapCallback(osgEarth::EarthManipulator* manip,QObject* parent)
 void MyMapCallback::onLayerAdded(osgEarth::Layer* layer, unsigned index){
     // std::cout << "Layer added: " << layer->getName() << " at index " << index << std::endl;
     emit onMapLoaded(layer);
-    if(_zoomToLayer) zoomToLayer(layer);
+    // if(_zoomToLayer) zoomToLayer(layer);
+    LayerManagerWidget::getInstance()->addLayer(layer);
+
 }
 
 void MyMapCallback::zoomToLayer(osgEarth::Layer* layer)
@@ -36,7 +38,8 @@ void MyMapCallback::zoomToLayer(osgEarth::Layer* layer)
 
     // Optional: set viewpoint with calculated range
     Viewpoint vp("",center.x(),center.y(),0.0f,0.0f,-90.0f, p1.distanceTo(p2)<1000?1000:p1.distanceTo(p2) );
-    _manip->setViewpoint(vp, 2.0); // with 2-second transition
+    _manip->setViewpoint(vp
+                         ); // with 2-second transition
     // qDebug()<<"The Range Covered by the layer = "<<p1.distanceTo(p2);
 
 }

@@ -1,81 +1,142 @@
 ﻿#include "VisibilityTestArea.h"
 
+const char* depthMapVertVP = R"(
+    #version 330 core
 
-#include <osg/LineWidth>
-#include <osg/ShapeDrawable>
-#include <osg/TextureCubeMap>
-#include <osg/BoundingSphere>
-#include <osg/PositionAttitudeTransform>
-#include <osgDB/ReadFile>
-#include <osgDB/Registry>
+    //in vec4 gl_Vertex;
+    out float lightDistance;
 
-#include <osgUtil/SmoothingVisitor>
-#include <osgSim/OverlayNode>
+    uniform mat4 osg_ModelViewProjectionMatrix;
+    uniform mat4 osg_ViewMatrixInverse;
+    uniform mat4 osg_ModelViewMatrix;
+    uniform vec3 lightPos;
+    uniform mat4 inverse_view;
 
-#include <osg/AutoTransform>
+    uniform float near_plane;
+    uniform float far_plane;
 
-#include "ViewshedShaders.h"
+    void depthMapVertex(inout vec4 vertex)
+    {
+        //IN Model space
+        // vec3 worldPos = (inverse_view * osg_ModelViewMatrix * vertex).xyz;
 
-#define USE_OSG_PROGRAM  0
+        //in view space
+        vec4 w = inverse_view * vertex;
+        vec3 worldPos = w.xyz / w.w;
 
-// 1. Add these Shader Strings at the top of your file
-static const char* debugVert =
-    "#version 330\n"
-    "layout(location = 0) in vec4 osg_Vertex;\n"
-    "layout(location = 8) in vec4 osg_MultiTexCoord0;\n"
-    "uniform mat4 osg_ModelViewProjectionMatrix;\n"
-    "out vec2 texCoord;\n"
-    "void main() {\n"
-    "  gl_Position = osg_ModelViewProjectionMatrix * osg_Vertex;\n"
-    "  texCoord = osg_MultiTexCoord0.xy;\n"
-    "}\n";
+        lightDistance = length(worldPos - lightPos);
+        lightDistance = ((1 / lightDistance) - (1 / near_plane)) / (1 / far_plane - 1 / near_plane);
 
-static const char* debugFrag =
-    "#version 330\n"
-    "uniform samplerCube depthMap;\n"
-    "in vec2 texCoord;\n"
-    "out vec4 color;\n"
-    "void main() {\n"
-    "  vec3 dir = vec3(texCoord.x * 2.0 - 1.0, texCoord.y * 2.0 - 1.0, 1.0);\n"
-    "  float rawDepth = texture(depthMap, dir).r;\n"
-    "  \n"
-    "  // If it's all white, try raising it to a power to see the contrast\n"
-    "  float visualized = pow(rawDepth, 50.0);\n"
-    "  color = vec4(vec3(visualized), 1.0);\n"
-    "}\n";
+        // gl_Position = osg_ModelViewProjectionMatrix * vertex;
+    }
+)";
+
+const char* depthMapFragVP = R"(
+    #version 330 core
+    in float lightDistance;
+    uniform float far_plane;
+
+    void depthMapFragment(inout vec4 color)
+    {
+        // Mapping to [0, 1]
+        // float depth = clamp(lightDistance, 0.0, 1.0);
+
+        // color = vec4(vec3(depth), 1.0);
+        gl_FragDepth = lightDistance;
+    }
+)";
+
+const char* visibilityShaderVertVP = R"(
+    #version 330 core
+
+in vec3 osg_Normal;
+
+    uniform mat4 osg_ModelViewProjectionMatrix;
+    uniform mat4 osg_ViewMatrixInverse;
+    uniform mat4 osg_ModelViewMatrix;
+
+    uniform mat4 inverse_view;
 
 
-// 2. Add this helper function to your class
-void VisibilityTestArea::setupDebugHUD() {
-    osg::Camera* hud = new osg::Camera;
-    hud->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
-    hud->setProjectionMatrixAsOrtho2D(0, 1280, 0, 720);
-    hud->setViewMatrix(osg::Matrix::identity());
-    hud->setRenderOrder(osg::Camera::POST_RENDER);
-    hud->setAllowEventFocus(false);
-    hud->setClearMask(GL_DEPTH_BUFFER_BIT);
+    uniform vec3 lightPos;
 
-    // Create a quad in the bottom-left corner
-    osg::Geometry* quad = osg::createTexturedQuadGeometry(
-        osg::Vec3(10, 10, 0), osg::Vec3(300, 0, 0), osg::Vec3(0, 300, 0));
-    osg::Geode* geode = new osg::Geode;
-    geode->addDrawable(quad);
-    hud->addChild(geode);
+    out vec3 worldPos;
+    out vec3 normal;
+    out float lightDistance;
 
-    osg::StateSet* ss = geode->getOrCreateStateSet();
-    ss->setTextureAttributeAndModes(0, depthMap.get(), osg::StateAttribute::ON);
+    void visibilityVertex(inout vec4 vertex)
+    {
+        //in Model space
+        // worldPos = (osg_ViewMatrixInverse * osg_ModelViewMatrix * vertex).xyz;
 
-    osg::Program* prog = new osg::Program;
-    prog->addShader(new osg::Shader(osg::Shader::VERTEX, debugVert));
-    prog->addShader(new osg::Shader(osg::Shader::FRAGMENT, debugFrag));
-    ss->setAttributeAndModes(prog, osg::StateAttribute::ON);
+        //IN view space
+        vec4 w = osg_ViewMatrixInverse * vertex;
+        worldPos = w.xyz / w.w;
 
-    ss->addUniform(new osg::Uniform("depthMap", 0));
-    ss->addUniform(_farPlaneUniform);
-    ss->addUniform(_nearPlaneUniform);
+        lightDistance = length(worldPos - lightPos);
 
-    _parentScene->addChild(hud);
-}
+        normal = normalize( osg_Normal );
+        // gl_Position = osg_ModelViewProjectionMatrix * vertex;
+    }
+)";
+
+
+const char* visibilityShaderFragVP = R"(
+    #version 330 core
+
+    in vec3 worldPos;
+    in vec3 normal;
+    in float lightDistance;
+
+    uniform vec3 lightPos;
+    uniform vec4 visibleColor;
+    uniform vec4 invisibleColor;
+
+    uniform samplerCube shadowMap;
+
+    uniform float near_plane;
+    uniform float far_plane;
+    uniform float user_area;
+
+    float linearizeDepth(float z)
+    {
+        float z_n = 2.0 * z - 1.0;
+        return 2.0 * near_plane * far_plane / (far_plane + near_plane - z_n * (far_plane - near_plane));
+    };
+
+    // Return 1 for shadowed, 0 visible
+    bool isShadowed(vec3 lightDir)
+    {
+        float bias = max(0.01 * (1.0 - dot(normal, lightDir)), 0.001) * far_plane;
+
+        float z = linearizeDepth(texture(shadowMap, lightDir).r);
+        return lightDistance - bias > z;
+    }
+
+    void visibilityFragment(inout vec4 FragColor)
+    {
+        if (length(lightPos - worldPos) < user_area)
+        {
+
+            vec3 lightDir = normalize(lightPos - worldPos);
+            float normDif = max(dot(lightDir, normal), 0.0);
+
+            // if (normDif > 0.0 && isShadowed(-lightDir) == false)
+            if (isShadowed(-lightDir) == false)
+            {
+                // Blends the current FragColor with visibleColor based on its alpha
+                FragColor.rgb = mix(FragColor.rgb, visibleColor.rgb, visibleColor.a);
+            }
+            else
+            {
+                // Blends the current FragColor with invisibleColor based on its alpha
+                FragColor.rgb = mix(FragColor.rgb, invisibleColor.rgb, invisibleColor.a);
+            }
+        }
+    }
+)";
+
+
 
 enum TraversalOption
 {
@@ -86,14 +147,17 @@ enum TraversalOption
 static const int   SM_TEXTURE_WIDTH  = 1024;
 
 
-
 VisibilityTestArea::VisibilityTestArea(osg::Group* sceneRoot, osgViewer::Viewer* viewer,osg::Vec3 lightSource, int radius):
     _shadowedScene(sceneRoot),
     _mainViewer(viewer),
     _lightSource(lightSource),
     _viweingRadius(radius)
 {
+
         _parentScene = _shadowedScene->getParent(0);
+
+        //create a sperical geod at the light soure position with _viweingRadius as radius, and add it to the scene for visualization
+        
 }
 
 osg::Camera * VisibilityTestArea::generateCubeCamera(osg::ref_ptr<osg::TextureCubeMap> cubeMap, unsigned face, osg::Camera::BufferComponent component)
@@ -109,7 +173,7 @@ osg::Camera * VisibilityTestArea::generateCubeCamera(osg::ref_ptr<osg::TextureCu
     camera->getOrCreateStateSet()->setMode(GL_DEPTH_TEST, osg::StateAttribute::ON);
     camera->attach(component, cubeMap, 0, face);
 
-    camera->setNodeMask(0xffffffff & (~INTERSECT_IGNORE));
+    // camera->setNodeMask(0xffffffff & (~INTERSECT_IGNORE));
     return camera.release();
 }
 
@@ -135,19 +199,14 @@ void  VisibilityTestArea::updateAttributes()
     // Update light source info for shadow map
     for (int i = 0; i < 6; i++)
     {
-        auto  depthCamera = _depthCameras[i];
-        depthCamera->setViewMatrix(shadowViews[i]);
+        _depthCameras[i]->setViewMatrix(shadowViews[i]);
     }
 
     if(!_inverseViewUniform[0].valid())
     {
         for (int i = 0; i < 6; i++){
             _inverseViewUniform[i] = new osg::Uniform("inverse_view", osg::Matrixf::inverse(shadowViews[i]));
-        }
-        for (int i = 0; i < 6; i++)
-        {
-            auto  depthCamera = _depthCameras[i];
-            depthCamera->getOrCreateStateSet()->addUniform(_inverseViewUniform[i]);
+            _depthCameras[i]->getOrCreateStateSet()->addUniform(_inverseViewUniform[i]);
         }
     }
     else{
@@ -160,7 +219,7 @@ void  VisibilityTestArea::updateAttributes()
 void  VisibilityTestArea::buildModel()
 {
 
-    _mainViewer->getCamera()->getGraphicsContext()->getState()->setUseModelViewAndProjectionUniforms(true);
+    // _mainViewer->getCamera()->getGraphicsContext()->getState()->setUseModelViewAndProjectionUniforms(true);
 
     depthMap = new osg::TextureCubeMap;
     depthMap->setTextureSize(SM_TEXTURE_WIDTH, SM_TEXTURE_WIDTH);
@@ -185,34 +244,15 @@ void  VisibilityTestArea::buildModel()
     _visibleColorUniform = new osg::Uniform("visibleColor", visibleColor);
     _invisibleColorUniform = new osg::Uniform("invisibleColor", invisibleColor);
 
-    _baseTextureUniform = new osg::Uniform("baseTexture", 0);
     _shadowMapUniform = new osg::Uniform("shadowMap", 10);
 
      // Generate shadow map cameras and corresponding textures
-    osg::Matrix  shadowProj = osg::Matrix::perspective(_verticalFOV, SM_TEXTURE_WIDTH / SM_TEXTURE_WIDTH, near_plane, far_plane);
+    osg::Matrix  shadowProj = osg::Matrix::perspective(90, SM_TEXTURE_WIDTH / SM_TEXTURE_WIDTH, near_plane, far_plane);
 
 
-#if USE_OSG_PROGRAM
-    osg::Program* _depthProgram = new osg::Program;
-    _depthProgram->addShader(new osg::Shader(osg::Shader::VERTEX, depthMapVert));
-    _depthProgram->addShader(new osg::Shader(osg::Shader::FRAGMENT, depthMapFrag));
-
-    osg::Program* _visibilityProgram = new osg::Program;
-    _visibilityProgram->addShader(new osg::Shader(osg::Shader::VERTEX, visibilityShaderVert));
-    _visibilityProgram->addShader(new osg::Shader(osg::Shader::FRAGMENT, visibilityShaderFrag));
-
-#else
-
-    osgEarth::VirtualProgram* _depthCamerasVP = new osgEarth::VirtualProgram();
+    _depthCamerasVP = new osgEarth::VirtualProgram();
     _depthCamerasVP->setFunction("depthMapVertex",depthMapVertVP,osgEarth::VirtualProgram::LOCATION_VERTEX_VIEW);
     _depthCamerasVP->setFunction("depthMapFragment",depthMapFragVP,osgEarth::VirtualProgram::LOCATION_FRAGMENT_COLORING);
-
-    osgEarth::VirtualProgram* _visibilityShaderVP = new osgEarth::VirtualProgram();
-    _visibilityShaderVP->setFunction("visibilityVertex",visibilityShaderVertVP,osgEarth::VirtualProgram::LOCATION_VERTEX_VIEW);
-    _visibilityShaderVP->setFunction("visibilityFragment",visibilityShaderFragVP,osgEarth::VirtualProgram::LOCATION_FRAGMENT_COLORING);
-
-#endif
-
 
 
     // Generate one camera for each side of the shadow cubemap
@@ -220,11 +260,9 @@ void  VisibilityTestArea::buildModel()
     {
         _depthCameras[i] = generateCubeCamera(depthMap, i, osg::Camera::DEPTH_BUFFER);
         _depthCameras[i]->setProjectionMatrix(shadowProj);
-#if USE_OSG_PROGRAM
-    _depthCameras[i]->getOrCreateStateSet()->setAttributeAndModes(_depthProgram, osg::StateAttribute::ON);
-#else
+
         _depthCameras[i]->getOrCreateStateSet()->setAttributeAndModes(_depthCamerasVP, osg::StateAttribute::ON);
-#endif
+
         _depthCameras[i]->getOrCreateStateSet()->addUniform(_lightPosUniform);
         _depthCameras[i]->getOrCreateStateSet()->addUniform(_farPlaneUniform);
         _depthCameras[i]->getOrCreateStateSet()->addUniform(_nearPlaneUniform);
@@ -234,18 +272,18 @@ void  VisibilityTestArea::buildModel()
     }
 
 
+    _visibilityShaderVP = new osgEarth::VirtualProgram();
+    _visibilityShaderVP->setFunction("visibilityVertex",visibilityShaderVertVP,osgEarth::VirtualProgram::LOCATION_VERTEX_VIEW);
+    _visibilityShaderVP->setFunction("visibilityFragment",visibilityShaderFragVP,osgEarth::VirtualProgram::LOCATION_FRAGMENT_COLORING);
+
     _parentScene->getOrCreateStateSet()->setTextureAttributeAndModes(10, depthMap, osg::StateAttribute::ON);
-#if USE_OSG_PROGRAM
-    _parentScene->getOrCreateStateSet()->setAttributeAndModes(_visibilityProgram, osg::StateAttribute::ON);
-#else
+
     _parentScene->getOrCreateStateSet()->setAttributeAndModes(_visibilityShaderVP, osg::StateAttribute::ON);
-#endif
-    _parentScene->getOrCreateStateSet()->addUniform(_baseTextureUniform);
+
     _parentScene->getOrCreateStateSet()->addUniform(_shadowMapUniform);
     _parentScene->getOrCreateStateSet()->addUniform(_visibleColorUniform);
     _parentScene->getOrCreateStateSet()->addUniform(_invisibleColorUniform);
 
-    // Update light source info for shadowing scene
     _parentScene->getOrCreateStateSet()->addUniform(_lightPosUniform);
     _parentScene->getOrCreateStateSet()->addUniform(_farPlaneUniform);
     _parentScene->getOrCreateStateSet()->addUniform(_nearPlaneUniform);
@@ -254,9 +292,6 @@ void  VisibilityTestArea::buildModel()
     _lightIndicator = makeIndicator(_lightSource);
     _parentScene->getParent(0)->addChild(_lightIndicator);
 
-
-    // Call the visualizer
-        // setupDebugHUD();
     updateAttributes();
 }
 
@@ -293,13 +328,13 @@ osg::AutoTransform* VisibilityTestArea::makeIndicator(osg::Vec3 eye)
 void VisibilityTestArea::setViwerPosition(const osg::Vec3 position)
 {
     _lightSource = position;
-    _lightPosUniform->set(_lightSource);
-    updateAttributes();
 
     if (_lightIndicator.valid())
-       {
-           _lightIndicator->setPosition(position);
-       }
+    {
+       _lightIndicator->setPosition(position);
+       _lightPosUniform->set(_lightSource);
+       updateAttributes();
+    }
 }
 
 void VisibilityTestArea::setRadius(int radius)
@@ -308,7 +343,8 @@ void VisibilityTestArea::setRadius(int radius)
         _viewRadiusUniform->set((float)radius);
         _farPlaneUniform->set((float)radius+ _farPlanOffSet);
     }
-    else _viweingRadius = radius;
+
+    _viweingRadius = radius;
 }
 
 void VisibilityTestArea::setVisibleAreaColor(const osg::Vec4 color)
@@ -316,7 +352,8 @@ void VisibilityTestArea::setVisibleAreaColor(const osg::Vec4 color)
     if(_visibleColorUniform.valid()){
         _visibleColorUniform->set(color);
     }
-    else visibleColor = color;
+
+    visibleColor = color;
 }
 
 void VisibilityTestArea::setInvisibleAreaColor(const osg::Vec4 color)
@@ -324,23 +361,15 @@ void VisibilityTestArea::setInvisibleAreaColor(const osg::Vec4 color)
     if(_invisibleColorUniform.valid()){
         _invisibleColorUniform->set(color);
     }
-    else invisibleColor = color;
-}
 
-void VisibilityTestArea::setVerticalFOV(int fov)
-{
-    _verticalFOV = fov;
-    osg::Matrix               shadowProj = osg::Matrix::perspective(_verticalFOV, SM_TEXTURE_WIDTH / SM_TEXTURE_WIDTH, near_plane, far_plane);
-    for (int i = 0; i < 6; i++)
-    {
-        _depthCameras[i]->setProjectionMatrix(shadowProj);
-    }
-
+    invisibleColor = color;
 }
 
 
 void  VisibilityTestArea::clear()
 {
+    // _mainViewer->getCamera()->getGraphicsContext()->getState()->setUseModelViewAndProjectionUniforms(false);
+
     for (int i = 0; i < 6; i++)
        {
            // _depthCameras[i]->getOrCreateStateSet()->setAttribute(depthShader, osg::StateAttribute::OFF);
@@ -359,20 +388,19 @@ void  VisibilityTestArea::clear()
        _parentScene->getOrCreateStateSet()->removeUniform(_farPlaneUniform);
        _parentScene->getOrCreateStateSet()->removeUniform(_nearPlaneUniform);
        _parentScene->getOrCreateStateSet()->removeUniform(_viewRadiusUniform);
-       _parentScene->getOrCreateStateSet()->removeUniform(_baseTextureUniform);
        _parentScene->getOrCreateStateSet()->removeUniform(_shadowMapUniform);
 
-       _parentScene->getOrCreateStateSet()->setAttribute(_visibilityShader, osg::StateAttribute::OFF);
-       _parentScene->getOrCreateStateSet()->setTextureAttributeAndModes(1, depthMap, osg::StateAttribute::OFF);
+       _parentScene->getOrCreateStateSet()->setAttributeAndModes(_visibilityShaderVP, osg::StateAttribute::OFF);
+       _parentScene->getOrCreateStateSet()->setTextureAttributeAndModes(10, depthMap, osg::StateAttribute::OFF);
        _parentScene->getOrCreateStateSet()->removeAttribute(osg::StateAttribute::PROGRAM);
-       _parentScene->getOrCreateStateSet()->removeTextureAttribute(1, osg::StateAttribute::TEXTURE);
+       // _parentScene->getOrCreateStateSet()->removeAttribute(_visibilityShaderVP);
+       _parentScene->getOrCreateStateSet()->removeTextureAttribute(10, osg::StateAttribute::TEXTURE);
 
        // _parentScene->removeChild(_shadowedScene);
        _parentScene->getParent(0)->removeChild(_lightIndicator);
 
        _lightIndicator = nullptr;
-       _visibilityShader = nullptr;
-
+       // _visibilityShader = nullptr;
 
 
 

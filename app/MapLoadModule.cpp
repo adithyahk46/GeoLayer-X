@@ -1,5 +1,5 @@
-#include "LoadLayersOnMap.h"
-#include "ui_LoadLayersOnMap.h"
+#include "MapLoadModule.h"
+#include "ui_MapLoadModule.h"
 
 #include <osgEarth/MapNode>
 #include <osgEarth/EarthManipulator>
@@ -31,11 +31,10 @@
 #include <QDebug>
 #include <QtConcurrent>
 
-LoadLayersOnMap::LoadLayersOnMap(QWidget* parent, osgEarth::MapNode* mapNode , osgEarth::EarthManipulator* ManIp)
+MapLoadModule::MapLoadModule(osgEarth::MapNode* mapNode, QWidget* parent )
     :QDialog(parent)
     ,ui(new Ui::MapLoadModule)
     ,_mapNode(mapNode)
-    ,_manip(ManIp)
 
 {
     ui->setupUi(this);
@@ -43,9 +42,11 @@ LoadLayersOnMap::LoadLayersOnMap(QWidget* parent, osgEarth::MapNode* mapNode , o
     setWindowIcon(QIcon(":/new/prefix1/icons/Layers/layers.png"));
 
   _initConnections();
+
+  adjustSize();
 }
 
-void LoadLayersOnMap::_initConnections()
+void MapLoadModule::_initConnections()
 {
 
     ui->le_rasterLabelName->setEnabled(!ui->cb_raster->isChecked());
@@ -182,7 +183,7 @@ void LoadLayersOnMap::_initConnections()
   }
 
 
-void LoadLayersOnMap::getAttributes(QString FilePath){
+void MapLoadModule::getAttributes(QString FilePath){
  // OGR Shapefile support
  // Register all GDAL drivers
     GDALAllRegister();
@@ -230,39 +231,14 @@ void LoadLayersOnMap::getAttributes(QString FilePath){
 
 }
 
-LoadLayersOnMap* LoadLayersOnMap::getInstance(osgEarth::MapNode* mapNode) {
-    static LoadLayersOnMap instance;
-    if (mapNode) {
-        instance._mapNode = mapNode;
-    }
-    return &instance;
-}
 
-// static LoadLayersOnMap& getInstance(osgEarth::MapNode* mapNode) {
-//         static LoadLayersOnMap instance;
-//         instance._mapNode = mapNode;  // Optional: may want to guard or restrict setting this multiple times
-//         return instance;
-//     }
-
-LoadLayersOnMap::~LoadLayersOnMap()
+MapLoadModule::~MapLoadModule()
 {
-        for (auto it = m_servers.begin(); it != m_servers.end(); ++it) {
-            ServerInfo& info = it.value();
-            if (info.process->state() == QProcess::Running) {
-                info.process->terminate();
-                if (!info.process->waitForFinished(1000)) {
-                    info.process->kill();
-                }
-            }
-            info.process->deleteLater();
-        }
-        m_servers.clear();
-
     delete ui;
 
 }
 
-QString LoadLayersOnMap::OpenFiles(FileType Type )
+QString MapLoadModule::OpenFiles(FileType Type )
 {
     QString Filter ="";
     switch(Type)
@@ -292,7 +268,7 @@ QString LoadLayersOnMap::OpenFiles(FileType Type )
 
 }
 
-void LoadLayersOnMap::LoadRasters(osgEarth::MapNode* mapNode, QString FilePath,  QString LayerName )
+void MapLoadModule::LoadRasters(osgEarth::MapNode* mapNode, QString FilePath,  QString LayerName )
 {
 
     QFileInfo finfo(FilePath);
@@ -311,14 +287,14 @@ void LoadLayersOnMap::LoadRasters(osgEarth::MapNode* mapNode, QString FilePath, 
     mapNode->getMap()->addLayer(imageLayer);
 }
 
-void LoadLayersOnMap::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , QString LayerName)
+void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , QString LayerName)
 {
 
     QFileInfo finfo(FilePath);
     QString MapName = finfo.baseName().toStdString().c_str();
     QString fileExt = finfo.suffix().toStdString().c_str();
 
-    osgEarth::OGRFeatureSource* features = new osgEarth::OGRFeatureSource();
+    osg::ref_ptr<osgEarth::OGRFeatureSource> features = new osgEarth::OGRFeatureSource();
     features->setURL(FilePath.toStdString().c_str());
 
     features->open();  // Open the feature source
@@ -415,13 +391,12 @@ void LoadLayersOnMap::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath ,
                 // extrusion->wallStyleName() = "building-wall";
                 // extrusion->roofStyleName() = "building-roof";
 
-                osgEarth::PolygonSymbol* poly = style.getOrCreate<osgEarth::PolygonSymbol>();
+                osg::ref_ptr<osgEarth::PolygonSymbol> poly = style.getOrCreate<osgEarth::PolygonSymbol>();
                 poly->fill()->color() = osgEarth::Color::White;
 
                 // Clamp the buildings to the terrain.
-                osgEarth::AltitudeSymbol* alt = style.getOrCreate<osgEarth::AltitudeSymbol>();
+                osg::ref_ptr<osgEarth::AltitudeSymbol> alt = style.getOrCreate<osgEarth::AltitudeSymbol>();
                 alt->clamping() = alt->CLAMP_TO_TERRAIN;
-                alt->technique() = alt->TECHNIQUE_DRAPE;
                 alt->binding() = alt->BINDING_VERTEX;
 
                 auto* render = style.getOrCreate<osgEarth::RenderSymbol>();
@@ -456,10 +431,10 @@ void LoadLayersOnMap::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath ,
     }
 
     {
-    osgEarth::StyleSheet* styleSheet = new osgEarth::StyleSheet();
+    osg::ref_ptr<osgEarth::StyleSheet> styleSheet = new osgEarth::StyleSheet();
     styleSheet->addStyle(style);
 
-    osgEarth::FeatureModelLayer* featureModelLayer = new osgEarth::FeatureModelLayer();
+    osg::ref_ptr<osgEarth::FeatureModelLayer> featureModelLayer = new osgEarth::FeatureModelLayer();
 
     if(LayerName.isEmpty())
     {
@@ -473,7 +448,7 @@ void LoadLayersOnMap::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath ,
     }
 
     osgEarth::FeatureDisplayLayout layout;
-    layout.tileSize() = 5500;
+    layout.tileSize() = 4500;
 
     featureModelLayer->setFeatureSource(features);
     featureModelLayer->setStyleSheet(styleSheet);
@@ -484,7 +459,7 @@ void LoadLayersOnMap::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath ,
 
 }
 
-void LoadLayersOnMap:: LoadElevation(osgEarth::MapNode* mapNode,QString FilePath, QString LayerName)
+void MapLoadModule:: LoadElevation(osgEarth::MapNode* mapNode,QString FilePath, QString LayerName)
 {
     QFileInfo finfo(FilePath);
     QString MapName = finfo.baseName().toStdString().c_str();
@@ -502,7 +477,7 @@ void LoadLayersOnMap:: LoadElevation(osgEarth::MapNode* mapNode,QString FilePath
     mapNode->getMap()->addLayer(elevationLayer);
 }
 
-void LoadLayersOnMap::LoadXYZTiles(osgEarth::MapNode* mapNode, QString url , QString LayerName){
+void MapLoadModule::LoadXYZTiles(osgEarth::MapNode* mapNode, QString url , QString LayerName){
 
     // QString url = "http://[abc].tile.openstreetmap.org/{z}/{x}/{y}.png";
     //              // QString url = "http://172.22.22.213:8000/{z}/{x}/{y}.png";
@@ -526,7 +501,7 @@ void LoadLayersOnMap::LoadXYZTiles(osgEarth::MapNode* mapNode, QString url , QSt
      mapNode->getMap()->addLayer(remoteTiles);
 }
 
-void LoadLayersOnMap::on_pb_openMap_clicked()
+void MapLoadModule::on_pb_openMap_clicked()
 {
     if(ui->tabWidget->currentIndex() == 0)
     {
@@ -544,7 +519,12 @@ void LoadLayersOnMap::on_pb_openMap_clicked()
 
         // Run LoadVectors in a separate thread
            QtConcurrent::run([=]() {
-               LoadVectors(_mapNode,ui->le_vectorUrl->text(),ui->le_vectorLayerName->text());
+
+               QMetaObject::invokeMethod(this, [=]() {
+
+                   LoadVectors(_mapNode, ui->le_vectorUrl->text(), ui->le_vectorLayerName->text());
+
+                  }, Qt::QueuedConnection);
            });
     }
 

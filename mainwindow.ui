@@ -65,6 +65,7 @@
     </property>
     <addaction name="actionLeft_Panel"/>
     <addaction name="actionLegends"/>
+    <addaction name="actionShow_Full_Screen"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -101,7 +102,7 @@
   </widget>
   <widget class="QDockWidget" name="dockWidget">
    <property name="allowedAreas">
-    <set>Qt::DockWidgetArea::BottomDockWidgetArea|Qt::DockWidgetArea::LeftDockWidgetArea|Qt::DockWidgetArea::TopDockWidgetArea</set>
+    <set>Qt::DockWidgetArea::AllDockWidgetAreas</set>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -134,22 +135,22 @@
         <number>0</number>
        </property>
        <widget class="QWidget" name="legengs_page">
+        <property name="acceptDrops">
+         <bool>true</bool>
+        </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
-         <item>
-          <widget class="QTreeWidget" name="treeWidget">
-           <property name="columnCount">
-            <number>1</number>
-           </property>
-           <attribute name="headerVisible">
-            <bool>false</bool>
-           </attribute>
-           <column>
-            <property name="text">
-             <string notr="true">1</string>
-            </property>
-           </column>
-          </widget>
-         </item>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
         </layout>
        </widget>
        <widget class="QWidget" name="Controls"/>
@@ -500,6 +501,17 @@
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionShow_Full_Screen">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Full Screen</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
    </property>
   </action>
  </widget>

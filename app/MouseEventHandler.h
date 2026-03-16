@@ -1,24 +1,8 @@
 #ifndef MOUSEEVENTHANDLER_H
 #define MOUSEEVENTHANDLER_H
 
-#include <osgGA/GUIEventHandler>
-#include <osgViewer/Viewer>
-#include <osg/Vec2>
-#include <QObject>
-
-#include <osgViewer/View>
 #include <iostream>
 
-#include <osgEarth/MapNode>
-#include <osgEarth/GeoData>
-#include <osgEarth/SpatialReference>
-
-#include <QWidget>
-#include <QLabel>
-#include <QStatusBar>
-#include <QLineEdit>
-#include <QComboBox>
-#include <QHBoxLayout>
 
 class MouseEventHandler :public QObject, public osgGA::GUIEventHandler
 {
