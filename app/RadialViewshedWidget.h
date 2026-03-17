@@ -1,5 +1,5 @@
-#ifndef VISIBILITYTESTAREAWIDGET_H
-#define VISIBILITYTESTAREAWIDGET_H
+#ifndef RADIALVIEWSHEDWIDGET_H
+#define RADIALVIEWSHEDWIDGET_H
 
 #include <QDialog>
 #include <osgEarth/MapNode>
@@ -7,20 +7,20 @@
 
 
 
-#include "pluggins/VisibilityTestArea/VisibilityTestArea.h"
+#include "pluggins/VisibilityTestArea/RadialViewshedAnalysis.h"
 
 
 namespace Ui {
-class VisibilityTestAreaWidget;
+class RadialViewshedWidget;
 }
 
-class VisibilityTestAreaWidget : public QDialog
+class RadialViewshedWidget : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit VisibilityTestAreaWidget(osgEarth::MapNode* mapNode, osgViewer::Viewer *viewer,osg::Group* root,QWidget *parent = nullptr);
-    ~VisibilityTestAreaWidget();
+    explicit RadialViewshedWidget(osgEarth::MapNode* mapNode, osgViewer::Viewer *viewer,osg::Group* root,QWidget *parent = nullptr);
+    ~RadialViewshedWidget();
 
 private slots:
     void on_pb_pickLocation_clicked();
@@ -47,11 +47,11 @@ private slots:
     void on_sb_boundarylineOpacity_valueChanged(int arg1);
 
 private:
-    Ui::VisibilityTestAreaWidget *ui;
+    Ui::RadialViewshedWidget *ui;
     osgEarth::MapNode* _mapNode = nullptr;
     osgViewer::Viewer* _viewer = nullptr;
     osg::Group* _root = nullptr;
-    VisibilityTestArea* viewShed =nullptr;
+    RadialViewshedAnalysis* viewShed =nullptr;
 
     osg::ref_ptr<osg::Group> _shadowSceneparent = nullptr;
     osg::ref_ptr<osg::Group>_shadowScene = nullptr;
@@ -62,4 +62,4 @@ private:
     osg::Vec3 geoPointsToVev3(double lon, double lat, double alt);
 };
 
-#endif // VISIBILITYTESTAREAWIDGET_H
+#endif // RADIALVIEWSHEDWIDGET_H

@@ -129,7 +129,7 @@ void MainWindow::initOsg()
     viewer->realize();
 
     QString figPath = QCoreApplication::applicationDirPath()
-                      + "/Data/earthFiles/simple.earth";
+                      + "/Data/earth_files/geocentric.earth";
 
     osg::ref_ptr<osg::Node> earthNode =
         osgDB::readRefNodeFile(figPath.toStdString());
@@ -209,13 +209,13 @@ void MainWindow::on_actionViewshed_triggered()
 }
 
 
-#include <app/VisibilityTestAreaWidget.h>
-VisibilityTestAreaWidget* viewshedDialog = nullptr;
+#include <app/RadialViewshedWidget.h>
+RadialViewshedWidget* viewshedDialog = nullptr;
 void MainWindow::on_actionRadar_Platter_triggered()
 {
     if (!viewshedDialog)
     {
-        viewshedDialog = new VisibilityTestAreaWidget(mapNode,viewer, root,this);
+        viewshedDialog = new RadialViewshedWidget(mapNode,viewer, root,this);
 
         connect(viewshedDialog, &QObject::destroyed,
                 this, [this]()

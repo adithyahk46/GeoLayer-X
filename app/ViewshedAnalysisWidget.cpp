@@ -109,13 +109,9 @@ void ViewshedAnalysisWidget::on_sb_verticleAngle_valueChanged(double arg1)
 
 void ViewshedAnalysisWidget::on_sb_horizantalAngle_valueChanged(double arg1)
 {
-    if(viewShed){}
+    if(viewShed)viewShed->setHorizontalFOV((int)arg1);
 
 }
-
-
-
-
 
 void ViewshedAnalysisWidget::on_sb_longitude_valueChanged(double arg1)
 {
@@ -123,13 +119,11 @@ void ViewshedAnalysisWidget::on_sb_longitude_valueChanged(double arg1)
     if(viewShed) viewShed->setCameraPosition(_lightPos);
 }
 
-
 void ViewshedAnalysisWidget::on_sb_latitude_valueChanged(double arg1)
 {
     _lightPos.y() = arg1;
     if(viewShed) viewShed->setCameraPosition(_lightPos);
 }
-
 
 void ViewshedAnalysisWidget::on_sb_altitude_valueChanged(double arg1)
 {
@@ -143,7 +137,6 @@ void ViewshedAnalysisWidget::on_sb_distance_valueChanged(double arg1)
      if(viewShed) viewShed->setDistance((float)arg1);
 }
 
-
 void ViewshedAnalysisWidget::on_sb_visibleAreaOpacity_valueChanged(int arg1)
 {
     if(viewShed) {
@@ -153,7 +146,6 @@ void ViewshedAnalysisWidget::on_sb_visibleAreaOpacity_valueChanged(int arg1)
     }
 }
 
-
 void ViewshedAnalysisWidget::on_sb_hiddenAreaOpacity_valueChanged(int arg1)
 {
     if(viewShed) {
@@ -162,7 +154,6 @@ void ViewshedAnalysisWidget::on_sb_hiddenAreaOpacity_valueChanged(int arg1)
         viewShed->setHiddenAreaColor(inVisibleColor);
     }
 }
-
 
 void ViewshedAnalysisWidget::on_sb_boundarylineOpacity_valueChanged(int arg1)
 {
@@ -175,24 +166,14 @@ void ViewshedAnalysisWidget::on_sb_xRotation_valueChanged(double arg1)
     double roll = arg1 - oldRoll;
     oldRoll = arg1;
     // Pass both current roll and current pitch to the setter
-    if(viewShed) {viewShed->setRotation(roll,osg::Vec3(1.0,0.0,0.0));}
+    if(viewShed) {viewShed->setRotation(roll,ViewshedAnalysis::Rotation::HORIZANTAL);}
 }
-
 
 void ViewshedAnalysisWidget::on_sb_yRotation_valueChanged(double arg1)
 {
     static double oldy = 0;
     double roll = arg1 - oldy;
     oldy = arg1;
-    if(viewShed) {viewShed->setRotation(roll,osg::Vec3(0.0,1.0,0.0));}
-}
-
-
-void ViewshedAnalysisWidget::on_sb_zRotation_valueChanged(double arg1)
-{
-    static double oldz = 0;
-    double roll = arg1 - oldz;
-    oldz = arg1;
-    if(viewShed) {viewShed->setRotation(roll,osg::Vec3(0.0,0.0,1.0));}
+    if(viewShed) {viewShed->setRotation(roll, ViewshedAnalysis::Rotation::VERTICAL);}
 }
 

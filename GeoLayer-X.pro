@@ -67,38 +67,38 @@ SOURCES += \
     app/MapLoadModule.cpp \
     app/MouseEventHandler.cpp \
     app/MyMapCallback.cpp \
+    app/RadialViewshedWidget.cpp \
     app/StatusBarHandler.cpp \
     app/ViewshedAnalysisWidget.cpp \
-    app/VisibilityTestAreaWidget.cpp \
     app/app.cpp \
     app/customwidgets/colorpickercheckbox.cpp \
     app/legends.cpp \
     main.cpp \
     mainwindow.cpp \
-    pluggins/VisibilityTestArea/ViewshedAnalysis.cpp \
-    pluggins/VisibilityTestArea/VisibilityTestArea.cpp
+    pluggins/VisibilityTestArea/RadialViewshedAnalysis.cpp \
+    pluggins/VisibilityTestArea/ViewshedAnalysis.cpp
 
 HEADERS += \
     app/LayerManagerWidget.h \
     app/MapLoadModule.h \
     app/MouseEventHandler.h \
     app/MyMapCallback.h \
+    app/RadialViewshedWidget.h \
     app/StatusBarHandler.h \
     app/ViewshedAnalysisWidget.h \
-    app/VisibilityTestAreaWidget.h \
     app/app.h \
     app/customwidgets/colorpickercheckbox.h \
     app/legends.h \
     mainwindow.h \
+    pluggins/VisibilityTestArea/RadialViewshedAnalysis.h \
     pluggins/VisibilityTestArea/ViewshedAnalysis.h \
-    pluggins/VisibilityTestArea/ViewshedShaders.h \
-    pluggins/VisibilityTestArea/VisibilityTestArea.h
+    pluggins/VisibilityTestArea/ViewshedShaders.h
 
 
 FORMS += \
     app/MapLoadModule.ui \
+    app/RadialViewshedWidget.ui \
     app/ViewshedAnalysisWidget.ui \
-    app/VisibilityTestAreaWidget.ui \
     mainwindow.ui
 
 

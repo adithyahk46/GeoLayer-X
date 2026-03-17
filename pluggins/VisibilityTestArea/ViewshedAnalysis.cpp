@@ -238,55 +238,6 @@ osg::ref_ptr<osg::MatrixTransform> createFrustumNode(osg::Camera* camera, float 
     return xform;
 }
 
-
-ViewshedAnalysis::ViewshedAnalysis(osgEarth::MapNode* mapNode, osgEarth::GeoPoint camPos, float distance):
-    _mapNode(mapNode),
-    _viewDistance(distance)
-{
-    _shadowedScene = _mapNode->asGroup();
-    _parentScene = _shadowedScene->getParent(0);
-    _cameraPos = geoPointsToVev3(camPos);
-    _camGeoPos = camPos;
-}
-
-void ViewshedAnalysis::updateProjectionMatrix()
-{
-    if(!_depthCamera.valid()) return;
-
-    //Updating Projection matrix of camera
-    {
-        double vFovRad = osg::DegreesToRadians(_verticalFOV);
-        double hFovRad = osg::DegreesToRadians(_horizontalFOV);
-
-        double top = near_plane * tan(vFovRad / 2.0);
-        double right = near_plane * tan(hFovRad / 2.0);
-
-        osg::Matrix shadowProj = osg::Matrix::frustum(-right, right,-top, top, near_plane, far_plane);
-
-        _depthCamera->setProjectionMatrix(shadowProj);
-    }
-
-    //updating view matrix of uniform
-    {
-        // Create a Bias Matrix (maps -1->1 to 0->1)
-        osg::Matrix biasMatrix = osg::Matrix::translate(1.0, 1.0, 1.0) * osg::Matrix::scale(0.5, 0.5, 0.5);
-
-        // Combine them: VP = View * Projection * Bias
-        osg::Matrix viewProjectionBias = _depthCamera->getViewMatrix() * _depthCamera->getProjectionMatrix() * biasMatrix;
-
-        _cameraVPUniform->set(viewProjectionBias);
-    }
-
-    //updating projection of frustrum outline
-    _parentScene->getParent(0)->removeChild(frustumVisual);
-
-    frustumVisual = createFrustumNode(_depthCamera.get(), near_plane, far_plane);
-    _parentScene->getParent(0)->addChild(frustumVisual);
-
-
-}
-
-
 bool ViewshedAnalysis::setUpCamera()
 {
     _depthCamera = new osg::Camera;
@@ -369,28 +320,6 @@ bool ViewshedAnalysis::setUpCamera()
 
 }
 
-void  ViewshedAnalysis::updateAttributes()
-{
-   //  osg::Matrix shadowView = osg::Matrix::lookAt(_cameraPos, _targetCenterPos, osg::Vec3(0.0, 0.0, 1.0));
-   // \
-   //  _depthCamera->setViewMatrix(shadowView);
-
-   //  if(!_inverseViewUniform.valid())
-   //  {
-   //          _inverseViewUniform = new osg::Uniform("inverse_view", osg::Matrixf::inverse(shadowView));
-   //          _depthCamera->getOrCreateStateSet()->addUniform(_inverseViewUniform);
-   //  }
-   //  // osg::Matrix lightSpace = shadowView * _depthCamera->getProjectionMatrix();
-
-   //  // if(!_lightSpaceMatrixUniform){
-   //  //     _lightSpaceMatrixUniform = new osg::Uniform("lightSpaceMatrix", lightSpace);
-
-   //  // }
-   //  // _lightSpaceMatrixUniform->set(lightSpace);
-   //  _inverseViewUniform->set(osg::Matrixf::inverse(shadowView));
-
-}
-
 void  ViewshedAnalysis::buildModel()
 {
     if (!_shadowedScene.valid())
@@ -453,78 +382,145 @@ void  ViewshedAnalysis::buildModel()
     setupDebugHUD();
 }
 
+ViewshedAnalysis::ViewshedAnalysis(osgEarth::MapNode* mapNode, osgEarth::GeoPoint camPos, float distance):
+    _mapNode(mapNode),
+    _viewDistance(distance)
+{
+    _shadowedScene = _mapNode->asGroup();
+    _parentScene = _shadowedScene->getParent(0);
+    _cameraPos = geoPointsToVev3(camPos);
+    _camGeoPos = camPos;
+}
 
 ViewshedAnalysis::~ViewshedAnalysis()
 {
     clear();
 }
 
-void ViewshedAnalysis::setCameraPosition(osgEarth::GeoPoint pos)
-{
 
+void ViewshedAnalysis::updateProjectionMatrix()
+{
     if(!_depthCamera.valid()) return;
 
-    _cameraPos = geoPointsToVev3(pos);
-    _camGeoPos = pos;
+    //Updating Projection matrix of camera
+    {
+        double vFovRad = osg::DegreesToRadians(_verticalFOV);
+        double hFovRad = osg::DegreesToRadians(_horizontalFOV);
+
+        double top = near_plane * tan(vFovRad / 2.0);
+        double right = near_plane * tan(hFovRad / 2.0);
+
+        osg::Matrix shadowProj = osg::Matrix::frustum(-right, right,-top, top, near_plane, far_plane);
+
+        _depthCamera->setProjectionMatrix(shadowProj);
+    }
+
+    //updating view matrix of uniform
+    {
+        // Create a Bias Matrix (maps -1->1 to 0->1)
+        osg::Matrix biasMatrix = osg::Matrix::translate(1.0, 1.0, 1.0) * osg::Matrix::scale(0.5, 0.5, 0.5);
+
+        // Combine them: VP = View * Projection * Bias
+        osg::Matrix viewProjectionBias = _depthCamera->getViewMatrix() * _depthCamera->getProjectionMatrix() * biasMatrix;
+
+        _cameraVPUniform->set(viewProjectionBias);
+    }
+
+    //updating projection of frustrum outline
+    _parentScene->getParent(0)->removeChild(frustumVisual);
+
+    frustumVisual = createFrustumNode(_depthCamera.get(), near_plane, far_plane);
+    _parentScene->getParent(0)->addChild(frustumVisual);
 
 
-    _cameraPosUniform->set(_cameraPos);
+}
 
-    if (_cameraIndicator.valid()) _cameraIndicator->setPosition(_cameraPos);
+void ViewshedAnalysis::updateViewMatrix(){
 
     {
-        osg::Vec3 up = geoPointsToVev3(osgEarth::GeoPoint(_mapNode->getMapSRS(), pos.x(), pos.y(), pos.z()+1,osgEarth::ALTMODE_ABSOLUTE ));
+        osg::Vec3 up = geoPointsToVev3(osgEarth::GeoPoint(_mapNode->getMapSRS(), _camGeoPos.x(), _camGeoPos.y(), _camGeoPos.z()+1,osgEarth::ALTMODE_ABSOLUTE ));
         osg::Vec3f pos, dir, up1;
         _depthCamera->getViewMatrix().getLookAt(pos,dir,up1);
         osg::Matrix view =
             osg::Matrix::lookAt(_cameraPos, _cameraPos + (dir-pos), up);
+
         _depthCamera->setViewMatrix(view);
 
         _inverseViewUniform->set(osg::Matrixf::inverse(view));
     }
 
-
     osg::Matrix worldMatrix = osg::Matrix::inverse(_depthCamera->getViewMatrix());
     frustumVisual->setMatrix(worldMatrix);
 
+    {
+        // Create a Bias Matrix (maps -1->1 to 0->1)
+        osg::Matrix biasMatrix = osg::Matrix::translate(1.0, 1.0, 1.0) * osg::Matrix::scale(0.5, 0.5, 0.5);
 
-    // Create a Bias Matrix (maps -1->1 to 0->1)
-    osg::Matrix biasMatrix = osg::Matrix::translate(1.0, 1.0, 1.0) * osg::Matrix::scale(0.5, 0.5, 0.5);
+        // Get the Camera's View and Projection
+        osg::Matrix view1 = _depthCamera->getViewMatrix();
+        osg::Matrix proj = _depthCamera->getProjectionMatrix();
 
-    // Get the Camera's View and Projection
-    osg::Matrix view1 = _depthCamera->getViewMatrix();
-    osg::Matrix proj = _depthCamera->getProjectionMatrix();
+        // Combine them: VP = View * Projection * Bias
+        osg::Matrix viewProjectionBias = view1 * proj * biasMatrix;
 
-    // Combine them: VP = View * Projection * Bias
-    osg::Matrix viewProjectionBias = view1 * proj * biasMatrix;
-
-    _cameraVPUniform->set(viewProjectionBias);
+        _cameraVPUniform->set(viewProjectionBias);
+    }
 }
 
-void ViewshedAnalysis::setRotation(double angle, const osg::Vec3 axis)
+void ViewshedAnalysis::setCameraPosition(osgEarth::GeoPoint pos)
+{
+    if(!_depthCamera.valid()) return;
+
+    _cameraPos = geoPointsToVev3(pos);
+    _camGeoPos = pos;
+    _cameraPosUniform->set(_cameraPos);
+    if (_cameraIndicator.valid()) _cameraIndicator->setPosition(_cameraPos);
+    updateViewMatrix();
+
+}
+
+void ViewshedAnalysis::setRotation(double angle, ViewshedAnalysis::Rotation dir)
 {
     if (!_depthCamera) return;
 
-    // 1. Convert to radians
-    double radians = osg::DegreesToRadians(angle);
+        double radians = osg::DegreesToRadians(angle);
 
-    osg::Vec3 pos, dir, up;
-    _depthCamera->getViewMatrix().getLookAt(pos,dir,up);
+        osg::Vec3d eye, center, up;
+        _depthCamera->getViewMatrix().getLookAt(eye, center, up);
 
-    // 3. Create the rotation matrix
-    osg::Matrixd rotationMatrix = osg::Matrixd::rotate(radians, axis);
+        // 1. Get current Local Directions
+        osg::Vec3d lookDir = center - eye;
+        lookDir.normalize();
 
-    // 4. Transform the LOOK and UP vectors by the rotation
-    // This rotates the "eyesight" without moving the "eye"
-    osg::Vec3 rotatedLookDir = rotationMatrix.postMult(dir);
-    osg::Vec3 rotatedUpVec = rotationMatrix.postMult(up);
+        // Normalize current up just in case
+        up.normalize();
 
-    // 5. Rebuild the View Matrix at the same position
-    osg::Matrixd newView = osg::Matrixd::lookAt(pos, pos + rotatedLookDir, rotatedUpVec);
-    _depthCamera->setViewMatrix(newView);
+        // 2. Calculate the "Right" vector (Side axis)
+        // This is perpendicular to both where we look and where 'up' is.
+        osg::Vec3d side = lookDir ^ up; // Cross product
+        side.normalize();
+
+        osg::Matrixd rotationMatrix;
+
+        if (dir == Rotation::HORIZANTAL) {
+            // Rotate around the Up vector (Panning left/right)
+            rotationMatrix = osg::Matrixd::rotate(radians, up);
+        }
+        else if (dir == Rotation::VERTICAL) {
+            // Rotate around the Side vector (Tilting up/down)
+            rotationMatrix = osg::Matrixd::rotate(radians, side);
+        }
+
+        // 3. Apply rotation to the Look direction and Up vector
+        osg::Vec3d newLookDir = rotationMatrix.preMult(lookDir);
+        osg::Vec3d newUp = rotationMatrix.preMult(up);
+
+        // 4. Update the View Matrix
+        // We keep 'eye' the same, and look at (eye + newLookDir)
+        _depthCamera->setViewMatrixAsLookAt(eye, eye + newLookDir, newUp);
 
     // 6. Update the frustum visualizer
-    osg::Matrix worldMatrix = osg::Matrix::inverse(newView);
+    osg::Matrix worldMatrix = osg::Matrix::inverse(_depthCamera->getViewMatrix());
     frustumVisual->setMatrix(worldMatrix);
 
     // 7. Sync the shader uniform
@@ -544,24 +540,33 @@ void ViewshedAnalysis::setRotation(double angle, const osg::Vec3 axis)
 
     _cameraVPUniform->set(viewProjectionBias);
 
-
-
 }
 
-void ViewshedAnalysis::setDistance(int radius)
+void ViewshedAnalysis::setDistance(int distance)
 {
+    _viewDistance = distance;
+    far_plane = _viewDistance + _farPlanOffSet;
+
     if(_viewDistanceUniform.valid()){
-        _viewDistanceUniform->set((float)radius);
-        _farPlaneUniform->set((float)radius+ _farPlanOffSet);
+        _viewDistanceUniform->set((float)_viewDistance);
+        _farPlaneUniform->set(far_plane);
     }
 
-    _viewDistance = radius;
+    updateProjectionMatrix();
 }
 
-void ViewshedAnalysis::setVerticalFOV(int vFOV)
+void ViewshedAnalysis::setVerticalFOV(int angle)
 {
-
+    _verticalFOV = angle;
+    updateProjectionMatrix();
 }
+
+void ViewshedAnalysis::setHorizontalFOV(int angle)
+{
+    _horizontalFOV = angle;
+    updateProjectionMatrix();
+}
+
 
 void ViewshedAnalysis::setVisibleAreaColor(const osg::Vec4 color)
 {

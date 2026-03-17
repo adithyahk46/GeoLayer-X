@@ -9,6 +9,11 @@ public:
     ViewshedAnalysis(osgEarth::MapNode* mapNode, osgEarth::GeoPoint camPos, float distance);
     ~ViewshedAnalysis();
 
+    enum Rotation{
+        HORIZANTAL,
+        VERTICAL
+    };
+
     void buildModel();
 
     void clear();
@@ -31,7 +36,7 @@ public:
      *
      * @note
      */
-    void setRotation(double angle,osg::Vec3 axis);
+    void setRotation(double angle, ViewshedAnalysis::Rotation dir);
 
     void setVisibleAreaColor(const osg::Vec4 color);
 
@@ -43,13 +48,11 @@ protected:
 
     bool setUpCamera();
 
-    void updateAttributes();
-
     osg::AutoTransform *makeIndicator(osg::Vec3 eye);
-
 
     void updateProjectionMatrix();
     void setupDebugHUD();
+    void updateViewMatrix();
 private:
     osg::ref_ptr<osgEarth::MapNode> _mapNode;
     osg::ref_ptr<osg::Group> _shadowedScene;

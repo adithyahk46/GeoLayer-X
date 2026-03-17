@@ -42,12 +42,9 @@ private slots:
 
     void on_sb_boundarylineOpacity_valueChanged(int arg1);
 
-
     void on_sb_xRotation_valueChanged(double arg1);
 
     void on_sb_yRotation_valueChanged(double arg1);
-
-    void on_sb_zRotation_valueChanged(double arg1);
 
 private:
     Ui::ViewshedAnalysisWidget *ui;

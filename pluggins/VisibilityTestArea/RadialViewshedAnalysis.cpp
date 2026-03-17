@@ -1,4 +1,4 @@
-﻿#include "VisibilityTestArea.h"
+﻿#include "RadialViewshedAnalysis.h"
 
 const char* depthMapVertVP = R"(
     #version 330 core
@@ -147,7 +147,7 @@ enum TraversalOption
 static const int   SM_TEXTURE_WIDTH  = 1024;
 
 
-VisibilityTestArea::VisibilityTestArea(osg::Group* sceneRoot, osgViewer::Viewer* viewer,osg::Vec3 lightSource, int radius):
+RadialViewshedAnalysis::RadialViewshedAnalysis(osg::Group* sceneRoot, osgViewer::Viewer* viewer,osg::Vec3 lightSource, int radius):
     _shadowedScene(sceneRoot),
     _mainViewer(viewer),
     _lightSource(lightSource),
@@ -160,7 +160,7 @@ VisibilityTestArea::VisibilityTestArea(osg::Group* sceneRoot, osgViewer::Viewer*
         
 }
 
-osg::Camera * VisibilityTestArea::generateCubeCamera(osg::ref_ptr<osg::TextureCubeMap> cubeMap, unsigned face, osg::Camera::BufferComponent component)
+osg::Camera * RadialViewshedAnalysis::generateCubeCamera(osg::ref_ptr<osg::TextureCubeMap> cubeMap, unsigned face, osg::Camera::BufferComponent component)
 {
     osg::ref_ptr<osg::Camera>  camera = new osg::Camera;
 
@@ -177,7 +177,7 @@ osg::Camera * VisibilityTestArea::generateCubeCamera(osg::ref_ptr<osg::TextureCu
     return camera.release();
 }
 
-void  VisibilityTestArea::updateAttributes()
+void  RadialViewshedAnalysis::updateAttributes()
 {
     // Light source info
     osg::Vec3  lightPos = _lightSource;
@@ -216,7 +216,7 @@ void  VisibilityTestArea::updateAttributes()
     }
 }
 
-void  VisibilityTestArea::buildModel()
+void  RadialViewshedAnalysis::buildModel()
 {
 
     // _mainViewer->getCamera()->getGraphicsContext()->getState()->setUseModelViewAndProjectionUniforms(true);
@@ -296,12 +296,12 @@ void  VisibilityTestArea::buildModel()
 }
 
 
-VisibilityTestArea::~VisibilityTestArea()
+RadialViewshedAnalysis::~RadialViewshedAnalysis()
 {
     clear();
 }
 
-osg::AutoTransform* VisibilityTestArea::makeIndicator(osg::Vec3 eye)
+osg::AutoTransform* RadialViewshedAnalysis::makeIndicator(osg::Vec3 eye)
 {
     osg::ref_ptr<osg::Sphere> sphere = new osg::Sphere(osg::Vec3(0.0f, 0.0f, 0.0f), 5.0f);
 
@@ -325,7 +325,7 @@ osg::AutoTransform* VisibilityTestArea::makeIndicator(osg::Vec3 eye)
     return xform.release();
 }
 
-void VisibilityTestArea::setViwerPosition(const osg::Vec3 position)
+void RadialViewshedAnalysis::setViwerPosition(const osg::Vec3 position)
 {
     _lightSource = position;
 
@@ -337,7 +337,7 @@ void VisibilityTestArea::setViwerPosition(const osg::Vec3 position)
     }
 }
 
-void VisibilityTestArea::setRadius(int radius)
+void RadialViewshedAnalysis::setRadius(int radius)
 {
     if(_viewRadiusUniform.valid()){
         _viewRadiusUniform->set((float)radius);
@@ -347,7 +347,7 @@ void VisibilityTestArea::setRadius(int radius)
     _viweingRadius = radius;
 }
 
-void VisibilityTestArea::setVisibleAreaColor(const osg::Vec4 color)
+void RadialViewshedAnalysis::setVisibleAreaColor(const osg::Vec4 color)
 {
     if(_visibleColorUniform.valid()){
         _visibleColorUniform->set(color);
@@ -356,7 +356,7 @@ void VisibilityTestArea::setVisibleAreaColor(const osg::Vec4 color)
     visibleColor = color;
 }
 
-void VisibilityTestArea::setInvisibleAreaColor(const osg::Vec4 color)
+void RadialViewshedAnalysis::setInvisibleAreaColor(const osg::Vec4 color)
 {
     if(_invisibleColorUniform.valid()){
         _invisibleColorUniform->set(color);
@@ -366,7 +366,7 @@ void VisibilityTestArea::setInvisibleAreaColor(const osg::Vec4 color)
 }
 
 
-void  VisibilityTestArea::clear()
+void  RadialViewshedAnalysis::clear()
 {
     // _mainViewer->getCamera()->getGraphicsContext()->getState()->setUseModelViewAndProjectionUniforms(false);
 

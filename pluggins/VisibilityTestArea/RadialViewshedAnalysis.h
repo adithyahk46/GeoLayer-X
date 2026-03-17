@@ -10,12 +10,12 @@
 #include <osgEarth/VirtualProgram>
 
 
-class VisibilityTestArea
+class RadialViewshedAnalysis
 {
 
 public:
-    VisibilityTestArea(osg::Group* sceneRoot, osgViewer::Viewer* viewer, osg::Vec3 lightSource, int radius);
-    ~VisibilityTestArea();
+    RadialViewshedAnalysis(osg::Group* sceneRoot, osgViewer::Viewer* viewer, osg::Vec3 lightSource, int radius);
+    ~RadialViewshedAnalysis();
 
     void clear();
     void setViwerPosition(const osg::Vec3 position);

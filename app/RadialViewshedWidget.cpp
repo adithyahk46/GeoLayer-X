@@ -1,16 +1,16 @@
-#include "VisibilityTestAreaWidget.h"
-#include "ui_VisibilityTestAreaWidget.h"
+#include "RadialViewshedWidget.h"
+#include "ui_RadialViewshedWidget.h"
 
 #include "MouseEventHandler.h"
 #include "app/customwidgets/colorpickercheckbox.h"
 
 
-VisibilityTestAreaWidget::VisibilityTestAreaWidget(osgEarth::MapNode* mapNode, osgViewer::Viewer *viewer,osg::Group* root,QWidget *parent) :
+RadialViewshedWidget::RadialViewshedWidget(osgEarth::MapNode* mapNode, osgViewer::Viewer *viewer,osg::Group* root,QWidget *parent) :
     QDialog(parent),
     _mapNode(mapNode),
     _viewer(viewer),
     _root(root),
-    ui(new Ui::VisibilityTestAreaWidget)
+    ui(new Ui::RadialViewshedWidget)
 {
     ui->setupUi(this);
     setWindowTitle("3D Viewshed Analysis");
@@ -73,7 +73,7 @@ VisibilityTestAreaWidget::VisibilityTestAreaWidget(osgEarth::MapNode* mapNode, o
 
 }
 
-VisibilityTestAreaWidget::~VisibilityTestAreaWidget()
+RadialViewshedWidget::~RadialViewshedWidget()
 {
     delete ui;
 
@@ -84,7 +84,7 @@ VisibilityTestAreaWidget::~VisibilityTestAreaWidget()
 }
 
 
-void VisibilityTestAreaWidget::on_pb_pickLocation_clicked()
+void RadialViewshedWidget::on_pb_pickLocation_clicked()
 {
     connect(MouseEventHandler::Instance(), &MouseEventHandler::mouseClickEvent, this,
             [this](const double lon, const double lat,const double alt,const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa)
@@ -100,7 +100,7 @@ void VisibilityTestAreaWidget::on_pb_pickLocation_clicked()
 }
 
 
-osg::Vec3 VisibilityTestAreaWidget::geoPointsToVev3(double lon, double lat, double alt){
+osg::Vec3 RadialViewshedWidget::geoPointsToVev3(double lon, double lat, double alt){
 const osgEarth::SpatialReference* mapSRS = _mapNode->getMapSRS();
 const osgEarth::SpatialReference* geoSRS = mapSRS->getGeographicSRS();
 
@@ -116,9 +116,9 @@ const osgEarth::SpatialReference* geoSRS = mapSRS->getGeographicSRS();
 }
 
 
-void VisibilityTestAreaWidget::on_pb_runORupdate_clicked()
+void RadialViewshedWidget::on_pb_runORupdate_clicked()
 {
-    viewShed = new VisibilityTestArea(_mapNode->asGroup(), _viewer
+    viewShed = new RadialViewshedAnalysis(_mapNode->asGroup(), _viewer
                                       ,geoPointsToVev3(ui->sb_longitude->value(),ui->sb_latitude->value(),ui->sb_altitude->value())
                                       ,int(ui->sb_distance->value()));
     // viewShed->setRadius(int(ui->sb_distance->value()));
@@ -127,48 +127,48 @@ void VisibilityTestAreaWidget::on_pb_runORupdate_clicked()
     viewShed->buildModel();
 }
 
-void VisibilityTestAreaWidget::on_sb_verticleAngle_valueChanged(double arg1)
+void RadialViewshedWidget::on_sb_verticleAngle_valueChanged(double arg1)
 {
     // if(viewShed) viewShed->setVerticalFOV((int)arg1);
 }
 
-void VisibilityTestAreaWidget::on_sb_roll_valueChanged(double arg1)
+void RadialViewshedWidget::on_sb_roll_valueChanged(double arg1)
 {
     if(viewShed){}
 }
 
 
-void VisibilityTestAreaWidget::on_sb_horizantalAngle_valueChanged(double arg1)
+void RadialViewshedWidget::on_sb_horizantalAngle_valueChanged(double arg1)
 {
     if(viewShed){}
 
 }
 
 
-void VisibilityTestAreaWidget::on_sb_longitude_valueChanged(double arg1)
+void RadialViewshedWidget::on_sb_longitude_valueChanged(double arg1)
 {
     if(viewShed) viewShed->setViwerPosition(geoPointsToVev3(arg1,ui->sb_latitude->value(),ui->sb_altitude->value()));
 }
 
 
-void VisibilityTestAreaWidget::on_sb_latitude_valueChanged(double arg1)
+void RadialViewshedWidget::on_sb_latitude_valueChanged(double arg1)
 {
     if(viewShed) viewShed->setViwerPosition(geoPointsToVev3(ui->sb_longitude->value(),arg1,ui->sb_altitude->value()));
 }
 
 
-void VisibilityTestAreaWidget::on_sb_altitude_valueChanged(double arg1)
+void RadialViewshedWidget::on_sb_altitude_valueChanged(double arg1)
 {
     if(viewShed) viewShed->setViwerPosition(geoPointsToVev3(ui->sb_longitude->value(),ui->sb_latitude->value(),arg1));
 }
 
-void VisibilityTestAreaWidget::on_sb_distance_valueChanged(double arg1)
+void RadialViewshedWidget::on_sb_distance_valueChanged(double arg1)
 {
      if(viewShed) viewShed->setRadius((int)arg1);
 }
 
 
-void VisibilityTestAreaWidget::on_sb_visibleAreaOpacity_valueChanged(int arg1)
+void RadialViewshedWidget::on_sb_visibleAreaOpacity_valueChanged(int arg1)
 {
     if(viewShed) {
         float alpha = static_cast<float>(ui->sb_visibleAreaOpacity->value()) / 100.0f;
@@ -178,7 +178,7 @@ void VisibilityTestAreaWidget::on_sb_visibleAreaOpacity_valueChanged(int arg1)
 }
 
 
-void VisibilityTestAreaWidget::on_sb_hiddenAreaOpacity_valueChanged(int arg1)
+void RadialViewshedWidget::on_sb_hiddenAreaOpacity_valueChanged(int arg1)
 {
     if(viewShed) {
         float alpha = static_cast<float>(ui->sb_hiddenAreaOpacity->value()) / 100.0f;
@@ -188,7 +188,7 @@ void VisibilityTestAreaWidget::on_sb_hiddenAreaOpacity_valueChanged(int arg1)
 }
 
 
-void VisibilityTestAreaWidget::on_sb_boundarylineOpacity_valueChanged(int arg1)
+void RadialViewshedWidget::on_sb_boundarylineOpacity_valueChanged(int arg1)
 {
 
 }
