@@ -1,6 +1,8 @@
 #ifndef APP_H
 #define APP_H
 
+#include <QMainWindow>
+
 #include <osgEarth/MapNode>
 #include <osgEarth/EarthManipulator>
 
@@ -26,12 +28,16 @@ public:
     void setOsgViewer(osgViewer::Viewer* viewer){_viewer = viewer;}
     osgViewer::Viewer* getOsgViewer(){return _viewer;}
 
+    static void setMainwindow(QMainWindow* window){_mainWindow = window;}
+    static QMainWindow* getMainwindow(){return _mainWindow;}
+
 private:
     App(){
 
     }
 
     static App* _app;
+    static QMainWindow* _mainWindow;
 
     osg::ref_ptr<osgEarth::MapNode> _mapNode;
     osg::ref_ptr<osgEarth::EarthManipulator> _manip;

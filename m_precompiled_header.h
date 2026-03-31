@@ -21,6 +21,7 @@
 #include <QTreeWidgetItem>
 #include <QListWidget>
 #include <QDir>
+#include <QStyleFactory>
 
 
 #include <osg/DisplaySettings>

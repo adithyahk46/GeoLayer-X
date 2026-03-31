@@ -32,6 +32,8 @@ private slots:
 
     void on_actionRadar_Platter_triggered();
 
+    void on_actionDark_Theme_triggered(bool checked);
+
 private:
     void _initConnections();
 

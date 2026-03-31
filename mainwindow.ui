@@ -25,19 +25,7 @@
   <property name="toolButtonStyle">
    <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
   </property>
-  <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QWidget" name="widget" native="true">
-      <layout class="QHBoxLayout" name="horizontalLayout_4">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_3"/>
-       </item>
-      </layout>
-     </widget>
-    </item>
-   </layout>
-  </widget>
+  <widget class="QWidget" name="centralwidget"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
@@ -55,7 +43,7 @@
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>Project</string>
     </property>
     <addaction name="actionLoad_Layers"/>
    </widget>
@@ -66,6 +54,7 @@
     <addaction name="actionLeft_Panel"/>
     <addaction name="actionLegends"/>
     <addaction name="actionShow_Full_Screen"/>
+    <addaction name="actionDark_Theme"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -87,10 +76,16 @@
      <string>Edit</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menusetting">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
    <addaction name="menuView"/>
    <addaction name="menuTools"/>
-   <addaction name="menuEdit"/>
+   <addaction name="menusetting"/>
   </widget>
   <widget class="QStatusBar" name="statusbar">
    <property name="maximumSize">
@@ -100,71 +95,12 @@
     </size>
    </property>
   </widget>
-  <widget class="QDockWidget" name="dockWidget">
-   <property name="allowedAreas">
-    <set>Qt::DockWidgetArea::AllDockWidgetAreas</set>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>1</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents">
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <property name="leftMargin">
-      <number>0</number>
-     </property>
-     <property name="topMargin">
-      <number>0</number>
-     </property>
-     <property name="rightMargin">
-      <number>0</number>
-     </property>
-     <property name="bottomMargin">
-      <number>0</number>
-     </property>
-     <item>
-      <widget class="QStackedWidget" name="stackedWidget">
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-        </font>
-       </property>
-       <property name="lineWidth">
-        <number>1</number>
-       </property>
-       <property name="currentIndex">
-        <number>0</number>
-       </property>
-       <widget class="QWidget" name="legengs_page">
-        <property name="acceptDrops">
-         <bool>true</bool>
-        </property>
-        <layout class="QVBoxLayout" name="verticalLayout_2">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-        </layout>
-       </widget>
-       <widget class="QWidget" name="Controls"/>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-  </widget>
   <widget class="QToolBar" name="toolbar_layers">
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
    <attribute name="toolBarArea">
-    <enum>LeftToolBarArea</enum>
+    <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>
@@ -218,7 +154,7 @@
   <action name="actionLoad_Layers">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/Layers/layers.png</normaloff>:/new/prefix1/icons/Layers/layers.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/Layers/layers.png</normaloff>:/new/prefix1/resources/icons/Layers/layers.png</iconset>
    </property>
    <property name="text">
     <string>Layers</string>
@@ -226,7 +162,7 @@
   </action>
   <action name="actionDrawLine">
    <property name="icon">
-    <iconset resource="Resources.qrc">
+    <iconset>
      <normaloff>:/new/prefix1/icons/drawTools/icons8-line-64.png</normaloff>:/new/prefix1/icons/drawTools/icons8-line-64.png</iconset>
    </property>
    <property name="text">
@@ -245,7 +181,7 @@
    </property>
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/drawTools/Polygon.png</normaloff>:/new/prefix1/icons/drawTools/Polygon.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/drawTools/Polygon.png</normaloff>:/new/prefix1/resources/icons/drawTools/Polygon.png</iconset>
    </property>
    <property name="text">
     <string>Polygon</string>
@@ -260,7 +196,7 @@
   <action name="actionDrawRectangle">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/drawTools/Rectangle.png</normaloff>:/new/prefix1/icons/drawTools/Rectangle.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/drawTools/Rectangle.png</normaloff>:/new/prefix1/resources/icons/drawTools/Rectangle.png</iconset>
    </property>
    <property name="text">
     <string>Rectangle</string>
@@ -275,7 +211,7 @@
   <action name="actionDrawCircle">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/drawTools/circle.png</normaloff>:/new/prefix1/icons/drawTools/circle.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/drawTools/circle.png</normaloff>:/new/prefix1/resources/icons/drawTools/circle.png</iconset>
    </property>
    <property name="text">
     <string>Circle</string>
@@ -290,7 +226,7 @@
   <action name="actionDrawScribble">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/drawTools/scribble.png</normaloff>:/new/prefix1/icons/drawTools/scribble.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/drawTools/scribble.png</normaloff>:/new/prefix1/resources/icons/drawTools/scribble.png</iconset>
    </property>
    <property name="text">
     <string>Scribble</string>
@@ -305,7 +241,7 @@
   <action name="actionAreaMeasurement">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/Area measure.png</normaloff>:/new/prefix1/icons/Area measure.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/Area measure.png</normaloff>:/new/prefix1/resources/icons/Area measure.png</iconset>
    </property>
    <property name="text">
     <string>Area</string>
@@ -319,7 +255,7 @@
   </action>
   <action name="actionDistanceCalculate">
    <property name="icon">
-    <iconset resource="Resources.qrc">
+    <iconset>
      <normaloff>:/new/prefix1/icons/Distance Measurement.png</normaloff>:/new/prefix1/icons/Distance Measurement.png</iconset>
    </property>
    <property name="text">
@@ -335,7 +271,7 @@
   <action name="actionMissileTracker">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/missile.png</normaloff>:/new/prefix1/icons/missile.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/missile.png</normaloff>:/new/prefix1/resources/icons/missile.png</iconset>
    </property>
    <property name="text">
     <string>Missile</string>
@@ -349,7 +285,7 @@
   </action>
   <action name="actionBaseMaps">
    <property name="icon">
-    <iconset resource="Resources.qrc">
+    <iconset>
      <normaloff>:/new/prefix1/icons/Layers/world-globe.png</normaloff>:/new/prefix1/icons/Layers/world-globe.png</iconset>
    </property>
    <property name="text">
@@ -365,7 +301,7 @@
   <action name="actionFind_Path">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/pathFinder.png</normaloff>:/new/prefix1/icons/pathFinder.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/pathFinder.png</normaloff>:/new/prefix1/resources/icons/pathFinder.png</iconset>
    </property>
    <property name="text">
     <string>Path</string>
@@ -380,7 +316,7 @@
   <action name="actionGoTo">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/goto.png</normaloff>:/new/prefix1/icons/goto.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/goto.png</normaloff>:/new/prefix1/resources/icons/goto.png</iconset>
    </property>
    <property name="text">
     <string>GoTo</string>
@@ -395,7 +331,7 @@
   <action name="actionAddLabel">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/drawTools/add-text.png</normaloff>:/new/prefix1/icons/drawTools/add-text.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/drawTools/AddLabel.png</normaloff>:/new/prefix1/resources/icons/drawTools/AddLabel.png</iconset>
    </property>
    <property name="text">
     <string>Label</string>
@@ -425,7 +361,7 @@
   <action name="actionLoad3D_Model">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/Layers/3d-model.png</normaloff>:/new/prefix1/icons/Layers/3d-model.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/Layers/3d-model.png</normaloff>:/new/prefix1/resources/icons/Layers/3d-model.png</iconset>
    </property>
    <property name="text">
     <string>3D Model</string>
@@ -443,7 +379,7 @@
    </property>
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/radarDom.png</normaloff>:/new/prefix1/icons/radarDom.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/radarDom.png</normaloff>:/new/prefix1/resources/icons/radarDom.png</iconset>
    </property>
    <property name="text">
     <string>Radar dome</string>
@@ -452,7 +388,7 @@
   <action name="actionRadar_Platter">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/radarPlatter.png</normaloff>:/new/prefix1/icons/radarPlatter.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/radarPlatter.png</normaloff>:/new/prefix1/resources/icons/radarPlatter.png</iconset>
    </property>
    <property name="text">
     <string>Radar Platter</string>
@@ -467,7 +403,7 @@
   <action name="actionDistanceCalculator">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/Distance Measurement.png</normaloff>:/new/prefix1/icons/Distance Measurement.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/Distance Measurement.png</normaloff>:/new/prefix1/resources/icons/Distance Measurement.png</iconset>
    </property>
    <property name="text">
     <string>Distance</string>
@@ -479,7 +415,7 @@
   <action name="actionLineOfSight">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/lineofsight.png</normaloff>:/new/prefix1/icons/lineofsight.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/lineofsight.png</normaloff>:/new/prefix1/resources/icons/lineofsight.png</iconset>
    </property>
    <property name="text">
     <string>Line Of Sight</string>
@@ -494,7 +430,7 @@
   <action name="actionViewshed">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/new/prefix1/icons/viewshed.png</normaloff>:/new/prefix1/icons/viewshed.png</iconset>
+     <normaloff>:/new/prefix1/resources/icons/viewshed.png</normaloff>:/new/prefix1/resources/icons/viewshed.png</iconset>
    </property>
    <property name="text">
     <string>Viewshed</string>
@@ -512,6 +448,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="actionDark_Theme">
+   <property name="text">
+    <string>Dark Theme</string>
    </property>
   </action>
  </widget>

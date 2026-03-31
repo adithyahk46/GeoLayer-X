@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>4</number>
+      <number>0</number>
      </property>
      <property name="iconSize">
       <size>
@@ -28,7 +28,7 @@
      <widget class="QWidget" name="raster_tab">
       <attribute name="icon">
        <iconset resource="../Resources.qrc">
-        <normaloff>:/new/prefix1/icons/Layers/rasterLayer.png</normaloff>:/new/prefix1/icons/Layers/rasterLayer.png</iconset>
+        <normaloff>:/new/prefix1/resources/icons/Layers/rasterLayer.png</normaloff>:/new/prefix1/resources/icons/Layers/rasterLayer.png</iconset>
       </attribute>
       <attribute name="title">
        <string>Raster</string>
@@ -107,7 +107,7 @@
      </widget>
      <widget class="QWidget" name="vector_tab">
       <attribute name="icon">
-       <iconset resource="../Resources.qrc">
+       <iconset>
         <normaloff>:/new/prefix1/icons/Layers/vectorLayer.png</normaloff>:/new/prefix1/icons/Layers/vectorLayer.png</iconset>
       </attribute>
       <attribute name="title">
@@ -253,7 +253,7 @@
      </widget>
      <widget class="QWidget" name="sceanTab">
       <attribute name="icon">
-       <iconset resource="../Resources.qrc">
+       <iconset>
         <normaloff>:/new/prefix1/icons/Layers/3D Scene Layer.png</normaloff>:/new/prefix1/icons/Layers/3D Scene Layer.png</iconset>
       </attribute>
       <attribute name="title">
@@ -391,7 +391,7 @@
      </widget>
      <widget class="QWidget" name="tab">
       <attribute name="icon">
-       <iconset resource="../Resources.qrc">
+       <iconset>
         <normaloff>:/new/prefix1/icons/Layers/XYZ.png</normaloff>:/new/prefix1/icons/Layers/XYZ.png</iconset>
       </attribute>
       <attribute name="title">

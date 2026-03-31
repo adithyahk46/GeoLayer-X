@@ -3,10 +3,14 @@
 
 #include <osgEarth/GLUtils>
 
+#include <osgEarth/Sky>
+
 #include <app/app.h>
+#include <app/toolbarmanager.h>
 #include <app/StatusBarHandler.h>
 #include <app/LayerManagerWidget.h>
 #include <app/MapLoadModule.h>
+
 
 using namespace osgEarth;
 
@@ -38,10 +42,14 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(osgWidget, &osgQOpenGLWidget::initialized, [this] {
         initOsg();
 
+        App::getInstance()->setMainwindow(this);
         App::getInstance()->setMapNode(mapNode);
         App::getInstance()->setManipulator(manip);
         App::getInstance()->setOsgViewer(viewer);
 
+        ToolBarManager::instance();
+
+        this->statusBar()->setFixedHeight(20);
         StatusBarHandler::getInstance()->setStatusbar(ui->statusbar);
         StatusBarHandler::getInstance()->CreatMapReaders();
 
@@ -52,7 +60,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     });
-
     addDockWidget(Qt::LeftDockWidgetArea,LayerManagerWidget::getInstance());
 
     _initConnections();
@@ -152,7 +159,7 @@ void MainWindow::initOsg()
     viewer->setCameraManipulator(manip);
 
     viewer->setSceneData(root);
-    viewer->getCamera()->setClearColor(osg::Vec4(0.3,0.3,0.3,1.0));
+    // viewer->getCamera()->setClearColor(osg::Vec4(0.3,0.3,0.3,1.0));
 
 
     // viewer->realize();
@@ -165,7 +172,16 @@ void MainWindow::initOsg()
     mouseControlle = MouseEventHandler::Instance(mapNode);
     viewer->addEventHandler(mouseControlle);
 
-    ui->dockWidget->show();
+
+    double hours = mapNode->externalConfig().child("sky").value("hours", 5.0);
+    osg::ref_ptr<osgEarth::Util::SkyNode> sky = osgEarth::SkyNode::create();
+    sky->setDateTime(osgEarth::DateTime(2020, 3, 6, hours));
+    // sky->setLighting(true);
+    sky->addChild(mapNode);
+    sky->attach(viewer);
+    // sky->getSunLight()->setAmbient(osg::Vec4(0.5f, 0.05f, 0.5f, 1.0f));
+
+    root->addChild(sky);
 
 }
 
@@ -227,4 +243,42 @@ void MainWindow::on_actionRadar_Platter_triggered()
     viewshedDialog->show();
 }
 
+void MainWindow::on_actionDark_Theme_triggered(bool checked)
+{
+    static bool isDark = true; // Track state
+        auto app = qApp;
+
+        if (isDark) {
+            // Switch to Light Theme
+            app->setPalette(app->style()->standardPalette());
+            app->setStyleSheet(""); // Clear custom dark styles if any
+            // viewer->getCamera()->setClearColor(osg::Vec4(0.3,0.3,0.3,1.0));
+
+        } else {
+            // Switch to Dark Theme
+            app->setStyle(QStyleFactory::create("Fusion"));
+             // Optional: Set a light palette for the Fusion style
+            QPalette lightPalette;
+             lightPalette.setColor(QPalette::Window, QColor(240, 240, 240));  // Light grey
+             lightPalette.setColor(QPalette::WindowText, Qt::black);
+             lightPalette.setColor(QPalette::Base, QColor(245, 245, 245));   // White
+             lightPalette.setColor(QPalette::AlternateBase, QColor(240, 240, 240));  // Light grey
+             lightPalette.setColor(QPalette::ToolTipBase, Qt::white);
+             lightPalette.setColor(QPalette::ToolTipText, Qt::black);
+             lightPalette.setColor(QPalette::Text, Qt::black);
+             lightPalette.setColor(QPalette::Button, QColor(240, 240, 240));  // Light grey
+             lightPalette.setColor(QPalette::ButtonText, Qt::black);
+             lightPalette.setColor(QPalette::BrightText, Qt::red);
+
+             lightPalette.setColor(QPalette::Highlight, QColor(76, 163, 224));  // Blue highlight
+             lightPalette.setColor(QPalette::HighlightedText, Qt::white);
+
+
+            app->setPalette(lightPalette);
+
+            // viewer->getCamera()->setClearColor(osg::Vec4(0.9,0.9,0.9,1.0));
+
+        }
+        isDark = !isDark;
+}
 
