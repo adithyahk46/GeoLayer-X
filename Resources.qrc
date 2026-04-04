@@ -1,36 +1,40 @@
 <RCC>
     <qresource prefix="/new/prefix1">
-        <file>icons/Layers/3D Scene Layer.png</file>
-        <file>icons/Layers/elevationLayer.png</file>
-        <file>icons/Layers/elevationLayerColor.png</file>
-        <file>icons/Layers/layers.png</file>
-        <file>icons/Layers/rasterLayer.png</file>
-        <file>icons/Layers/vectorLayer.png</file>
-        <file>icons/Layers/vectorLayer2.png</file>
-        <file>icons/drawTools/icons8-line-64.png</file>
-        <file>icons/drawTools/Polygon.png</file>
-        <file>icons/drawTools/Polygon2.png</file>
-        <file>icons/drawTools/Rectangle.png</file>
-        <file>icons/drawTools/circle.png</file>
-        <file>icons/drawTools/scribble.png</file>
-        <file>icons/Area measure.png</file>
-        <file>icons/Distance Measurement.png</file>
-        <file>icons/GeoLayer-X_SplashScreen.jpg</file>
-        <file>icons/ApplicationIcon.png</file>
-        <file>icons/Layers/XYZ.png</file>
-        <file>icons/missile.png</file>
-        <file>icons/Layers/world-map-icon.jpg</file>
-        <file>icons/Layers/world-globe.png</file>
-        <file>icons/pathFinder.png</file>
-        <file>icons/goto.png</file>
-        <file>icons/drawTools/AddLabel.png</file>
-        <file>icons/drawTools/add-text.png</file>
-        <file>icons/drawTools/LocationMarker.png</file>
-        <file>icons/Layers/3d-model.png</file>
-        <file>icons/radar.png</file>
-        <file>icons/radarPlatter.png</file>
-        <file>icons/radarDom.png</file>
-        <file>icons/viewshed.png</file>
-        <file>icons/lineofsight.png</file>
+        <file>resources/icons/Layers/3D Scene Layer.png</file>
+        <file>resources/icons/Layers/elevationLayer.png</file>
+        <file>resources/icons/Layers/elevationLayerColor.png</file>
+        <file>resources/icons/Layers/layers.png</file>
+        <file>resources/icons/Layers/rasterLayer.png</file>
+        <file>resources/icons/Layers/vectorLayer.png</file>
+        <file>resources/icons/Layers/vectorLayer2.png</file>
+        <file>resources/icons/drawTools/icons8-line-64.png</file>
+        <file>resources/icons/drawTools/Polygon.png</file>
+        <file>resources/icons/drawTools/Polygon2.png</file>
+        <file>resources/icons/drawTools/Rectangle.png</file>
+        <file>resources/icons/drawTools/circle.png</file>
+        <file>resources/icons/drawTools/scribble.png</file>
+        <file>resources/icons/Area measure.png</file>
+        <file>resources/icons/Distance Measurement.png</file>
+        <file>resources/icons/GeoLayer-X_SplashScreen.jpg</file>
+        <file>resources/icons/ApplicationIcon.png</file>
+        <file>resources/icons/Layers/XYZ.png</file>
+        <file>resources/icons/missile.png</file>
+        <file>resources/icons/Layers/world-map-icon.jpg</file>
+        <file>resources/icons/Layers/world-globe.png</file>
+        <file>resources/icons/pathFinder.png</file>
+        <file>resources/icons/goto.png</file>
+        <file>resources/icons/drawTools/AddLabel.png</file>
+        <file>resources/icons/drawTools/add-text.png</file>
+        <file>resources/icons/drawTools/LocationMarker.png</file>
+        <file>resources/icons/Layers/3d-model.png</file>
+        <file>resources/icons/radar.png</file>
+        <file>resources/icons/radarPlatter.png</file>
+        <file>resources/icons/radarDom.png</file>
+        <file>resources/icons/viewshed.png</file>
+        <file>resources/icons/lineofsight.png</file>
+        <file>resources/icons/project/newfolder.png</file>
+        <file>resources/icons/project/open_folder.png</file>
+        <file>resources/icons/project/print.png</file>
+        <file>resources/icons/project/save_project.png</file>
     </qresource>
 </RCC>

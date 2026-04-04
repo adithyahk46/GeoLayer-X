@@ -73,6 +73,7 @@ SOURCES += \
     app/app.cpp \
     app/customwidgets/colorpickercheckbox.cpp \
     app/legends.cpp \
+    app/toolbarmanager.cpp \
     main.cpp \
     mainwindow.cpp \
     pluggins/VisibilityTestArea/RadialViewshedAnalysis.cpp \
@@ -89,6 +90,7 @@ HEADERS += \
     app/app.h \
     app/customwidgets/colorpickercheckbox.h \
     app/legends.h \
+    app/toolbarmanager.h \
     mainwindow.h \
     pluggins/VisibilityTestArea/RadialViewshedAnalysis.h \
     pluggins/VisibilityTestArea/ViewshedAnalysis.h \
@@ -117,5 +119,7 @@ INSTALLS += config
 data.files = Data/*
 data.path = $$PWD/install/
 INSTALLS += data
+
+DISTFILES +=
 
 

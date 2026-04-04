@@ -1,5 +1,6 @@
 #include <cstdint>
-
+#include <iostream>
+#include <filesystem>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -23,8 +24,12 @@
 // #include <QTextCodec>
 void setUpEnvironments(){
 
+    std::cout << std::filesystem::current_path() << std::endl;
+
     qputenv("PROJ_LIB", "./share/proj");
     qputenv("FONTCONFIG_PATH", "./etc/fonts");
+
+
 
 }
 

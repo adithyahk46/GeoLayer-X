@@ -56,6 +56,7 @@ in vec3 osg_Normal;
     uniform mat4 osg_ModelViewProjectionMatrix;
     uniform mat4 osg_ViewMatrixInverse;
     uniform mat4 osg_ModelViewMatrix;
+uniform mat3 osg_NormalMatrix;
 
     uniform mat4 inverse_view;
 
@@ -77,7 +78,9 @@ in vec3 osg_Normal;
 
         lightDistance = length(worldPos - eyePos);
 
-        normal = normalize( osg_Normal );
+// Convert normal from view → world
+mat3 normalMatrixWorld = mat3(osg_ViewMatrixInverse) * mat3(osg_NormalMatrix);
+normal = normalize(/*normalMatrixWorld **/ osg_Normal);
         // gl_Position = osg_ModelViewProjectionMatrix * vertex;
     }
 )";
@@ -95,6 +98,7 @@ const char* visibilityShaderFrag = R"(
     uniform vec4 invisibleColor;
 
     uniform sampler2D shadowMap;
+    uniform mat4 cameraVP;       // The new Uniform
 
     uniform float near_plane;
     uniform float far_plane;
@@ -117,13 +121,34 @@ const char* visibilityShaderFrag = R"(
 
     void visibilityFragment(inout vec4 FragColor)
     {
-        if (length(eyePos - worldPos) < user_area)
-        {
-            vec3 lightDir = normalize(eyePos - worldPos);
-            float normDif = max(dot(lightDir, normal), 0.0);
+        // 1. Project world position into Camera's Screen Space
+        vec4 projPos = cameraVP * vec4(worldPos, 1.0);
+        vec3 projCoords = projPos.xyz / projPos.w; // Perspective divide
 
-            // if (normDif > 0.0 && isShadowed(-lightDir) == false)
-            if (isShadowed(-lightDir) == false)
+        // 2. Check if the point is inside the Camera's Frustum (FOV)
+        // Since we used a bias matrix, the valid range is [0.0, 1.0]
+        bool inFrustum = projCoords.x >= 0.0 && projCoords.x <= 1.0 &&
+                         projCoords.y >= 0.0 && projCoords.y <= 1.0 &&
+                         projCoords.z >= 0.0 && projCoords.z <= 1.0;
+
+        float shadow = 0.0;
+        if (inFrustum)
+        {
+
+           float shadow = 0.0;
+
+            float closestDepth = texture(shadowMap, projCoords.xy).r;
+            float currentDepth = projCoords.z;
+
+            // Bias to prevent shadow acne
+            float bias = 0.0005;
+            shadow = (currentDepth - bias > closestDepth) ? 1.0 : 0.0;
+
+            // Lighting calculation
+            vec3 lightDir = normalize(eyePos - worldPos);
+            float normDif = max(dot(normal, lightDir), 0.0);
+
+            if (shadow < 0.5 /*&& normDif > 0.1*/)
             {
                 // Blends the current FragColor with visibleColor based on its alpha
                 FragColor.rgb = mix(FragColor.rgb, visibleColor.rgb, visibleColor.a);
@@ -133,8 +158,8 @@ const char* visibilityShaderFrag = R"(
                 // Blends the current FragColor with invisibleColor based on its alpha
                 FragColor.rgb = mix(FragColor.rgb, invisibleColor.rgb, invisibleColor.a);
             }
-        }
 
+        }
 
     }
 )";
@@ -607,6 +632,7 @@ void  ViewshedAnalysis::clear()
        _parentScene->getOrCreateStateSet()->removeUniform(_nearPlaneUniform);
        _parentScene->getOrCreateStateSet()->removeUniform(_viewDistanceUniform);
        _parentScene->getOrCreateStateSet()->removeUniform(_shadowMapUniform);
+       _parentScene->getOrCreateStateSet()->removeUniform(_cameraVPUniform);
 
        _parentScene->getOrCreateStateSet()->setAttributeAndModes(_visibilityShaderVP, osg::StateAttribute::OFF);
        _parentScene->getOrCreateStateSet()->setTextureAttributeAndModes(10, depthMap, osg::StateAttribute::OFF);
@@ -616,9 +642,10 @@ void  ViewshedAnalysis::clear()
 
        // _parentScene->removeChild(_shadowedScene);
        _parentScene->getParent(0)->removeChild(_cameraIndicator);
+       _parentScene->getParent(0)->removeChild(frustumVisual);
 
        _cameraIndicator = nullptr;
-       // _visibilityShader = nullptr;
+       frustumVisual = nullptr;
 
 
 }

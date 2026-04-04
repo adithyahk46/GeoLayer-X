@@ -38,6 +38,8 @@ release/
 build-*/
 install/
 
+.vs/
+
 
 
 #.qmake.stash
@@ -45,7 +47,7 @@ install/
 
 .qtcreator/
 Configuration_libs/
-resources/
+# resources/
 
 # Qt unit tests
 target_wrapper.*
