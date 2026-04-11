@@ -1,16 +1,15 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <osgEarth/GLUtils>
 
-#include <osgEarth/Sky>
 
 #include <app/app.h>
 #include <app/toolbarmanager.h>
 #include <app/StatusBarHandler.h>
 #include <app/LayerManagerWidget.h>
-#include <app/MapLoadModule.h>
+#include <app/MapLoadModuleDialog.h>
 
+#include "pluggins/MapLoadModule.h"
 
 using namespace osgEarth;
 
@@ -21,21 +20,6 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     setWindowTitle("3D Viewer");
-
-    // // Dock 1
-    // QDockWidget *dock1 = new QDockWidget("Layers", this);
-    // dock1->setWidget(new QListWidget());
-    // addDockWidget(Qt::LeftDockWidgetArea, dock1);
-
-    // // Dock 2
-    // QDockWidget *dock2 = new QDockWidget("Browser", this);
-    // dock2->setWidget(new QTextEdit());
-    // addDockWidget(Qt::LeftDockWidgetArea, dock2);
-
-    // // Dock 3
-    // QDockWidget *dock3 = new QDockWidget("Processing", this);
-    // dock3->setWidget(new QLabel("Processing Tools"));
-    // addDockWidget(Qt::LeftDockWidgetArea, dock3);
 
     osgWidget=new osgQOpenGLWidget();
     osgWidget->setMouseTracking(true);
@@ -135,11 +119,8 @@ void MainWindow::initOsg()
 
     viewer->realize();
 
-    QString figPath = QCoreApplication::applicationDirPath()
-                      + "/Data/earth_files/geocentric.earth";
-
     osg::ref_ptr<osg::Node> earthNode =
-        osgDB::readRefNodeFile(figPath.toStdString());
+        osgDB::readRefNodeFile("../resources/app/geocentric.earth");
 
     root = new osg::Group();
 
@@ -159,7 +140,7 @@ void MainWindow::initOsg()
     viewer->setCameraManipulator(manip);
 
     viewer->setSceneData(root);
-    // viewer->getCamera()->setClearColor(osg::Vec4(0.3,0.3,0.3,1.0));
+    viewer->getCamera()->setClearColor(osg::Vec4(1,1,1,0.5));
 
 
     // viewer->realize();
@@ -177,11 +158,12 @@ void MainWindow::initOsg()
     osg::ref_ptr<osgEarth::Util::SkyNode> sky = osgEarth::SkyNode::create();
     sky->setDateTime(osgEarth::DateTime(2020, 3, 6, hours));
     // sky->setLighting(true);
-    sky->addChild(mapNode);
-    sky->attach(viewer);
+    // sky->addChild(mapNode);
+    // sky->attach(viewer);
     // sky->getSunLight()->setAmbient(osg::Vec4(0.5f, 0.05f, 0.5f, 1.0f));
 
-    root->addChild(sky);
+
+    // root->addChild(sky);
 
 }
 
@@ -198,7 +180,7 @@ void MainWindow::_initConnections()
 
     QObject::connect(ui->actionLoad_Layers,&QAction::triggered,this,[=](){
            // LoadLayer("");
-           MapLoadModule* _loadmap = new MapLoadModule(mapNode, this);
+           MapLoadModuleDialog* _loadmap = new MapLoadModuleDialog(mapNode, this);
            _loadmap->setAttribute(Qt::WA_DeleteOnClose);
            _loadmap->show();
 

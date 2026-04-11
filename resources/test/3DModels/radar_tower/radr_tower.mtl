@@ -1,0 +1,22 @@
+# Blender 4.5.2 LTS MTL File: 'None'
+# www.blender.org
+
+newmtl RadarTower
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1000.000000
+d 1.000000
+illum 2
+map_Kd C:/RadarTower_diffuse.jpeg
+map_Ns C:/RadarTower_specularGlossiness.png
+
+newmtl Red_lamps
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1000.000000
+d 1.000000
+illum 2
+map_Kd C:/Red_lamps_diffuse.jpeg
+map_Ns C:/Red_lamps_specularGlossiness.jpeg
+map_Ke C:/Red_lamps_emissive.jpeg

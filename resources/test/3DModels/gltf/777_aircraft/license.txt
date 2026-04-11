@@ -1,0 +1,8 @@
+Model Information:
+* title:	777 aircraft
+* source:	https://sketchfab.com/3d-models/777-aircraft-d519c08c76734588b88316607c3876a6
+* author:	whitelie (https://sketchfab.com/whitelie)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

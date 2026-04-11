@@ -1,0 +1,35 @@
+# Blender 4.5.2 LTS MTL File: 'None'
+# www.blender.org
+
+newmtl body
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd textures/body_baseColor.png
+map_Bump -bm 1.000000 C:/Users/pnmt1054/Adithya-working-directory/Data/3D-models/C:/body_normal.png
+
+newmtl material
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd textures/material_baseColor.png
+map_Bump -bm 1.000000 C:/Users/pnmt1054/Adithya-working-directory/Data/3D-models/C:/material_normal.png
+
+newmtl tracks
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 2
+map_Kd textures/tracks_baseColor.png
+map_d C:/Users/pnmt1054/Adithya-working-directory/Data/3D-models/C:/tracks_baseColor.png
+map_Bump -bm 1.000000 C:/Users/pnmt1054/Adithya-working-directory/Data/3D-models/C:/tracks_normal.png

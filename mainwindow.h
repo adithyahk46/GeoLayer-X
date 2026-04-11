@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 
-#include "app/MapLoadModule.h"
+#include "app/MapLoadModuleDialog.h"
 #include "app/MyMapCallback.h"
 #include "app/legends.h"
 #include "app/MouseEventHandler.h"

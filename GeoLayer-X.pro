@@ -43,7 +43,6 @@ INDIGIS_DEPS = $$PWD/../QT_PROJECTS/INDIGIS_DEPS
 # LIBS += -L"$${INDIGIS_DEPS}/qgis_lib/lib"
 # LIBS += -lqgis_core -lqgis_gui -lqgis_analysis
 
-
 # extranal deps
 INCLUDEPATH += "$${INDIGIS_DEPS}/external_libs/include"
 LIBS += -L"$${INDIGIS_DEPS}/external_libs/lib"
@@ -64,7 +63,7 @@ LIBS += -losgQOpenGL -lopengl32
 
 SOURCES += \
     app/LayerManagerWidget.cpp \
-    app/MapLoadModule.cpp \
+    app/MapLoadModuleDialog.cpp \
     app/MouseEventHandler.cpp \
     app/MyMapCallback.cpp \
     app/RadialViewshedWidget.cpp \
@@ -76,12 +75,14 @@ SOURCES += \
     app/toolbarmanager.cpp \
     main.cpp \
     mainwindow.cpp \
+    pluggins/MapLoadModule.cpp \
+    pluggins/VisibilityTestArea/RadarDomeAnalysis.cpp \
     pluggins/VisibilityTestArea/RadialViewshedAnalysis.cpp \
     pluggins/VisibilityTestArea/ViewshedAnalysis.cpp
 
 HEADERS += \
     app/LayerManagerWidget.h \
-    app/MapLoadModule.h \
+    app/MapLoadModuleDialog.h \
     app/MouseEventHandler.h \
     app/MyMapCallback.h \
     app/RadialViewshedWidget.h \
@@ -92,13 +93,15 @@ HEADERS += \
     app/legends.h \
     app/toolbarmanager.h \
     mainwindow.h \
+    pluggins/MapLoadModule.h \
+    pluggins/VisibilityTestArea/RadarDomeAnalysis.h \
     pluggins/VisibilityTestArea/RadialViewshedAnalysis.h \
     pluggins/VisibilityTestArea/ViewshedAnalysis.h \
     pluggins/VisibilityTestArea/ViewshedShaders.h
 
 
 FORMS += \
-    app/MapLoadModule.ui \
+    app/MapLoadModuleDialog.ui \
     app/RadialViewshedWidget.ui \
     app/ViewshedAnalysisWidget.ui \
     mainwindow.ui
