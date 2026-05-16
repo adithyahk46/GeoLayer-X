@@ -1,0 +1,91 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarth/StyleSheet>
+#include <osgEarth/Session>
+#include <osgEarth/Feature>
+#include <osgEarth/Filter>
+#include <osgEarth/MapboxGLGlyphManager>
+
+namespace osgEarth
+{
+    namespace Util
+    {
+        class OSGEARTH_EXPORT FeatureRasterizer
+        {
+        public:
+            FeatureRasterizer(
+                unsigned int width, 
+                unsigned int height, 
+                const GeoExtent& extent, 
+                const Color& backgroundColor = Color::Transparent);
+
+            FeatureRasterizer(
+                osg::Image* preallocatedImage,
+                const GeoExtent& extent);
+
+            MapboxGLGlyphManager* getGlyphManager() const;
+            void setGlyphManager(MapboxGLGlyphManager* glyphManager);
+
+            //! A scaling factor that adjusts symbols to the desired pixel size.  Mostly useful for mapbox layers.
+            float getPixelScale() const;
+            void setPixelScale(float pixelScale);
+
+            void render(
+                const FeatureList& features,
+                const Style& style,
+                FilterContext& context);
+
+            GeoImage finalize();        
+
+            struct SymbolBoundingBoxes
+            {
+                bool intersects2d(const osg::BoundingBox& bb)
+                {
+                    for (auto& b : _bounds)
+                    {
+                        if (osg::maximum(b.xMin(), bb.xMin()) <= osg::minimum(b.xMax(), bb.xMax()) &&
+                            osg::maximum(b.yMin(), bb.yMin()) <= osg::minimum(b.yMax(), bb.yMax()))
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                std::vector< osg::BoundingBox > _bounds;
+            };
+
+        private:
+            Bounds    _bounds;
+            GeoExtent _originalExtent;
+            unsigned _width = 0, _height = 0;
+            osg::ref_ptr< osg::Image > _image;
+            osg::ref_ptr< MapboxGLGlyphManager > _glyphManager;
+            float _pixelScale = 1.0f;
+            unsigned _bufferPixels = 2;
+            
+            enum RenderFormat {
+                RF_BGRA,
+                RF_ABGR
+            };
+            RenderFormat _implPixelFormat = RF_BGRA;
+            bool _inverted = false;
+
+            SymbolBoundingBoxes _symbolBoundingBoxes;
+
+
+            void render_blend2d(
+                const FeatureList& features,
+                const Style& style,
+                FilterContext& context);
+
+            void render_agglite(
+                const FeatureList& features,
+                const Style& style,
+                FilterContext& context);
+        };
+    }
+}

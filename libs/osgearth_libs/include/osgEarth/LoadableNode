@@ -1,0 +1,42 @@
+/* osgEarth
+* Copyright 2008-2014 Pelican Mapping
+* MIT License
+*/
+#pragma once
+
+#include <osgEarth/Export>
+#include <osgEarth/RefinePolicy>
+
+namespace osgEarth
+{
+    /**
+     * Pure interface for an object that can load or unload data.
+     */
+    class /*interface*/ LoadableNode
+    {
+    public:
+        //! Instruct the object to load its payload
+        virtual void load() = 0;
+
+        //! Instruct the object to discard its payload
+        virtual void unload() = 0;
+
+        //! How to behave when higher resolution data is loaded
+        virtual RefinePolicy getRefinePolicy() const = 0;
+
+        //! Whether a call to load() completed (successfully or not)
+        virtual bool isLoadComplete() const = 0;
+
+        //! Whether the node is the highest resolution node in the scene graph
+        virtual bool isHighestResolution() const = 0;
+
+        //! Whether to automatically discard the payload when the
+        //! system determines that this node is not currently in use
+        virtual bool getAutoUnload() const = 0;
+
+        //! Whether to automatically discard the payload when the
+        //! system determines that this node is not currently in use
+        virtual void setAutoUnload(bool value) = 0;
+    };
+}
+

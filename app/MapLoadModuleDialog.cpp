@@ -2,7 +2,7 @@
 #include "ui_MapLoadModuleDialog.h"
 
 
-#include "pluggins/MapLoadModule.h"
+#include <DataManager/MapLoadModule.h>
 
 MapLoadModuleDialog::MapLoadModuleDialog(osgEarth::MapNode* mapNode, QWidget* parent )
     :QDialog(parent)

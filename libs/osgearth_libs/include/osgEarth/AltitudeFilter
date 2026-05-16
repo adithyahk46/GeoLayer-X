@@ -1,0 +1,45 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarth/Common>
+#include <osgEarth/Feature>
+#include <osgEarth/Filter>
+
+namespace osgEarth { namespace Util
+{
+    /**
+     * Feature filter that will clamp incoming feature geometry to an elevation model.
+     */
+    class OSGEARTH_EXPORT AltitudeFilter : public FeatureFilter
+    {
+    public:
+        //! Constructs a new clamping filter
+        AltitudeFilter() = default;
+
+    public: // properties
+
+        //! Shortcut to set any properties that are represented in a style.
+        void setPropertiesFromStyle( const Style& style );
+
+        //! Access the symbology used to control the filter
+        AltitudeSymbol* getOrCreateSymbol();
+
+        //! Maximum terrain resolution to consider when clamping
+        void setMaxResolution(const Distance& value) { _maxResolution = value; }
+        const Distance& getMaxResolution() const { return _maxResolution; }
+
+    public:
+        virtual FilterContext push( FeatureList& input, FilterContext& cx );
+
+    protected:
+        osg::ref_ptr<AltitudeSymbol> _altitude;
+        Distance _maxResolution = Distance(5.0, Units::METERS);
+        std::string _maxZAttr, _minZAttr, _terrainZAttr;
+
+        void pushAndClamp( FeatureList& input, FilterContext& cx );
+        void pushAndDontClamp( FeatureList& input, FilterContext& cx );
+    };
+} }

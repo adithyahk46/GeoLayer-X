@@ -1,0 +1,60 @@
+/* osgEarth
+* Copyright 2025 Pelican Mapping
+* MIT License
+*/
+
+#ifndef OSGEARTH_LEGACY_TILE_SOURCE_ELEVATION_LAYER_H
+#define OSGEARTH_LEGACY_TILE_SOURCE_ELEVATION_LAYER_H 1
+
+#include <osgEarth/ElevationLayer>
+#include <osgEarth/TileSource>
+
+namespace osgEarth { namespace Contrib
+{
+    using namespace osgEarth;
+    /**
+    * A map terrain layer containing elevation grid heightfields.
+    * @deprecated For legacy application support only
+    */
+    class OSGEARTH_EXPORT TileSourceElevationLayer : public ElevationLayer
+    {
+    public:
+        class OSGEARTH_EXPORT Options : public ElevationLayer::Options {
+        public:
+            META_LayerOptions(osgEarth, Options, ElevationLayer::Options);
+            OE_OPTION(TileSourceOptions, driver);
+            virtual Config getConfig() const;
+        private:
+            void fromConfig( const Config& conf );
+        };
+
+    public:
+        META_Layer(osgEarth, TileSourceElevationLayer, Options, ElevationLayer, elevation);
+
+    protected: // Layer
+
+        virtual void init();
+
+    protected: // ElevationLayer
+
+        //! Open the layer for reading.
+        virtual Status openImplementation();
+
+        virtual GeoHeightField createHeightFieldImplementation(
+            const TileKey& key, 
+            ProgressCallback* progress) const;
+
+        virtual ~TileSourceElevationLayer() { }
+
+    private:
+
+        osg::ref_ptr<TileSource> _tileSource;
+        TileSource::HeightFieldOperation* getOrCreatePreCacheOp() const;
+        mutable osg::ref_ptr<TileSource::HeightFieldOperation> _preCacheOp;
+    };
+
+} } // namespace osgEarth
+
+OSGEARTH_SPECIALIZE_CONFIG(osgEarth::Contrib::TileSourceElevationLayer::Options);
+
+#endif // OSGEARTH_LEGACY_TILE_SOURCE_ELEVATION_LAYER_H

@@ -1,0 +1,65 @@
+/* osgEarth
+* Copyright 2025 Pelican Mapping
+* MIT License
+*/
+#pragma once
+#include <osgEarth/Common>
+#include <osgEarth/Feature>
+#include <ogr_api.h>
+
+#ifndef OSGEARTH_LIBRARY
+//#error OgrUtils is an internal-only header
+#endif
+
+namespace osgEarth { namespace Util
+{
+    using namespace osgEarth;
+
+    struct OGRFeatureFactory
+    {
+        const SpatialReference* srs = nullptr;
+        optional<GeoInterpolation> interp = { GEOINTERP_DEFAULT };
+        bool keepNullValues = true;
+        bool rewindPolygons = true;
+        std::vector<std::string> fieldNames;
+
+        Feature* createFeature(OGRFeatureH handle) const;
+    };
+
+    struct OgrUtils
+    {
+        static void populate( OGRGeometryH geomHandle, Geometry* target, int numPoints );
+    
+        static osgEarth::Polygon* createPolygon( OGRGeometryH geomHandle, bool rewindPolygons = true);
+
+        static MultiGeometry* createTIN(OGRGeometryH geomHandle);
+       
+        static Geometry* createGeometry( OGRGeometryH geomHandle, bool rewindPolygons = true);
+
+        static OGRGeometryH createOgrGeometry(const Geometry* geometry, OGRwkbGeometryType requestedType = wkbUnknown);
+
+        static AttributeType getAttributeType( OGRFieldType type );
+
+        static OGRwkbGeometryType getOGRGeometryType(const Geometry::Type& type);
+    
+        static OGRwkbGeometryType getOGRGeometryType(const Geometry* geometry);
+
+        OE_DEPRECATED("Use OGRFeatureFactory::create instead")
+        inline Feature* createFeature(OGRFeatureH handle, const SpatialReference* srs, const optional<GeoInterpolation>& interp, bool rewindPolygons = true) {
+            OGRFeatureFactory factory;
+            factory.srs = srs;
+            factory.interp = interp;
+            factory.rewindPolygons = rewindPolygons;
+            return factory.createFeature(handle);
+        }
+
+        OE_DEPRECATED("Use OGRFeatureFactory::create instead")
+            inline Feature* createFeature(OGRFeatureH handle, const SpatialReference* srs, bool rewindPolygons) {
+            OGRFeatureFactory factory;
+            factory.srs = srs;
+            factory.rewindPolygons = rewindPolygons;
+            return factory.createFeature(handle);
+        }
+    };
+} }
+

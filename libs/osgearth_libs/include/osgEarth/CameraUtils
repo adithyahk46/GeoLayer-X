@@ -1,0 +1,40 @@
+/* osgEarth
+* Copyright 2025 Pelican Mapping
+* MIT License
+*/
+#ifndef OSGEARTH_CAMERAUTILS_H
+#define OSGEARTH_CAMERAUTILS_H  1
+
+#include <osgEarth/Common>
+
+namespace osg {
+    class Camera;
+}
+
+namespace osgEarth { namespace Util
+{
+    struct OSGEARTH_EXPORT CameraUtils
+    {
+        //! Marks a camera as a shadow map camera
+        static void setIsShadowCamera(osg::Camera* camera);
+
+        //! Whether a camera is marked as a shadow map camera
+        static bool isShadowCamera(const osg::Camera* camera);
+
+        //! Marks a camera as a depth camera
+        static void setIsDepthCamera(osg::Camera* camera);
+
+        //! Whether a camera is marked is a depth camera
+        static bool isDepthCamera(const osg::Camera* camera);
+
+        //! Marks a camera as a picker camera
+        static void setIsPickCamera(osg::Camera* camera);
+
+        //! Whether a camera is a picker camera
+        static bool isPickCamera(const osg::Camera* camera);
+
+    };
+
+} }
+
+#endif // OSGEARTH_CAMERAUTILS_H

@@ -1,0 +1,43 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTH_TERRAIN_EFFECT_H
+#define OSGEARTH_TERRAIN_EFFECT_H 1
+
+#include <osgEarth/Common>
+#include <osgEarth/Config>
+
+namespace osgEarth
+{
+    class TerrainEngineNode;
+
+    /**
+     * A terrain effect is a class that applies an effect to the 
+     * TerrainEngineNode. You can add effect to the engine by calling
+     * TerrainEngineNode::addEffect(). An effect can do anything, 
+     * but typically it will alter the state set in some way (such as
+     * to customize the shaders).
+     */
+    class TerrainEffect : public osg::Referenced /* header-only */
+    {
+    public:
+        /** Called by the terrain engine when you install the effect */
+        virtual void onInstall(TerrainEngineNode* engine) { }
+
+        /** Called by the terrain engine when you uninstall the effect */
+        virtual void onUninstall(TerrainEngineNode* engine) { }
+
+    public: // serialization
+
+        virtual Config getConfig() const { return Config(); }
+
+    protected:
+        TerrainEffect() { }
+        virtual ~TerrainEffect() { }
+    };
+
+} // namespace osgEarth
+
+#endif // OSGEARTH_TERRAIN_EFFECT_H

@@ -1,0 +1,76 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarthImGui/Common>
+
+#include <osgEarth/Config>
+#include <osg/RenderInfo>
+#include <osgGA/GUIEventHandler>
+#include <typeinfo>
+
+struct ImGuiSettingsHandler;
+
+namespace osgEarth
+{
+    /**
+    * Generic OSG event handler that will render ImGui elements.
+    * Subclass this and override "draw" to render your own ImGui interface,
+    * and add this instance as an event handler to your viewer.
+    */
+    class ImGuiEventHandler : public osgGA::GUIEventHandler
+    {
+    public:
+        bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa) override;
+
+        virtual void load(void* section, const std::string& key, const std::string& value) { }
+
+        virtual void save(osgEarth::Config& conf) { }
+
+        virtual void* findByName(const char* name) { return nullptr; }
+
+        virtual void* findByType(const std::type_info& type) { return nullptr; }
+
+        bool getAutoAdjustProjectionMatrix() const { return _autoAdjustProjectionMatrix; }
+
+        void setAutoAdjustProjectionMatrix(bool value) { _autoAdjustProjectionMatrix = value; }
+
+        // Put your ImGui code inside this function
+        virtual void draw(osg::RenderInfo& renderInfo) = 0;
+
+        void newFrame(osg::RenderInfo& renderInfo);
+
+        void render(osg::RenderInfo& renderInfo);
+
+        bool _show = true;
+
+        // called by the handler upon ImGui initialization - you can access
+        // ImGui::GetIO() safely from here.
+        std::function<void()> onStartup = nullptr;
+
+    protected:
+        bool _dirtySettings = false;
+
+    private:
+        struct ImGuiNewFrameCallback;
+        struct ImGuiRenderCallback;
+
+        double _time = 0.0;
+        bool _initialized = false;
+        bool _firstFrame = true;
+        bool _autoAdjustProjectionMatrix = true;
+        bool _dragging = false;
+
+        static void* handleStartEntry(ImGuiContext* ctx, ImGuiSettingsHandler* handler, const char* name);
+
+        static void handleReadSetting(ImGuiContext* ctx, ImGuiSettingsHandler* handler, void* entry, const char* line);
+
+        static void handleWriteSettings(ImGuiContext* ctx, ImGuiSettingsHandler* handler, ImGuiTextBuffer* out_buf);
+
+        void installSettingsHandler();
+
+        ImGuiKey convertKey(int osgKey);
+    };
+}

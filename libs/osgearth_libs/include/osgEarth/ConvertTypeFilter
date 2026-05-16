@@ -1,0 +1,49 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTHFEATURES_CONVERT_TYPE_FILTER_H
+#define OSGEARTHFEATURES_CONVERT_TYPE_FILTER_H 1
+
+#include <osgEarth/Common>
+#include <osgEarth/Feature>
+#include <osgEarth/Filter>
+#include <osg/Geode>
+
+namespace osgEarth { namespace Util
+{
+    using namespace osgEarth;
+
+    /**
+     * This filter will change geometry from one type to another.
+     */
+    class OSGEARTH_EXPORT ConvertTypeFilter : public FeatureFilter
+    {
+    public:
+        // Call this determine whether this filter is available.
+        static bool isSupported() { return true; }
+
+    public:
+        ConvertTypeFilter() = default;
+        ConvertTypeFilter(const ConvertTypeFilter&) = default;
+
+        ConvertTypeFilter(const Geometry::Type& toType);
+        ConvertTypeFilter(const Config& conf);
+
+        //!Serialize this FeatureFilter
+        Config getConfig() const override;
+
+    public:
+        const Geometry::Type& toType() const {
+            return _toType.value(); }
+
+    public:
+        virtual FilterContext push( FeatureList& input, FilterContext& context );
+
+    protected:
+        optional<Geometry::Type> _toType = Geometry::TYPE_UNKNOWN;
+    };
+} }
+
+#endif // OSGEARTHFEATURES_CONVERT_TYPE_FILTER_H

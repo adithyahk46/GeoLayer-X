@@ -1,0 +1,58 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTHFEATURES_ATTRIBUTES_FILTER_H
+#define OSGEARTHFEATURES_ATTRIBUTES_FILTER_H 1
+
+#include <osgEarth/Common>
+#include <osgEarth/Feature>
+#include <osgEarth/Filter>
+
+namespace osgEarth
+{
+    /**
+     * Filters out features that have the given attributes
+     */
+    class OSGEARTH_EXPORT AttributesFilter : public FeatureFilter
+    {
+    public:
+        // Call this determine whether this filter is available.
+        static bool isSupported() { return true; }
+
+    public:
+        AttributesFilter();
+        AttributesFilter(const std::vector<std::string>& attributes);
+        AttributesFilter(const AttributesFilter& rhs);
+
+        AttributesFilter(const Config& conf);
+
+        /**
+         * Serialize this FeatureFilter
+         */
+        virtual Config getConfig() const;
+
+        virtual ~AttributesFilter() { }
+
+    public:
+        std::vector<std::string>& attributes()
+        {
+            return _attributes;
+        }
+
+        const std::vector<std::string>& attributes() const
+        {
+            return _attributes;
+        }
+
+    public:
+        virtual FilterContext push(FeatureList& input, FilterContext& context);
+
+    protected:
+        std::vector<std::string> _attributes;
+    };
+
+} // namespace osgEarth
+
+#endif // OSGEARTHFEATURES_ATTRIBUTES_FILTER_H

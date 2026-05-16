@@ -1,0 +1,61 @@
+/* osgEarth
+* Copyright 2008-2012 Pelican Mapping
+* MIT License
+*/
+#ifndef OSGEARTHUTIL_SKYVIEW_H
+#define OSGEARTHUTIL_SKYVIEW_H
+
+#include <osgEarth/Common>
+#include <osgEarth/ImageLayer>
+#include <osgEarth/LayerReference>
+
+namespace osgEarth { namespace Contrib
+{
+    /**
+     * Image layer intended to be viewed from the inside.
+     */
+    class OSGEARTH_EXPORT SkyViewImageLayer : public ImageLayer
+    {
+    public:
+        class OSGEARTH_EXPORT Options : public ImageLayer::Options {
+        public:
+            META_LayerOptions(osgEarth, Options, ImageLayer::Options);
+            OE_OPTION_LAYER(ImageLayer, imageLayer);
+            virtual Config getConfig() const;
+            static Config getMetadata();
+        private:
+            void fromConfig(const Config& conf);
+        };
+
+    public:
+        META_Layer(osgEarth, SkyViewImageLayer, Options, ImageLayer, SkyView);
+
+        //! Image layer to render in skyview mode
+        void setImageLayer(ImageLayer* layer) { options().imageLayer().setLayer(layer); }
+        ImageLayer* getImageLayer() const { return options().imageLayer().getLayer(); }
+
+    public: // Layer
+
+        //! Called by constructors
+        void init();
+
+        //! Establishes a connection to the WMS service
+        Status openImplementation();
+
+        //! Return an image for a key.
+        GeoImage createImageImplementation(const TileKey& key, ProgressCallback* progress) const;
+
+        virtual Config getConfig() const;
+
+    protected:
+
+        //! Destructor
+        virtual ~SkyViewImageLayer() { }
+    };
+
+} } // namespace osgEarth:Contrib
+
+OSGEARTH_SPECIALIZE_CONFIG(osgEarth::Contrib::SkyViewImageLayer::Options);
+
+
+#endif // OSGEARTHUTIL_SKYVIEW_H

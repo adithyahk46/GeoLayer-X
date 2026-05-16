@@ -1,0 +1,105 @@
+/* osgEarth
+ * Copyright 2008-2014 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarth/Common>
+
+#ifdef OSGEARTH_HAVE_MVT
+
+#include <osgEarth/FeatureSource>
+#include <osgDB/ObjectWrapper>
+
+namespace osgEarth
+{
+    namespace MVT
+    {
+        //! Reads features from an MVT stream for the specified tile.
+        extern OSGEARTH_EXPORT bool readTile(
+            const std::string& data,
+            const TileKey& key,
+            FeatureList& features,
+            const std::vector<std::string>& layersToRead = {});
+
+    }
+}
+
+namespace osgEarth
+{
+    /**
+     * Feature Layer that accesses features according to the Mapnik Vector Tiles specification.
+     */
+    class OSGEARTH_EXPORT MVTFeatureSource : public TiledFeatureSource
+    {   
+    public: // serialization
+        class OSGEARTH_EXPORT Options : public TiledFeatureSource::Options
+        {
+        public:
+            META_LayerOptions(osgEarth, Options, TiledFeatureSource::Options);
+            OE_OPTION(URI, url);
+            virtual Config getConfig() const;
+            void fromConfig(const Config& conf);
+        };
+
+    public:
+        META_Layer(osgEarth, MVTFeatureSource, Options, TiledFeatureSource, MVTFeatures);
+
+        //! Location of the resource
+        void setURL(const URI& value);
+        const URI& getURL() const;
+
+        typedef void(*FeatureTileCallback)(const TileKey& key, const FeatureList& features, void* context);
+        /**
+        * Iterates over the tiles in the mbtiles dataset
+        */
+        void iterateTiles(int zoomLevel, int limit, int offset, const GeoExtent& extent, FeatureTileCallback callback, void* context);
+
+    public: // Layer
+
+        Status openImplementation() override;
+        Status closeImplementation() override;
+
+    protected:
+
+        void init() override;
+
+    public: // FeatureSource
+
+        FeatureCursor* createFeatureCursorImplementation(const Query& query, ProgressCallback* progress) const override;
+        
+    protected:
+
+        virtual ~MVTFeatureSource();
+
+    private:
+        osg::ref_ptr<osgDB::BaseCompressor> _compressor;
+
+        struct PerThreadData {
+            void* database = nullptr;
+            void* selectTileStmt = nullptr;
+            void* selectMetaDataStmt = nullptr;
+
+            ~PerThreadData();
+        };
+
+        PerThreadData& getPerThreadData() const;
+
+        mutable osgEarth::Util::PerThread<PerThreadData> _perThreadData;
+
+        unsigned _minLevel;
+        unsigned _maxLevel;
+
+        const FeatureProfile* createFeatureProfile();
+        void computeLevels();
+        bool getMetaData(const std::string& key, std::string& value);
+        void closeDatabase();
+    };
+}
+
+OSGEARTH_SPECIALIZE_CONFIG(osgEarth::MVTFeatureSource::Options);
+
+#else
+#pragma message("osgEarth was not built with MVT support")
+#endif
+

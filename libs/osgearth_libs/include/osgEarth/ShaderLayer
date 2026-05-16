@@ -1,0 +1,48 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTH_SHADER_LAYER_H
+#define OSGEARTH_SHADER_LAYER_H
+
+#include "VisibleLayer"
+
+using namespace osgEarth;
+
+namespace osgEarth
+{
+    /**
+     * Layer that just renders the terrain surface with a shader
+     * and nothing else.
+     */
+    class OSGEARTH_EXPORT ShaderLayer : public VisibleLayer
+    {
+    public:
+        class OSGEARTH_EXPORT Options : public VisibleLayer::Options {
+        public:
+            META_LayerOptions(osgEarth, Options, VisibleLayer::Options);
+            virtual Config getConfig() const override;
+            static Config getMetadata();
+        private:
+            void fromConfig(const Config& conf);
+        };
+
+    public:
+        META_Layer(osgEarth, ShaderLayer, Options, VisibleLayer, Shader);
+
+    public: // Layer
+
+        virtual void init() override;
+
+    protected:
+
+        //! Destructor
+        virtual ~ShaderLayer() { }
+    };
+}
+
+OSGEARTH_SPECIALIZE_CONFIG(osgEarth::ShaderLayer::Options);
+
+
+#endif // OSGEARTH_UTIL_DEBUG_IMAGE_LAYER_H

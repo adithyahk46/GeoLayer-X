@@ -1,0 +1,30 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTHFEATURES_CENTROID_FILTER_H
+#define OSGEARTHFEATURES_CENTROID_FILTER_H 1
+
+#include <osgEarth/Common>
+#include <osgEarth/Filter>
+
+namespace osgEarth { namespace Util
+{
+    using namespace osgEarth;
+
+    /**
+     * Replaces each feature's geometry with a single-point centroid.
+     */
+    class OSGEARTH_EXPORT CentroidFilter : public FeatureFilter
+    {
+    public:
+        CentroidFilter();
+        virtual ~CentroidFilter() { }
+
+    public:
+        virtual FilterContext push( FeatureList& input, FilterContext& context );
+    };
+} }
+
+#endif // OSGEARTHFEATURES_CENTROID_FILTER_H

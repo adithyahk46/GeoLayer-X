@@ -1,0 +1,43 @@
+/* osgEarth
+ * Copyright 2008-2011 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTH_CLAMPABLE_NODE_H
+#define OSGEARTH_CLAMPABLE_NODE_H 1
+
+#include <osgEarth/Common>
+#include <osg/Group>
+#include <osg/observer_ptr>
+
+namespace osgEarth
+{
+    class MapNode;
+
+    /**
+     * Node graph that will be GPU-clamped on the terrain, if supported.
+     * This group must be a descendant of a MapNode.
+     */
+    class OSGEARTH_EXPORT ClampableNode : public osg::Group
+    {
+    public:
+        //! Constructs a new clampable node.
+        ClampableNode();
+
+    public: // osg::Node
+
+        virtual void traverse(osg::NodeVisitor& nv);
+
+    protected:
+        void setUniforms();
+        void dirty();
+
+        bool _mapNodeUpdateRequested;
+        osg::observer_ptr<MapNode> _mapNode;
+
+        virtual ~ClampableNode() { }
+    };
+
+} // namespace osgEarth
+
+#endif // OSGEARTH_CLAMPABLE_NODE_H

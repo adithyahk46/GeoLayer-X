@@ -1,0 +1,48 @@
+/* osgEarth
+ * Copyright 2008-2011 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTH_DRAPEABLE_NODE_H
+#define OSGEARTH_DRAPEABLE_NODE_H 1
+
+#include <osgEarth/Common>
+#include <osg/Group>
+
+namespace osgEarth
+{
+    /**
+     * Base class for a graph that can be "draped" on the terrain using
+     * projective texturing.
+     *
+     * Usage: Create this node and place it as a descendant of a MapNode.
+     */
+    class OSGEARTH_EXPORT DrapeableNode : public osg::Group
+    {
+    public:
+        META_Object(osgEarth, DrapeableNode);
+
+        //! Constructs a new drapeable node.
+        DrapeableNode();
+
+        //! Copy ctor
+        DrapeableNode(const DrapeableNode& rhs, const osg::CopyOp& copy);
+
+        //! Whether draping is enabled. Defaults to true.
+        void setDrapingEnabled(bool value);
+        bool getDrapingEnabled() const { return _drapingEnabled; }
+
+    public: // osg::Group/Node
+
+        virtual void traverse(osg::NodeVisitor& nv) override;
+
+    protected:
+        /** dtor */
+        virtual ~DrapeableNode() { }
+
+        bool _drapingEnabled;
+    };
+
+} // namespace osgEarth
+
+#endif // OSGEARTH_DRAPEABLE_NODE_H

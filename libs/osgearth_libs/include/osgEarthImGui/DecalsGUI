@@ -1,0 +1,238 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarthImGui/ImGuiPanel>
+#include <osgEarth/GLUtils>
+#include <osgEarth/ExampleResources>
+#include <osgEarth/Decals>
+#include <osg/ShapeDrawable>
+#include <osg/PolygonMode>
+
+namespace osgEarth
+{
+    using namespace osgEarth::Threading;
+
+    class DecalsGUI : public ImGuiPanel
+    {
+    private:
+        osg::observer_ptr<MapNode> _mapNode;
+        bool _installed = false;
+        osg::ref_ptr<DecalDecorator> _decalDecorator;
+        osg::ref_ptr<DecalGroup> _decalGroup;
+        osg::ref_ptr<DecalNode> _stampingDecals;
+        osg::ref_ptr<DecalNode> _draggingDecals;
+        osg::ref_ptr<DecalRTTNode> _decalRTTNode;
+        osg::ref_ptr<osg::MatrixTransform> _decalMT;
+        osg::ref_ptr<osg::MatrixTransform> _rttMT;
+        bool _stamping = false;
+        bool _dragging = false;
+        bool _rtt = false;
+        float _size = 500.0f;
+        float _depth = 5.0f;
+        bool _lockDepthToSize = true;
+        float _opacity = 1.0f;
+        bool _nadir = true;
+        bool _uphill = true;
+        bool _debugBoxes = false;
+        bool _debugTiles = false;
+        int _pixelsPerTile = 16;
+        Texture::Ptr _texture;
+
+    public:
+        DecalsGUI() : ImGuiPanel("Decals") { }
+
+        void load(const Config& conf) override
+        {
+        }
+
+        void save(Config& conf) override
+        {
+        }
+
+        void install(osg::RenderInfo& ri)
+        {
+            URI refgrid("https://raw.githubusercontent.com/pelicanmapping/osgearth/refs/heads/master/data/reference_grid.jpg?raw=true");
+            URI rttobject("https://github.com/pelicanmapping/osgearth/blob/master/data/jet.osgb?raw=true");
+
+            EventRouter::get(view(ri))
+                .onMove([&](osg::View* v, float x, float y) { onMove(v, x, y); }, false)
+                .onClick([&](osg::View* v, float x, float y) { onClick(v, x, y); }, false);
+
+            auto image = refgrid.getImage();
+            if (image)
+                _texture = Texture::create(image);
+            else
+                OE_WARN << "Could not load decal texture" << std::endl;
+
+            // install a decal applier at the top level
+            _decalDecorator = DecalDecorator::getOrCreate(_mapNode.get());
+
+            _decalGroup = new DecalGroup(_decalDecorator);
+            _mapNode->addChild(_decalGroup);
+
+            auto shape = rttobject.getNode();
+            if (!shape) {
+                shape = new osg::ShapeDrawable(new osg::Box());
+                shape->getOrCreateStateSet()->setAttribute(new osg::PolygonMode(osg::PolygonMode::FRONT_AND_BACK, osg::PolygonMode::LINE));
+            }
+            _rttMT = new osg::MatrixTransform();
+            _rttMT->addChild(shape);
+            _decalRTTNode = new DecalRTTNode();
+            _decalRTTNode->addChild(_rttMT);
+            _decalRTTNode->setRTTSize(256, 256);
+            _decalRTTNode->setDynamic(true);
+            _decalRTTNode->setNodeMask(0);
+            _decalMT = new osg::MatrixTransform();
+            _decalMT->addChild(_decalRTTNode);
+            _decalGroup->addChild(_decalMT);
+
+            _stampingDecals = new DecalNode();
+            _decalGroup->addChild(_stampingDecals);
+
+            _draggingDecals = new DecalNode();
+            _draggingDecals->getDecals().emplace_back();
+            _draggingDecals->setNodeMask(0);
+            _decalGroup->addChild(_draggingDecals);
+
+            _installed = true;
+        }
+
+        void draw(osg::RenderInfo& ri) override
+        {
+            if (!isVisible()) return;
+            if (!findNodeOrHide(_mapNode, ri)) return;
+            if (!_installed) install(ri);
+
+            // spin the rtt model
+            double a = 0.1 * ri.getState()->getFrameStamp()->getReferenceTime();
+            double b = a * 2;
+            _rttMT->setMatrix(osg::Matrix::rotate(a, osg::Vec3d(0, 0, 1)) * osg::Matrix::rotate(b, osg::Vec3d(1, 0, 0)));
+
+            ImGui::Begin(name(), visible());
+            {
+                auto engine = _mapNode->getTerrainEngine();
+                if (!engine)
+                {
+                    ImGui::TextColored(ImVec4(1, 0, 0, 1), "No terrain engine");
+                    ImGui::End();
+                    return;
+                }
+
+                if (ImGuiLTable::Begin("decalsgui"))
+                {
+                    ImGuiLTable::SliderFloat("Size", &_size, 1.0f, 1000.0f, "%.0f", ImGuiSliderFlags_Logarithmic);
+                    ImGuiLTable::SliderFloat("Depth", &_depth, 1.0f, 10000.0f, "%.0f", ImGuiSliderFlags_Logarithmic);
+                    ImGuiLTable::Checkbox("  Lock depth", &_lockDepthToSize);
+                    ImGuiLTable::SliderFloat("Opacity", &_opacity, 0.0f, 1.0f);
+                    ImGui::Separator();
+                    ImGuiLTable::Checkbox("Drag", &_dragging);
+                    ImGuiLTable::Checkbox("Stamp", &_stamping);                   
+                    if (_dragging) ImGuiLTable::Checkbox("  RTT", &_rtt);
+                    ImGui::Separator();
+                    ImGuiLTable::Checkbox("Nadir", &_nadir);
+                    if (!_nadir)
+                        ImGuiLTable::Checkbox("Orient uphill", &_uphill);
+                    if (ImGuiLTable::Checkbox("Show boxes", &_debugBoxes)) {
+                        _stampingDecals->debug(_debugBoxes);
+                    }
+                    if (ImGuiLTable::Checkbox("Show tiles", &_debugTiles)) {
+                        _decalDecorator->debugTiles(_debugTiles);
+                    }
+                    ImGuiLTable::SliderFloat("Min pixels", &_stampingDecals->minPixels().mutable_value(), 0.0f, 256.0f);
+                    //if (ImGuiLTable::SliderInt("Tile size", &_pixelsPerTile, 16, 256)) {
+                    //    _decalDecorator->setPixelsPerTile(_pixelsPerTile);
+                    //}
+                    if (_lockDepthToSize) _depth = _size;
+                    ImGuiLTable::End();
+                    if (ImGui::Button("Clear all")) {
+                        _stampingDecals->getDecals().clear();
+                        _stampingDecals->dirtyBound();
+                        _stampingDecals->debug(_debugBoxes);
+                    }
+                }
+                ImGui::Separator();
+                if (_texture) {
+                    ImGui::Text("%s", "Texture:");
+                    auto gl = _texture->getGLObject(*ri.getState());
+                    if (gl) ImGuiEx::Texture(gl->name(), 256, 256, _texture->getPixelFormat());
+                }
+                else {
+                    ImGui::Text("%s", "Could not load texture :(");
+                }
+            }
+            ImGui::End();
+        }
+
+        // makes a basis matrix that either points "uphill" or north.
+        inline osg::Matrix worldTBN(const osg::Vec3d& pos, const osg::Vec3d& N_in) const
+        {
+            auto up = pos; up.normalize();
+            auto N = _nadir ? up : N_in; N.normalize();
+            if (!_uphill || fabs(N * up) > 0.999)
+                up = osg::Vec3d(0, 0, 1);
+            auto T = up ^ N; T.normalize();
+            auto B = N ^ T; B.normalize();
+            return osg::Matrix(
+                T.x(), T.y(), T.z(), 0.0,
+                B.x(), B.y(), B.z(), 0.0,
+                N.x(), N.y(), N.z(), 0.0,
+                pos.x(), pos.y(), pos.z(), 1.0);
+        }
+            
+        void onMove(osg::View* view, float x, float y)
+        {
+            _draggingDecals->setNodeMask(0);
+            _decalRTTNode->setNodeMask(0);
+            if (_dragging)
+            {
+                auto i = intersectMouse(view, x, y, _mapNode.get());
+                if (i.isOK())
+                {
+                    if (_rtt)
+                    {
+                        _decalMT->setMatrix(worldTBN(i->getWorldIntersectPoint(), i->getWorldIntersectNormal()));
+                        _decalRTTNode->getDecal().size = osg::Vec3f(_size, _size, _depth);
+                        _decalRTTNode->getDecal().opacity = _opacity;
+                        _decalRTTNode->dirtyBound();
+                        _decalRTTNode->setNodeMask(~0);
+                    }
+                    else
+                    {
+                        Decal& decal = _draggingDecals->getDecals().front();
+                        decal.matrix = worldTBN(i->getWorldIntersectPoint(), i->getWorldIntersectNormal());
+                        decal.size = osg::Vec3f(_size, _size, _depth);
+                        decal.texture = _texture;
+                        decal.opacity = _opacity;
+
+                        _draggingDecals->dirtyBound();
+                        _draggingDecals->debug(_debugBoxes);
+                        _draggingDecals->setNodeMask(~0);
+                    }
+                }
+            }
+        }
+
+        void onClick(osg::View* view, float x, float y)
+        {
+            if (_stamping)
+            {
+                auto i = intersectMouse(view, x, y, _mapNode.get());
+                if (i.isOK())
+                {
+                    Decal decal;
+                    decal.matrix = worldTBN(i->getWorldIntersectPoint(), i->getWorldIntersectNormal());
+                    decal.size = osg::Vec3f(_size, _size, _depth);
+                    decal.texture = _texture;
+                    decal.opacity = _opacity;
+
+                    _stampingDecals->getDecals().emplace_back(std::move(decal));
+                    _stampingDecals->dirtyBound();
+                    _stampingDecals->debug(_debugBoxes);
+                }
+            }
+        }
+    };
+}

@@ -1,0 +1,166 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgText/Text>
+#include <osgEarth/Symbol>
+#include <osgEarth/Expression>
+#include <osgEarth/Fill>
+#include <osgEarth/Stroke>
+
+namespace osgEarth
+{
+    /**
+     * Symbol that describes how to render text labels.
+     */
+    class OSGEARTH_EXPORT TextSymbol : public Symbol
+    {
+    public:
+        enum Encoding {
+            ENCODING_ASCII,
+            ENCODING_UTF8,
+            ENCODING_UTF16,
+            ENCODING_UTF32
+        };
+
+        // note: these are identical to the values in osgText::Text::AlignmentType
+        enum Alignment {
+            ALIGN_LEFT_TOP,
+            ALIGN_LEFT_CENTER,
+            ALIGN_LEFT_BOTTOM,
+
+            ALIGN_CENTER_TOP,
+            ALIGN_CENTER_CENTER,
+            ALIGN_CENTER_BOTTOM,
+
+            ALIGN_RIGHT_TOP,
+            ALIGN_RIGHT_CENTER,
+            ALIGN_RIGHT_BOTTOM,
+
+            ALIGN_LEFT_BASE_LINE,
+            ALIGN_CENTER_BASE_LINE,
+            ALIGN_RIGHT_BASE_LINE,
+
+            ALIGN_LEFT_BOTTOM_BASE_LINE,
+            ALIGN_CENTER_BOTTOM_BASE_LINE,
+            ALIGN_RIGHT_BOTTOM_BASE_LINE,
+
+            ALIGN_BASE_LINE = ALIGN_LEFT_BASE_LINE /// default.
+        };
+
+        enum Layout {
+            LAYOUT_LEFT_TO_RIGHT,
+            LAYOUT_RIGHT_TO_LEFT,
+            LAYOUT_VERTICAL
+        };
+
+        META_Object(osgEarth, TextSymbol);
+
+        TextSymbol(const TextSymbol& rhs,const osg::CopyOp& copyop=osg::CopyOp::SHALLOW_COPY);
+        TextSymbol( const Config& conf =Config() );
+
+        /** dtor */
+        virtual ~TextSymbol() { }
+
+        /** Text fill color. */
+        optional<Fill>& fill() { return _fill; }
+        const optional<Fill>& fill() const { return _fill; }
+
+        /** Text outline color. */
+        optional<Stroke>& halo() { return _halo; }
+        const optional<Stroke>& halo() const { return _halo; }
+
+        /** Text outline offset */
+        optional<float>& haloOffset() { return _haloOffset; }
+        const optional<float>& haloOffset() const { return _haloOffset; }
+
+        /** Halo backdrop type */
+        optional<osgText::Text::BackdropType>& haloBackdropType() { return _haloBackdropType; }
+        const optional<osgText::Text::BackdropType>& haloBackdropType() const { return _haloBackdropType; }
+
+        /** Halo backdrop implementation */
+        optional<osgText::Text::BackdropImplementation>& haloImplementation() { return _haloImplementation; }
+        const optional<osgText::Text::BackdropImplementation>& haloImplementation() const { return _haloImplementation; }
+
+        /** Name of text font. */
+        optional<std::string>& font() { return _font; }
+        const optional<std::string>& font() const { return _font; }
+
+        /** Actual text to render (if applicable) */
+        OE_OPTION(Expression<String>, content);
+
+        /** Priority of the label (applicable when the renderer sorts labels) */
+        OE_OPTION(Expression<float>, priority, 0.0f);
+
+        /** Font size. */
+        OE_OPTION(Expression<float>, size, 16.0f);
+
+        /** Pixel offset from the center point. */
+        optional<osg::Vec2s>& pixelOffset() { return _pixelOffset; }
+        const optional<osg::Vec2s>& pixelOffset() const { return _pixelOffset; }
+
+        /** On screen rotation **/
+        OE_OPTION(Expression<float>, onScreenRotation, 0.0f);
+
+        /** Label orientation for following a fixed course on the map. */
+        OE_OPTION(Expression<float>, geographicCourse, 0.0f);
+
+        /** Alignment of the label relative to (0,0) pixels */
+        optional<Alignment>& alignment() { return _alignment; }
+        const optional<Alignment>& alignment() const { return _alignment; }
+
+        /** Layout of the label*/
+        optional<Layout>& layout() { return _layout; }
+        const optional<Layout>& layout() const { return _layout; }
+
+        /** Whether to enable decluttering on the text, if applicable */
+        optional<bool>& declutter() { return _declutter; }
+        const optional<bool>& declutter() const { return _declutter; }
+
+        /** Whether to enable occlusion culling on the text */
+        optional<bool>& occlusionCull() { return _occlusionCull; }
+        const optional<bool>& occlusionCull() const { return _occlusionCull; }
+
+        /** The viewer altitude at which to start occlusion culling the text */
+        optional<double>& occlusionCullAltitude() { return _occlusionCullAltitude; }
+        const optional<double>& occlusionCullAltitude() const { return _occlusionCullAltitude; }
+
+        /** Label generation provider to use */
+        optional<std::string>& provider() { return _provider; }
+        const optional<std::string>& provider() const { return _provider; }
+
+        /** text encoding */
+        optional<Encoding>& encoding() { return _encoding; }
+        const optional<Encoding>& encoding() const { return _encoding; }
+
+        /** text encoding */
+        optional<bool>& unique() { return _unique; }
+        const optional<bool>& unique() const { return _unique; }
+
+        OE_OPTION(bool, simple, false);
+
+    public:
+        virtual Config getConfig() const;
+        virtual void mergeConfig( const Config& conf );
+        static void parseSLD(const Config& c, class Style& style);
+
+    protected:
+        optional<Fill>              _fill;
+        optional<Stroke>            _halo;
+        optional<float>             _haloOffset;
+        optional<osgText::Text::BackdropType> _haloBackdropType;
+        optional<osgText::Text::BackdropImplementation> _haloImplementation;
+        optional<std::string>       _font;
+        optional<osg::Vec2s>        _pixelOffset;
+        optional<std::string>       _provider;
+        optional<Encoding>          _encoding;
+        optional<Alignment>         _alignment;
+        optional<Layout>            _layout;
+        optional<bool>              _declutter;
+        optional<bool>              _occlusionCull;
+        optional<double>            _occlusionCullAltitude;
+        optional<bool>              _unique;
+    };
+} // namespace osgEarth

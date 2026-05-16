@@ -1,0 +1,46 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarth/Common>
+#include <vector>
+#include <functional>
+#include <string>
+
+namespace osgEarth { namespace Util
+{
+    /**
+     * Utility that reads GLSL source code and lexes it into chunks that
+     * you can then perform operations on.
+     */
+    class OSGEARTH_EXPORT GLSLChunker
+    {
+    public:
+        struct Chunk {
+            enum Type { TYPE_STATEMENT, TYPE_DIRECTIVE, TYPE_FUNCTION, TYPE_COMMENT };
+            Type type;
+            std::string text;
+            std::vector<std::string> tokens;
+        };
+
+        typedef std::vector<Chunk> Chunks;
+
+    public:
+        /** Read GLSL into chunks */
+        void read(const std::string& input, Chunks& output) const;
+
+        /** Write chunks (read using the read() method) back to GLSL */
+        void write(const Chunks& input, std::string& output, bool reindent=true) const;
+
+        /** Search and replace a string */
+        void replace(Chunks& input, const std::string& target, const std::string& replacement) const;
+
+        /** Dump chunks to notify (for debugging) */
+        void dump(const std::string&, const Chunks&) const;
+
+        /** Create a chunk from a line. */
+        Chunk chunkLine(const std::string& line) const;
+    };
+} }

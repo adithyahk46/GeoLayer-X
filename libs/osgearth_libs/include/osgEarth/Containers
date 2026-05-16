@@ -1,0 +1,890 @@
+/* osgEarth
+* Copyright 2025 Pelican Mapping
+* MIT License
+*/
+#pragma once
+#include <osgEarth/Common>
+#include <osgEarth/Threading>
+#include <osg/ref_ptr>
+#include <list>
+#include <vector>
+#include <map>
+#include <unordered_map>
+#include <queue>
+#include <thread>
+
+namespace osgEarth { namespace Util
+{
+    template<typename T>
+    struct vector_map_equal {
+        inline bool operator()(const T& a, const T& b) const {
+            return a == b;
+        }
+    };
+
+    /**
+     * A std::unordered_map-like map that uses a vector.
+     * This benchmarks much faster than std::map or std::unordered_map for small sets.
+     */
+    template<typename KEY,typename DATA,typename EQUAL=vector_map_equal<KEY>>
+    struct vector_map
+    {
+        struct ENTRY {
+            KEY first;
+            DATA second;
+        };
+
+        using value_type = DATA;
+        using container_t = std::vector<ENTRY>;
+        using iterator = typename container_t::iterator;
+        using const_iterator = typename container_t::const_iterator;
+        EQUAL keys_equal;
+
+        container_t _container;
+
+        //inline bool keys_equal(const KEY& a, const KEY& b) const {
+        //    return EQUAL()(a, b);
+        //}
+
+        inline DATA& operator[](const KEY& key) {
+            for(unsigned i=0; i<_container.size(); ++i) {
+                if (keys_equal(_container[i].first, key)) {
+                    return _container[i].second;
+                }
+            }
+            _container.emplace_back();
+            _container.back().first = key;
+            return _container.back().second;
+        }
+
+        inline const_iterator begin() const { return _container.begin(); }
+        inline const_iterator end()   const { return _container.end(); }
+        inline iterator begin()             { return _container.begin(); }
+        inline iterator end()               { return _container.end(); }
+
+        inline iterator find(const KEY& key) {
+            for (unsigned i = 0; i < _container.size(); ++i) {
+                if (keys_equal(_container[i].first, key)) {
+                    return _container.begin() + i;
+                }
+            }
+            return _container.end();
+        }
+
+        inline const_iterator find(const KEY& key) const {
+            for(unsigned i=0; i<_container.size(); ++i) {
+                if (keys_equal(_container[i].first, key)) {
+                    return _container.begin()+i;
+                }
+            }
+            return _container.end();
+        }
+
+        inline bool empty() const { return _container.empty(); }
+
+        inline void clear() { _container.clear(); }
+
+        inline void erase(const KEY& key) {
+            for(unsigned i=0; i<_container.size(); ++i) {
+                if (keys_equal(_container[i].first, key)) {
+                    if (i+1 < _container.size()) {
+                        _container[i] = _container[_container.size()-1];
+                    }
+                    _container.resize(_container.size()-1);
+                    break;
+                }
+            }
+        }
+
+        //! Fetch the index location of the underlying key
+        inline int indexOf(const KEY& key) const {
+            for(unsigned i=0; i<_container.size(); ++i) {
+                if (keys_equal(_container[i].first, key)) {
+                    return (int)i;
+                }
+            }
+            return -1;
+        }
+
+        //! Fetch the data at index with NO bounds checking
+        inline const DATA& at(int index) const {
+            return _container[index].second;
+        }
+
+        inline int size() const { return _container.size(); }
+
+        template<typename InputIterator>
+        void insert(InputIterator a, InputIterator b) {
+            for(InputIterator i = a; i != b; ++i) (*this)[i->first] = i->second;
+        }
+    };
+
+    template<typename DATA>
+    struct vector_set
+    {
+        typedef std::vector<DATA> container_t;
+
+        typedef typename container_t::iterator iterator;
+        typedef typename container_t::const_iterator const_iterator;
+        typedef typename container_t::size_type size_type;
+
+        container_t _container;
+
+        inline const_iterator begin() const { return _container.begin(); }
+        inline const_iterator end()   const { return _container.end(); }
+        inline iterator begin() { return _container.begin(); }
+        inline iterator end() { return _container.end(); }
+
+        inline std::pair<typename vector_set<DATA>::const_iterator, bool> insert(const DATA& data) {
+            const_iterator i = find(data);
+            if (i != end()) {
+                return std::make_pair(i, false);
+            }
+            else {
+                _container.push_back(data);
+                return std::make_pair(_container.end()-1, true);
+            }
+        }
+
+        inline const_iterator find(const DATA& data) const {
+            for (unsigned i = 0; i < _container.size(); ++i) {
+                if (_container[i] == data) {
+                    return _container.begin() + i;
+                }
+            }
+            return _container.end();
+        }
+
+        inline bool contains(const DATA& data) const {
+            return find(data) != _container.end();
+        }
+
+        inline bool empty() const { return _container.empty(); }
+
+        inline void clear() { _container.clear(); }
+
+        inline size_type erase(const DATA& data) {
+            for (unsigned i = 0; i < _container.size(); ++i) {
+                if (_container[i] == data) {
+                    if (i + 1 < _container.size()) {
+                        _container[i] = _container[_container.size() - 1];
+                    }
+                    _container.resize(_container.size() - 1);
+                    return 1;
+                }
+            }
+            return 0;
+        }
+
+        inline int size() const { return _container.size(); }
+
+        template<typename InputIterator>
+        void insert(InputIterator a, InputIterator b) {
+            for (InputIterator i = a; i != b; ++i)
+                insert(*i);
+        }
+    };
+
+    //------------------------------------------------------------------------
+
+    struct CacheStats
+    {
+    public:
+        CacheStats( unsigned entries, unsigned maxEntries, unsigned queries, float hitRatio )
+            : _entries(entries), _maxEntries(maxEntries), _queries(queries), _hitRatio(hitRatio) { }
+
+        /** dtor */
+        virtual ~CacheStats() { }
+
+        unsigned _entries;
+        unsigned _maxEntries;
+        unsigned _queries;
+        float    _hitRatio;
+    };
+
+    //------------------------------------------------------------------------
+
+    /**
+    * LRUCache is a thread-safe implementation of a Least Recently Used (LRU) cache.
+    * It stores key-value pairs and evicts the least recently used item when the cache reaches its capacity.
+    * The cache is protected by a mutex to ensure thread safety.
+    * Adapted from https://www.geeksforgeeks.org/lru-cache-implementation
+    * Optimized by Copilot
+    */
+    template<class K, class V>
+    class LRUCache
+    {
+    private:
+        mutable std::mutex mutex;
+        unsigned capacity = 128u;
+        using E = typename std::pair<K, V>;
+        mutable typename std::list<E> cache;
+        mutable std::map<K, typename std::list<E>::iterator> map;
+
+    public:
+        using ValueType = typename std::optional<V>;
+        mutable int hits = 0;
+        mutable int get_count = 0;
+
+        LRUCache(unsigned cap) : capacity(std::max(1u, cap))
+        {
+            //nop
+        }
+
+        LRUCache(bool) = delete;
+
+        //! Sets the cache capacity and clears all current entries and statistics.
+        //! @param value The new maximum number of items the cache can hold.
+        inline void setCapacity(unsigned value)
+        {
+            std::scoped_lock L(mutex);
+            cache.clear();
+            map.clear();
+            hits = 0;
+            get_count = 0;
+            capacity = std::max(1u, value);
+        }
+
+        //! Retrieves the value associated with the given key, if present.
+        //! Moves the accessed item to the most recently used position.
+        //! @param key The key to look up.
+        //! @return An optional containing the value if found, or empty if not found.
+        inline ValueType get(const K& key) const
+        {
+            if (capacity == 0)
+                return {};
+            std::scoped_lock L(mutex);
+            ++get_count;
+            auto it = map.find(key);
+            if (it == map.end())
+                return {};
+            ++hits;
+            if (it->second != std::prev(cache.end()))
+                cache.splice(cache.end(), cache, it->second);
+            return cache.back().second;
+        }
+
+        //! Moved the keyed element to the front of the LRU.
+        //! @param key The key to look up.
+        //! @return true if the key exists, false otherwise.
+        inline bool touch(const K& key)
+        {
+            if (capacity == 0)
+                return false;
+            std::scoped_lock L(mutex);
+            auto it = map.find(key);
+            if (it != map.end()) {
+                if (it->second != std::prev(cache.end()))
+                    cache.splice(cache.end(), cache, it->second);
+                return true;
+            }
+            return false;
+        }
+
+        //! Inserts or updates the value for the given key.
+        //! If the key already exists, updates its value and moves it to the most recently used position.
+        //! If the cache is full, evicts the least recently used item.
+        //! @param key The key to insert or update.
+        //! @param value The value to associate with the key.
+        inline void insert(const K& key, const V& value)
+        {
+            if (capacity == 0)
+                return;
+            std::scoped_lock L(mutex);
+            auto it = map.find(key);
+            if (it != map.end()) {
+                // Update value and move to back
+                it->second->second = value;
+                cache.splice(cache.end(), cache, it->second);
+            }
+            else {
+                if (cache.size() == capacity) {
+                    auto first_key = cache.front().first;
+                    cache.pop_front();
+                    map.erase(first_key);
+                }
+                cache.emplace_back(key, value);
+                map[key] = std::prev(cache.end());
+            }
+        }
+
+        //! Tries to get the value for the given key, inserting it if not found.
+        //! This method does everything under a single mutex lock to avoid double-insertion.
+        //! @param key The key to look up or insert.
+        //! @param create A function that creates a new value if the key is not found. This
+        //!    function should take no arguments and return an std::optional<V>.
+        template<typename FUNC>
+        inline ValueType get_or_insert(const K& key, FUNC&& create)
+        {
+            if (capacity == 0) {
+                ValueType v;
+                create(v);
+                return v;
+            }
+
+            std::scoped_lock L(mutex);
+            ++get_count;
+            auto it = map.find(key);
+            if (it != map.end()) {
+                // Move to back and return value
+                if (it->second != std::prev(cache.end())) {
+                    cache.splice(cache.end(), cache, it->second);
+                }
+                ++hits;
+                return cache.back().second;
+            }
+            // Create new value. If the creator returns an empty optional, do not insert.
+            ValueType new_value;
+            create(new_value);
+            if (new_value.has_value()) {
+                if (cache.size() == capacity) {
+                    auto first_key = cache.front().first;
+                    cache.pop_front();
+                    map.erase(first_key);
+                }
+                cache.emplace_back(key, new_value.value());
+                map[key] = std::prev(cache.end());
+            }
+            return new_value;
+        }
+
+        //! Erases an element from the cache if it exists.
+        inline void erase(const K& key)
+        {
+            if (capacity == 0)
+                return;
+            std::scoped_lock L(mutex);
+            auto it = map.find(key);
+            if (it != map.end()) {
+                cache.erase(it->second);
+                map.erase(it);
+            }
+        }
+
+        //! Clears all entries from the cache and resets statistics.
+        inline void clear()
+        {
+            std::scoped_lock L(mutex);
+            cache.clear();
+            map.clear();
+            get_count = 0, hits = 0;
+        }
+
+        //! Num of elements
+        inline std::size_t size() const
+        {
+            std::scoped_lock L(mutex);
+            return map.size();
+        }
+    };
+
+    //--------------------------------------------------------------------
+
+    /**
+     * Same of osg::InlineVector, but with a superclass template parameter.
+     */
+    template<class ValueT, class SuperClass>
+    class InlineVector : public SuperClass
+    {
+        typedef typename std::vector<ValueT> vector_type;
+    public:
+        typedef typename vector_type::allocator_type allocator_type;
+        typedef typename vector_type::value_type value_type;
+        typedef typename vector_type::const_pointer const_pointer;
+        typedef typename vector_type::pointer pointer;
+        typedef typename vector_type::const_reference const_reference;
+        typedef typename vector_type::reference reference;
+        typedef typename vector_type::const_iterator const_iterator;
+        typedef typename vector_type::iterator iterator;
+        typedef typename vector_type::const_reverse_iterator const_reverse_iterator;
+        typedef typename vector_type::reverse_iterator reverse_iterator;
+        typedef typename vector_type::size_type size_type;
+        typedef typename vector_type::difference_type difference_type;
+
+        explicit InlineVector() : _impl()
+        {
+        }
+
+        explicit InlineVector(size_type initial_size, const value_type& fill_value = value_type())
+        : _impl(initial_size, fill_value)
+        {
+        }
+
+        template<class InputIterator>
+        InlineVector(InputIterator first, InputIterator last)
+        : _impl(first, last)
+        {
+        }
+
+        InlineVector(const vector_type& other)
+        : _impl(other)
+        {
+        }
+
+        InlineVector(const InlineVector& other)
+        : _impl(other._impl)
+        {
+        }
+
+        InlineVector& operator=(const vector_type& other)
+        {
+            _impl = other;
+            return *this;
+        }
+
+        InlineVector& operator=(const InlineVector& other)
+        {
+            _impl = other._impl;
+            return *this;
+        }
+
+        virtual ~InlineVector() {}
+
+        void clear() { _impl.clear(); }
+        void resize(size_type new_size, const value_type& fill_value = value_type()) { _impl.resize(new_size, fill_value); }
+        void reserve(size_type new_capacity) { _impl.reserve(new_capacity); }
+
+        void swap(vector_type& other) { _impl.swap(other); }
+        void swap(InlineVector& other) { _impl.swap(other._impl); }
+
+        bool empty() const { return _impl.empty(); }
+        size_type size() const { return _impl.size(); }
+        size_type capacity() const { return _impl.capacity(); }
+        size_type max_size() const { return _impl.max_size(); }
+        allocator_type get_allocator() const { return _impl.get_allocator(); }
+
+        const_iterator begin() const { return _impl.begin(); }
+        iterator begin() { return _impl.begin(); }
+        const_iterator end() const { return _impl.end(); }
+        iterator end() { return _impl.end(); }
+
+        const_reverse_iterator rbegin() const { return _impl.rbegin(); }
+        reverse_iterator rbegin() { return _impl.rbegin(); }
+        const_reverse_iterator rend() const { return _impl.rend(); }
+        reverse_iterator rend() { return _impl.rend(); }
+
+        const_reference operator[](size_type index) const { return _impl[index]; }
+        reference operator[](size_type index) { return _impl[index]; }
+
+        const_reference at(size_type index) const { return _impl.at(index); }
+        reference at(size_type index) { return _impl.at(index); }
+
+        void assign(size_type count, const value_type& value) { _impl.assign(count, value); }
+        template<class Iter>
+        void assign(Iter first, Iter last) { _impl.assign(first, last); }
+
+        void push_back(const value_type& value) { _impl.push_back(value); }
+        void pop_back() { _impl.pop_back(); }
+
+        iterator erase(iterator where) { return _impl.erase(where); }
+        iterator erase(iterator first, iterator last) { return _impl.erase(first, last); }
+
+        iterator insert(iterator where, const value_type& value) { return _impl.insert(where, value); }
+
+        template<class InputIterator>
+        void insert(iterator where, InputIterator first, InputIterator last)
+        {
+            _impl.insert(where, first, last);
+        }
+
+        void insert(iterator where, size_type count, const value_type& value)
+        {
+            _impl.insert(where, count, value);
+        }
+
+        const_reference back() const { return _impl.back(); }
+        reference back() { return _impl.back(); }
+        const_reference front() const { return _impl.front(); }
+        reference front() { return _impl.front(); }
+
+        vector_type& asVector() { return _impl; }
+        const vector_type& asVector() const { return _impl; }
+
+        friend inline bool operator==(const InlineVector<ValueT,SuperClass>& left, const InlineVector<ValueT,SuperClass>& right) { return left._impl == right._impl; }
+        friend inline bool operator==(const InlineVector<ValueT,SuperClass>& left, const std::vector<ValueT>& right) { return left._impl == right; }
+        friend inline bool operator==(const std::vector<ValueT>& left, const InlineVector<ValueT,SuperClass>& right) { return left == right._impl; }
+
+        friend inline bool operator!=(const InlineVector<ValueT,SuperClass>& left, const InlineVector<ValueT,SuperClass>& right) { return left._impl != right._impl; }
+        friend inline bool operator!=(const InlineVector<ValueT,SuperClass>& left, const std::vector<ValueT>& right) { return left._impl != right; }
+        friend inline bool operator!=(const std::vector<ValueT>& left, const InlineVector<ValueT,SuperClass>& right) { return left != right._impl; }
+
+        friend inline bool operator<(const InlineVector<ValueT,SuperClass>& left, const InlineVector<ValueT,SuperClass>& right) { return left._impl < right._impl; }
+        friend inline bool operator<(const InlineVector<ValueT,SuperClass>& left, const std::vector<ValueT>& right) { return left._impl < right; }
+        friend inline bool operator<(const std::vector<ValueT>& left, const InlineVector<ValueT,SuperClass>& right) { return left < right._impl; }
+
+        friend inline bool operator>(const InlineVector<ValueT,SuperClass>& left, const InlineVector<ValueT,SuperClass>& right) { return left._impl > right._impl; }
+        friend inline bool operator>(const InlineVector<ValueT,SuperClass>& left, const std::vector<ValueT>& right) { return left._impl > right; }
+        friend inline bool operator>(const std::vector<ValueT>& left, const InlineVector<ValueT,SuperClass>& right) { return left > right._impl; }
+
+        friend inline bool operator<=(const InlineVector<ValueT,SuperClass>& left, const InlineVector<ValueT,SuperClass>& right) { return left._impl <= right._impl; }
+        friend inline bool operator<=(const InlineVector<ValueT,SuperClass>& left, const std::vector<ValueT>& right) { return left._impl <= right; }
+        friend inline bool operator<=(const std::vector<ValueT>& left, const InlineVector<ValueT,SuperClass>& right) { return left <= right._impl; }
+
+        friend inline bool operator>=(const InlineVector<ValueT,SuperClass>& left, const InlineVector<ValueT,SuperClass>& right) { return left._impl >= right._impl; }
+        friend inline bool operator>=(const InlineVector<ValueT,SuperClass>& left, const std::vector<ValueT>& right) { return left._impl >= right; }
+        friend inline bool operator>=(const std::vector<ValueT>& left, const InlineVector<ValueT,SuperClass>& right) { return left >= right._impl; }
+
+    private:
+        vector_type _impl;
+    };
+
+
+    /** Template for per-thread data storage */
+    template<typename T>
+    struct PerThread : public std::mutex
+    {
+        PerThread() { }
+
+        T& get() {
+            std::lock_guard<std::mutex> lock(*this);
+            return _data[std::this_thread::get_id()];
+        }
+
+        void clear() {
+            std::lock_guard<std::mutex> lock(*this);
+            _data.clear();
+        }
+
+        typedef typename std::unordered_map<std::thread::id,T> container_t;
+        typedef typename container_t::iterator iterator;
+
+        // NB. lock before using these!
+        iterator begin() { return _data.begin(); }
+        iterator end() { return _data.end(); }
+
+    private:
+        container_t _data;
+    };
+
+
+    /** Template for thread safe per-object data storage */
+    template<typename KEY, typename DATA>
+    struct PerObjectMap
+    {
+        PerObjectMap() { }
+        bool threadsafe = true;
+
+        DATA& get(KEY k)
+        {
+            {
+                osgEarth::Threading::ScopedReadLock readLock(_mutex);
+                typename std::unordered_map<KEY,DATA>::iterator i = _data.find(k);
+                if ( i != _data.end() )
+                    return i->second;
+            }
+            {
+                osgEarth::Threading::ScopedWriteLock lock(_mutex);
+                typename std::unordered_map<KEY,DATA>::iterator i = _data.find(k);
+                if ( i != _data.end() )
+                    return i->second;
+                else
+                    return _data[k];
+            }
+        }
+
+        void remove(KEY k)
+        {
+            osgEarth::Threading::ScopedWriteLock exclusive(_mutex);
+            _data.erase( k );
+        }
+
+    private:
+        std::unordered_map<KEY,DATA> _data;
+        osgEarth::Threading::ReadWriteMutex _mutex;
+    };
+
+    /** Template for thread safe per-object data storage */
+    template<typename KEY, typename DATA>
+    struct PerObjectFastMap
+    {
+        PerObjectFastMap() { }
+        bool threadsafe = true;
+
+        struct Functor {
+            virtual void operator()(DATA& data) =0;
+        };
+
+        struct ConstFunctor {
+            virtual void operator()(const DATA& data) const =0;
+        };
+
+        DATA& get(KEY k)
+        {
+            osgEarth::Threading::scoped_lock_if lock(_mutex, threadsafe);
+            typename std::unordered_map<KEY,DATA>::iterator i = _data.find(k);
+            if ( i != _data.end() )
+                return i->second;
+            else
+                return _data[k];
+        }
+
+        void remove(KEY k)
+        {
+            osgEarth::Threading::scoped_lock_if lock(_mutex, threadsafe);
+            _data.erase( k );
+        }
+
+        void forEach(Functor& functor)
+        {
+            osgEarth::Threading::scoped_lock_if lock(_mutex, threadsafe);
+            for (typename std::unordered_map<KEY, DATA>::iterator i = _data.begin(); i != _data.end(); ++i)
+                functor.operator()(i->second);
+        }
+
+        void forEach(std::function<void(DATA&)> functor)
+        {
+            osgEarth::Threading::scoped_lock_if lock(_mutex, threadsafe);
+            for (auto& entry : _data)
+                functor(entry.second);
+        }
+
+        void forEach(ConstFunctor& functor) const
+        {
+            osgEarth::Threading::scoped_lock_if lock(_mutex, threadsafe);
+            for (typename std::unordered_map<KEY, DATA>::const_iterator i = _data.begin(); i != _data.end(); ++i)
+                functor.operator()(i->second);
+        }
+
+        void forEach(std::function<void(const DATA&)> functor) const
+        {
+            osgEarth::Threading::scoped_lock_if lock(_mutex, threadsafe);
+            for (auto& entry : _data)
+                functor(entry.second);
+        }
+
+        unsigned size() const
+        {
+            osgEarth::Threading::scoped_lock_if lock(_mutex, threadsafe);
+            return _data.size();
+        }
+
+        void clear()
+        {
+            osgEarth::Threading::scoped_lock_if lock(_mutex, threadsafe);
+            _data.clear();
+        }
+
+    private:
+        std::unordered_map<KEY,DATA> _data;
+        mutable std::mutex _mutex;
+    };
+
+    /** Template for thread safe per-object data storage */
+    template<typename KEY, typename DATA>
+    struct PerObjectRefMap
+    {
+        PerObjectRefMap() { }
+
+        DATA* get(KEY k)
+        {
+            osgEarth::Threading::ScopedReadLock lock(_mutex);
+            typename std::unordered_map<KEY,osg::ref_ptr<DATA>>::const_iterator i = _data.find(k);
+            if ( i != _data.end() )
+                return i->second.get();
+
+            return 0L;
+        }
+
+        DATA* getOrCreate(KEY k, DATA* newDataIfNeeded)
+        {
+            osg::ref_ptr<DATA> _refReleaser = newDataIfNeeded;
+            {
+                osgEarth::Threading::ScopedReadLock lock(_mutex);
+                typename std::unordered_map<KEY,osg::ref_ptr<DATA>>::const_iterator i = _data.find(k);
+                if ( i != _data.end() )
+                    return i->second.get();
+            }
+
+            {
+                osgEarth::Threading::ScopedWriteLock lock(_mutex);
+                typename std::unordered_map<KEY,osg::ref_ptr<DATA>>::iterator i = _data.find(k);
+                if ( i != _data.end() )
+                    return i->second.get();
+
+                _data[k] = newDataIfNeeded;
+                return newDataIfNeeded;
+            }
+        }
+
+        void remove(KEY k)
+        {
+            osgEarth::Threading::ScopedWriteLock exclusive(_mutex);
+            _data.erase( k );
+        }
+
+        void remove(DATA* data)
+        {
+            osgEarth::Threading::ScopedWriteLock exclusive(_mutex);
+            for( typename std::unordered_map<KEY,osg::ref_ptr<DATA>>::iterator i = _data.begin(); i != _data.end(); ++i )
+            {
+                if ( i->second.get() == data )
+                {
+                    _data.erase( i );
+                    break;
+                }
+            }
+        }
+
+        template<typename FUNC>
+        void forEach(FUNC&& func)
+        {
+            osgEarth::Threading::ScopedReadLock lock(_mutex);
+            for (auto& entry : _data)
+                func(entry.first, entry.second);
+        }
+
+    private:
+        std::unordered_map<KEY,osg::ref_ptr<DATA>> _data;
+        osgEarth::Threading::ReadWriteMutex _mutex;
+    };
+
+    // borrowed from osg::buffered_object. Auto-resizing array.
+    template<class T>
+    class AutoArray
+    {
+    public:
+        using iterator = typename std::vector<T>::iterator;
+        using const_iterator = typename std::vector<T>::const_iterator;
+
+        inline AutoArray() { }
+
+        inline AutoArray(unsigned int size) : _array(size) { }
+
+        AutoArray& operator = (const AutoArray& rhs)
+        {
+            _array = rhs._array;
+            return *this;
+        }
+
+        inline void setAllElementsTo(const T& t) { std::fill(_array.begin(), _array.end(), t); }
+        inline void clear() { _array.clear(); }
+        inline bool empty() const { return _array.empty(); }
+        inline unsigned int size() const { return _array.size(); }
+        inline void resize(unsigned int newSize) { _array.resize(newSize); }
+
+        inline iterator begin() { return _array.begin(); }
+        inline const_iterator begin() const { return _array.begin(); }
+        inline iterator end() { return _array.end(); }
+        inline const_iterator end() const { return _array.end(); }
+
+        inline T& operator[] (unsigned int pos)
+        {
+            if (_array.size() <= pos)
+                _array.resize(pos + 1);
+
+            return _array[pos];
+        }
+
+        inline const T& operator[] (unsigned int pos) const
+        {
+            // automatically resize array.
+            if (_array.size() <= pos)
+                _array.resize(pos + 1);
+
+            return _array[pos];
+        }
+
+        inline T& back() { return _array[size()-1]; }
+        inline const T& back() const { return _array[size()-1]; }
+
+    protected:
+
+        mutable std::vector<T> _array;
+    };
+
+    // A generic osg::Referenced vector
+    template<typename T>
+    class RefVector : public InlineVector<T, osg::Referenced>
+    {
+    };
+
+    /**
+     * Thread-safe queue.
+     */
+    template<typename T>
+    class MutexedQueue
+    {
+    public:
+        //! Push a new item safely
+        void push(const T& t) {
+            std::lock_guard<std::mutex> lock(_m);
+            _queue.push(t);
+        }
+        //! Remove the front item safely 
+        void pop() {
+            std::lock_guard<std::mutex> lock(_m);
+            _queue.pop();
+        }
+        //! Safely return a copy of the item at the head of
+        //! the queue
+        T front() {
+            std::lock_guard<std::mutex> lock(_m);
+            return _queue.empty() ? _default : _queue.front();
+        }
+        //! Safely remove the item at the head of the queue
+        //! and return it
+        T take_front() {
+            std::lock_guard<std::mutex> lock(_m);
+            T t = _queue.empty() ? _default : _queue.front();
+            if (_queue.empty() == false)
+                _queue.pop();
+            return t;
+        }
+        //! Safely clear the queue
+        void clear() {
+            std::lock_guard<std::mutex> lock(_m);
+            _queue.swap(std::queue<T>());
+        }
+        //! True if the queue is empty (but only at the 
+        //! instant of the call.)
+        bool empty() const {
+            return _queue.empty();
+        }
+
+    private:
+        std::queue<T> _queue;
+        mutable std::mutex _m;
+        T _default;
+    };
+
+    /**
+     * A circular list that you can pull pointers from
+     * NOT thread safe.
+     */
+    template<typename T>
+    class OSGEARTH_EXPORT RoundRobin {
+    public:
+        using iterator = typename std::list<T>::iterator;
+        using const_iterator = typename std::list<T>::const_iterator;
+
+        void add(const T& t) {
+            _list.push_back(t);
+            if (_list.size() == 1)
+                _iter = begin();
+        }
+        T next() {
+            OE_HARD_ASSERT(_list.size() > 0);
+            T t = *_iter++;
+            if (_iter == end()) _iter = begin();
+            return t;
+        }
+        iterator begin() {
+            return _list.begin();
+        }
+        const_iterator begin() const {
+            return _list.begin();
+        }
+        iterator end() {
+            return _list.end();
+        }
+        const_iterator end() const {
+            return _list.end();
+        }
+        bool empty() const {
+            return _list.empty();
+        }
+    private:
+        std::list<T> _list;
+        iterator _iter;
+    };
+} }

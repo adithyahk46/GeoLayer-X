@@ -1,0 +1,50 @@
+/* osgEarth
+* Copyright 2008-2025 Pelican Mapping
+* MIT License
+*/
+#ifndef OSGEARTH_SHADERS
+#define OSGEARTH_SHADERS 1
+
+#include <osgEarth/ShaderLoader>
+
+namespace osgEarth { namespace Util
+{
+    class OSGEARTH_EXPORT Shaders : public ShaderPackage
+	{
+    public:
+        Shaders();
+
+        std::string CascadeDraping;
+        std::string Chonk;
+        std::string ChonkCulling;
+        std::string Decals_Headers;
+        std::string Decals;
+        std::string DecalsCulling;
+        std::string DepthOffset;
+        std::string Draping;
+        std::string DrawInstancedAttribute;
+        std::string FrustumGrid_Headers;
+        std::string FrustumGridComputer;
+        std::string GPUClamping, GPUClampingLib;
+        std::string HexTilingLib;
+        std::string Instancing;
+        std::string LineDrawable;
+        std::string WireLines;
+        std::string PointDrawable;
+        std::string PhongLighting;
+        std::string Text, TextLegacy;
+        std::string ContourMap;
+        std::string GeodeticGraticule;
+        std::string LogDepthBuffer;
+        std::string LogDepthBuffer_VertOnly;
+        std::string ShadowCaster;
+        std::string SimpleOceanLayer;
+        std::string RTTPicker;
+        std::string WindComputer;
+        std::string PBR;
+        std::string MetadataNode;
+	};	
+
+} } 
+
+#endif // OSGEARTH_SHADERS

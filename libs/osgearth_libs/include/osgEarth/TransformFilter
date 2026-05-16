@@ -1,0 +1,54 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTHFEATURES_TRANSFORM_FILTER_H
+#define OSGEARTHFEATURES_TRANSFORM_FILTER_H 1
+
+#include <osgEarth/Common>
+#include <osgEarth/Feature>
+#include <osgEarth/Filter>
+#include <osg/BoundingBox>
+
+namespace osgEarth
+{
+    using namespace osgEarth;
+
+    /**
+     * Feature filter that transforms features from one FeatureProfile to 
+     * another.
+     */
+    class OSGEARTH_EXPORT TransformFilter : public FeatureFilter
+    {
+    public:
+        TransformFilter();
+        TransformFilter( const osg::Matrixd& xform );
+        TransformFilter( const SpatialReference* outputSRS );
+
+        virtual ~TransformFilter() { }
+
+        /** Transform matrix to apply to each point. If there's is also an SRS conversion,
+            the matrix will be applied first. */
+        void setMatrix( const osg::Matrixd& mat ) { _mat = mat; }
+        const osg::Matrixd& getMatrix() const { return _mat; }
+
+        /** Whether to localize coordinates to the bounding box centroid (to avoid precision jitter
+            when turning the data into OSG geometry) */
+        void setLocalizeCoordinates( bool value ) { _localize = value; }
+        bool getLocalizeCoordinates() const { return _localize; }
+
+    public:
+        FilterContext push( FeatureList& features, FilterContext& context );
+
+    protected:
+        osg::ref_ptr<const SpatialReference> _outputSRS;
+        osg::BoundingBoxd _bbox;
+        bool _localize;
+        osg::Matrixd _mat;
+        
+        bool push( Feature* feature, FilterContext& context );
+    };
+} // namespace osgEarth
+
+#endif // OSGEARTHFEATURES_TRANSFORM_FILTER_H

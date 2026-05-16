@@ -1,0 +1,183 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarth/Common>
+#include <osgEarth/Resource>
+#include <osgEarth/Symbol>
+#include <osgEarth/URI>
+#include <osgEarth/PBRMaterial>
+#include <osg/TexEnv>
+#include <osg/Image>
+
+namespace osgEarth
+{
+    namespace Util
+    {
+        class ResourceLibrary;
+
+        /**
+         * A resource that points to a "skin", which is a Texture image paired with
+         * a collection of metadata that describes its suitability for use in a scene.
+         */
+        class OSGEARTH_EXPORT SkinResource : public Resource
+        {
+        public:
+            /** Constructs a new skin resource. */
+            SkinResource(const Config& conf = Config());
+
+            /** dtor */
+            virtual ~SkinResource() { }
+
+            //! Creates a new StateSet containing a Texture based on this Skin.
+            osg::StateSet* createStateSet(const osgDB::Options* dbOptions) const;
+
+            //! Creates a state attribute for this resource. This will either be 
+            //! an osg::Texture (for a simple image), a PBRTexture (for a PBR material),
+            //! or nullptr.
+            osg::StateAttribute* createStateAttribute(const osgDB::Options* readOptions) const;
+
+            //! Creates a texture for the input image. Supports multilayer array images.
+            osg::Texture* createTexture(osg::Image* image) const;
+
+            //! Create an image from the color channel of the configured material.
+            //! TODO: expand to support other material channels.
+            osg::ref_ptr<osg::Image> createColorImage(const osgDB::Options* options) const;
+
+            //! A key string that can uniquely identify this object for the purposes
+            //! of creating its state set (e.g., for a cache)
+            std::string getUniqueID() const;
+
+        public:
+            /** inline image (not serializable) */
+            OE_OPTION_REFPTR(osg::Image, image);
+
+            //! Source data for the textures.
+            //! Use this OR imageURI.
+            OE_OPTION(PBRMaterial, material);
+
+            //! Source location of a texture image.
+            //! This is an alternative to using material() that will load just a color image.
+            //! This supports texture arrays and atlases, whereas material does not (yet).
+            OE_OPTION(URI, imageURI);
+
+            /** Real-world width of the image, in meters */
+            OE_OPTION(float, imageWidth, 10.0f);
+
+            /** Real-world height of the image, in meters */
+            OE_OPTION(float, imageHeight, 3.0f);
+
+            /** Minimum acceptable real-world object height (meters) for which this image would make an appropriate texture */
+            OE_OPTION(float, minObjectHeight, 0.0f);
+
+            /** Maximum acceptable real-world object height (meters) for which this image would make an appropriate texture */
+            OE_OPTION(float, maxObjectHeight, FLT_MAX);
+
+            /** Whether this image is suitable for use as a vertically repeating texture */
+            OE_OPTION(bool, isTiled, false);
+
+            /** Image offset within a source atlas (S dimension [0..1]) */
+            OE_OPTION(float, imageBiasS, 0.0f);
+
+            /** Image offset (pixels) within a source atlas (T dimension [0..1]) */
+            OE_OPTION(float, imageBiasT, 0.0f);
+
+            /** Image layer index within a source atlas (R dimension) */
+            OE_OPTION(unsigned, imageLayer, 0);
+
+            /** Image scalke factor within a source atlas (S dimension) */
+            OE_OPTION(float, imageScaleS, 1.0f);
+
+            /** Image scalke factor within a source atlas (T dimension) */
+            OE_OPTION(float, imageScaleT, 1.0f);
+
+            /** GL texture application mode */
+            OE_OPTION(osg::TexEnv::Mode, texEnvMode, osg::TexEnv::MODULATE);
+
+            /** The maximum allowable size of a texture (in either dimension) that uses this image. */
+            OE_OPTION(unsigned, maxTexSpan, 1024);
+
+            /** Whether this image is suitable for texture atlasing */
+            OE_OPTION(bool, atlasHint, true);
+
+            /** Options string to pass in when reading the image */
+            OE_OPTION(std::string, readOptions);
+
+        public: // serialization methods
+
+            virtual Config getConfig() const;
+            void mergeConfig(const Config& conf);
+
+        protected:
+
+            osg::StateSet* createStateSet(osg::Image* image) const;
+        };
+
+        using SkinResourceVector = std::vector< osg::ref_ptr<SkinResource> >;
+    }
+
+
+    /**
+     * Query object that you can use to search for applicable Skin resources from the
+     * ResourceLibrary.
+     */
+    class OSGEARTH_EXPORT SkinSymbol : public TaggableWithConfig<Symbol>
+    {
+    public:
+        META_Object(osgEarth, SkinSymbol);
+
+        SkinSymbol(const SkinSymbol& rhs, const osg::CopyOp& copyop = osg::CopyOp::SHALLOW_COPY);
+        SkinSymbol(const Config& conf = Config());
+
+        /** dtor */
+        virtual ~SkinSymbol() { }
+
+    public:
+        
+        //! Attempt to convert this symbol into a resource
+        SkinResource* getResource(ResourceLibrary* lib, unsigned rnd, const osgDB::Options* readOptions) const;
+
+    public: // query parameters
+
+        /** Object height in meters (must fall in the skin's min/max object height range to be accepted) */
+        optional<float>& objectHeight() { return _objHeight; }
+        const optional<float>& objectHeight() const { return _objHeight; }
+
+        /** Minimum acceptable real-world object height for which this image would make an appropriate texture */
+        optional<float>& minObjectHeight() { return _minObjHeight; }
+        const optional<float>& minObjectHeight() const { return _minObjHeight; }
+
+        /** Maximum acceptable real-world object height for which this image would make an appropriate texture */
+        optional<float>& maxObjectHeight() { return _maxObjHeight; }
+        const optional<float>& maxObjectHeight() const { return _maxObjHeight; }
+
+        /** Whether this image is suitable for use as a vertically repeating texture */
+        optional<bool>& isTiled() { return _isTiled; }
+        const optional<bool>& isTiled() const { return _isTiled; }
+
+        /** Random number seed value (for picking a candidate) */
+        optional<unsigned>& randomSeed() { return _randomSeed; }
+        const optional<unsigned>& randomSeed() const { return _randomSeed; }
+
+        /** Name of a specific skin in the catalog */
+        optional<StringExpression>& name() { return _name; }
+        const optional<StringExpression>& name() const { return _name; }
+
+    public:
+        void mergeConfig(const Config& conf);
+        Config getConfig() const;
+        static void parseSLD(const Config& c, class Style& style);
+
+    protected:
+        optional<std::string> _library;
+        optional<float>       _objHeight;
+        optional<float>       _minObjHeight;
+        optional<float>       _maxObjHeight;
+        optional<bool>        _isTiled;
+        optional<unsigned>    _randomSeed;
+        optional<StringExpression> _name;
+    };
+}
+

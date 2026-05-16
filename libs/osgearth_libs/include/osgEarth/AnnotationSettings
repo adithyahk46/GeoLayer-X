@@ -1,0 +1,33 @@
+/* osgEarth
+* Copyright 2025 Pelican Mapping
+* MIT License
+*/
+#ifndef OSGEARTH_ANNOTATION_SETTINGS_H
+#define OSGEARTH_ANNOTATION_SETTINGS_H 1
+
+#include <osgEarth/Common>
+#include <osg/NodeVisitor>
+
+namespace osgEarth
+{	
+    /**
+     * Global default settings for controlling annotation behavior
+     */
+    class OSGEARTH_EXPORT AnnotationSettings
+    {
+    public:
+        /**
+         * Gets or sets the max camera altitude at which the occlusion culling callback is applied.
+         * DEFAULT: 200000.0 meters
+         */
+        static void setOcclusionCullingMaxAltitude( double value ) { _occlusionCullingMaxAltitude = value; }
+        static double getOcclusionCullingMaxAltitude() { return _occlusionCullingMaxAltitude; }
+
+
+    private:
+        static double _occlusionCullingMaxAltitude;
+    };
+
+}
+
+#endif //OSGEARTH_ANNOTATION_SETTINGS_H

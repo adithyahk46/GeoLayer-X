@@ -1,0 +1,18 @@
+/* osgEarth
+* Copyright 2025 Pelican Mapping
+* MIT License
+*/
+
+#ifndef OSGEARTH_REFINE_POLICY_H
+#define OSGEARTH_REFINE_POLICY_H 1
+
+namespace osgEarth
+{
+    enum RefinePolicy
+    {
+        REFINE_REPLACE,  // async node replaces children
+        REFINE_ADD       // async node combines with children
+    };
+}
+
+#endif

@@ -1,0 +1,73 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarth/Common>
+#include <osgEarth/Style>
+#include <osgEarth/Expression>
+
+namespace osgEarth
+{
+    /**
+     * A style selector lets you classify styles based on rules, such as a
+     * feature query. By default the selector selects the style with the
+     * same name as the selector, but you can override this by settings
+     * the styleName property.
+     */
+    class OSGEARTH_EXPORT StyleSelector
+    {
+    public:
+        /** Constructs a style selector */
+        StyleSelector(const Config& conf = Config());
+
+        /** Constructs a style selector with a name and expression */
+        StyleSelector(const std::string& name, const StringExpression& expr);
+
+        virtual ~StyleSelector() { }
+
+    public: // properties
+
+        /** Name of this style class. */
+        OE_OPTION(std::string, name);
+
+        /** Name of the style to select */
+        OE_OPTION(std::string, styleName);
+
+        /** Script that returns the name of the style to select. */
+        OE_OPTION(StringExpression, styleExpression);
+
+        /** Expression/spatial filter used to select items to which the style will apply */
+        OE_OPTION(Query, query);
+
+        /** Returns the styleClass() property, if set; otherwise returns the selector name. */
+        std::string getSelectedStyleName() const;
+
+        //Configurable
+        virtual void mergeConfig(const Config& conf);
+        virtual Config getConfig() const;
+    };
+
+    class OSGEARTH_EXPORT SelectorSymbol : public Symbol
+    {
+    public:
+        META_Object(osgEarth, SelectorSymbol);
+
+        SelectorSymbol(const Config& conf = {});
+        SelectorSymbol(const SelectorSymbol& rhs, const osg::CopyOp& op = osg::CopyOp::SHALLOW_COPY);
+
+        //! A predicate function (in a scripting language) that returns true if the style should be selected.
+        OE_OPTION(std::string, predicate);
+
+    public:
+        Config getConfig() const override;
+        void mergeConfig(const Config& conf) override;
+        static void parseSLD(const Config& c, class Style& style);
+
+    protected:
+
+        virtual ~SelectorSymbol() { }
+    };
+
+} // namespace osgEarth

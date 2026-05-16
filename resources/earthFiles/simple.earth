@@ -1,0 +1,6 @@
+<map name="GeoLayerX">
+  <xyzimage name="osm_imagery">
+    <url>https://tile.openstreetmap.org/{z}/{x}/{y}.png</url>
+    <profile>spherical-mercator</profile>
+  </xyzimage>
+</map>

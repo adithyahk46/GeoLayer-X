@@ -1,0 +1,45 @@
+/* osgEarth
+* Copyright 2008-2012 Pelican Mapping
+* MIT License
+*/
+#ifndef OSGEARTH_DETAIL_TERRAIN_EFFECT_H
+#define OSGEARTH_DETAIL_TERRAIN_EFFECT_H
+
+#include "DetailOptions"
+
+#include <osgEarth/TerrainEffect>
+#include <osg/Uniform>
+#include <osg/Texture2D>
+
+using namespace osgEarth;
+
+namespace osgEarth { namespace Detail
+{
+    /**
+     * Effect that activates a detail texture on the terrain.
+     */
+    class DetailTerrainEffect : public TerrainEffect
+    {
+    public:
+        DetailTerrainEffect(const DetailOptions& options);        
+
+
+    public: // TerrainEffect interface
+
+        void onInstall(TerrainEngineNode* engine);
+
+        void onUninstall(TerrainEngineNode* engine);
+
+
+    protected:
+        virtual ~DetailTerrainEffect() { }
+
+        DetailOptions                _options;
+        int                          _texImageUnit;
+        osg::ref_ptr<osg::Texture>   _tex;
+        osg::ref_ptr<osg::Uniform>   _samplerUniform;
+    };
+
+} } // namespace osgEarth::Detail
+
+#endif // OSGEARTH_DETAIL_TERRAIN_EFFECT_H

@@ -1,0 +1,38 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarth/Common>
+#include <osgEarth/Expression>
+#include <osgEarth/Symbol>
+
+namespace osgEarth
+{
+    /** 
+     * Symbol that contains coverage encoding information
+     */
+    class OSGEARTH_EXPORT CoverageSymbol : public Symbol
+    {
+    public:
+        META_Object(osgEarth, CoverageSymbol);
+
+        /** construct a symbol */
+        CoverageSymbol(const Config& conf =Config());
+        CoverageSymbol(const CoverageSymbol& rhs,const osg::CopyOp& copyop=osg::CopyOp::SHALLOW_COPY);
+
+        /** coverage value expression; resolves to a 32-bit floating point number. */
+        OE_OPTION(Expression<double>, value, 0.0);
+
+    public:
+        virtual Config getConfig() const override;
+        void mergeConfig(const Config& conf) override;
+        static void parseSLD(const Config& c, class Style& style);
+
+    protected:
+        
+        /** dtor */
+        virtual ~CoverageSymbol() { }
+    };
+} // namespace osgEarth

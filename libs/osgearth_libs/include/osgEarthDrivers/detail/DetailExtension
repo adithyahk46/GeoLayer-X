@@ -1,0 +1,56 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#ifndef OSGEARTH_DETAIL_EXTENSION
+#define OSGEARTH_DETAIL_EXTENSION 1
+
+#include "DetailOptions"
+#include "DetailTerrainEffect"
+#include <osgEarth/Extension>
+#include <osgEarth/MapNode>
+
+namespace osgEarth { namespace Detail
+{
+    using namespace osgEarth;
+
+    /**
+     * Extension for loading a detail texture.
+     */
+    class DetailExtension : public Extension,
+                            public ExtensionInterface<MapNode>
+    {
+    public:
+        META_OE_Extension(osgEarth, DetailExtension, detail);
+
+        // CTORs
+        DetailExtension();
+        DetailExtension(const DetailOptions& options);
+
+        // DTOR
+        virtual ~DetailExtension();
+
+
+    public: // Extension
+
+        void setDBOptions(const osgDB::Options* dbOptions) override;
+
+        const ConfigOptions& getConfigOptions() const override { return _options; }
+
+
+    public: // ExtensionInterface<MapNode>
+
+        bool connect(MapNode* mapNode) override;
+
+        bool disconnect(MapNode* mapNode) override;
+
+        
+    private:
+        const DetailOptions                 _options;
+        osg::ref_ptr<const osgDB::Options>  _dbOptions;
+        osg::ref_ptr<DetailTerrainEffect>   _effect;
+    };
+
+} } // namespace osgEarth::Detail
+
+#endif // OSGEARTH_DETAIL_EXTENSION

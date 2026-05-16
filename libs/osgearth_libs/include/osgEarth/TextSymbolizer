@@ -1,0 +1,53 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTHFEATURES_TEXT_SYMBOLIZER_H
+#define OSGEARTHFEATURES_TEXT_SYMBOLIZER_H 1
+
+#include <osgEarth/Common>
+#include <osgEarth/TextSymbol>
+#include <osgText/Text>
+#include <osg/BoundingBox>
+
+namespace osgEarth
+{
+    class Feature;
+}
+
+namespace osgEarth { namespace Util
+{
+    class FilterContext;
+
+    /**
+     * Applies the TextSymbol to a Text object.
+     */
+    class OSGEARTH_EXPORT TextSymbolizer
+    {
+    public:
+        //! Construct a new symbolizer
+        TextSymbolizer(const TextSymbol* symbol);
+
+        //! Translate the symbol's encoding to an OSG enum
+        osgText::String::Encoding getEncoding() const;
+
+        //! Apply this symbol to a text object
+        void apply(osgText::Text* text) const;
+
+        //! Apply this symbol to a text object, using the optional
+        //! feature/context to evaluate expression fields. The optional
+        //! bounding box can be used for alignment support.
+        void apply(
+            osgText::Text* text,
+            Feature* feature,
+            const FilterContext* context,
+            const osg::BoundingBox* box) const;
+
+    protected:
+        osg::ref_ptr<const TextSymbol> _symbol;
+    };
+
+} }
+
+#endif // OSGEARTHFEATURES_TEXT_SYMBOLIZER_H

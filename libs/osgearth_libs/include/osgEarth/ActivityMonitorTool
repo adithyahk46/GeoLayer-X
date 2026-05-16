@@ -1,0 +1,35 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTHUTIL_ACTIVITY_MONITOR_TOOL_H
+#define OSGEARTHUTIL_ACTIVITY_MONITOR_TOOL_H 1
+
+#include <osgEarth/Common>
+#include <osgEarth/Controls>
+#include <osgGA/GUIEventHandler>
+#include <set>
+
+namespace osgEarth { namespace Contrib
+{
+    /**
+     * Tool that displays the contents of the registry's activity set.
+     */
+    class OSGEARTH_EXPORT ActivityMonitorTool : public osgGA::GUIEventHandler
+    {
+    public:
+        ActivityMonitorTool(Util::Controls::VBox* vbox);
+        virtual ~ActivityMonitorTool() { }
+
+    public: // GUIEventHandler
+        bool handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa );
+
+    protected:
+        osg::observer_ptr<Util::Controls::VBox> _vbox;
+        std::set<std::string>   _prev;
+    };
+
+} }
+
+#endif // OSGEARTHUTIL_MOUSE_COORDS_TOOL_H

@@ -1,0 +1,46 @@
+/* osgEarth
+* Copyright 2025 Pelican Mapping
+* MIT License
+*/
+#ifndef OSGEARTH_UTIL_GEODETIC_LABELING_ENGINE_H
+#define OSGEARTH_UTIL_GEODETIC_LABELING_ENGINE_H 1
+
+#include <osgEarth/Common>
+#include <osgEarth/GraticuleLabelingEngine>
+#include <osgEarth/LatLongFormatter>
+#include <osgEarth/GeoData>
+#include <osgEarth/MapNode>
+#include <osgEarth/Containers>
+#include <osgEarth/LabelNode>
+
+namespace osgEarth { namespace Util
+{
+    using namespace osgEarth;
+    using namespace osgEarth::Util;
+
+    /**
+     * Node that plots geodetic coordinats labels along the edge of the
+     * viewport when you are looking straight down on a zoomed-in area.
+     */
+    class GeodeticLabelingEngine : public GraticuleLabelingEngine
+    {
+    public:
+        //! Construct a new labeling engine with the map's SRS
+        GeodeticLabelingEngine(const SpatialReference* srs);
+
+        virtual bool updateLabels(const osg::Vec3d& LL_world, osg::Vec3d& UL_world, osg::Vec3d& LR_world, ClipSpace& window, CameraData& data);
+
+        double getResolution() const;
+        void setResolution(double resolution);
+
+    protected:
+        std::string getText(const GeoPoint& location, bool lat);
+
+        double _resolution;
+
+        osg::ref_ptr<LatLongFormatter> _formatter;
+    };
+
+} } // namespace osgEarth::Util
+
+#endif // GeodeticLabelingEngine

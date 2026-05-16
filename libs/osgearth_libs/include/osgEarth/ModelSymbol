@@ -1,0 +1,99 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTHSYMBOLOGY_MODEL_SYMBOL_H
+#define OSGEARTHSYMBOLOGY_MODEL_SYMBOL_H 1
+
+#include <climits>
+
+#include <osgEarth/Common>
+#include <osgEarth/InstanceSymbol>
+#include <osg/Vec3f>
+
+namespace osgEarth
+{
+    namespace Util {
+        class InstanceResource;
+    }
+
+    /**
+     * Represents an external 3D model
+     */
+    class OSGEARTH_EXPORT ModelSymbol : public InstanceSymbol
+    {
+    public:
+        META_Object(osgEarth, ModelSymbol);
+
+        ModelSymbol(const ModelSymbol& rhs,const osg::CopyOp& copyop=osg::CopyOp::SHALLOW_COPY);
+        ModelSymbol( const Config& conf =Config() );
+
+        /** dtor */
+        virtual ~ModelSymbol() { }
+
+        /** heading in degrees */
+        OE_OPTION(Expression<double>, heading, 0.0);
+        OE_OPTION(Expression<double>, pitch, 0.0);
+        OE_OPTION(Expression<double>, roll, 0.0);
+
+        /** whether to automatically scale the model from meters to pixels */
+        optional<bool>& autoScale() { return _autoScale; }
+        const optional<bool>& autoScale() const { return _autoScale; }
+
+		/** minimum scale of the model when autoscale is enabled */
+        optional<double>& minAutoScale() { return _minAutoScale; }
+        const optional<double>& minAutoScale() const { return _minAutoScale; }
+		
+		/** maximum scale of the model when autoscale is enabled */
+        optional<double>& maxAutoScale() { return _maxAutoScale; }
+        const optional<double>& maxAutoScale() const { return _maxAutoScale; }
+		
+        /** Name of a specific model in the catalog */
+        OE_OPTION(Expression<String>, name);
+        
+        /** Maximum acceptable model length (size in the X dimension) */
+        optional<float>& maxSizeX() { return _maxSizeX; }
+        const optional<float>& maxSizeX() const { return _maxSizeX; }
+        
+        /** Maximum acceptable model width (size in the Y dimension) */
+        optional<float>& maxSizeY() { return _maxSizeY; }
+        const optional<float>& maxSizeY() const { return _maxSizeY; }
+
+        /** Model instance scale factor */
+        OE_OPTION(Expression<double>, scaleX, 1.0);
+        OE_OPTION(Expression<double>, scaleY, 1.0);
+        OE_OPTION(Expression<double>, scaleZ, 1.0);
+
+        /** Calculate model orientation from components of feature */
+        optional<bool>& orientationFromFeature() { return _orientationFromFeature; };
+        const optional<bool>& orientationFromFeature() const { return _orientationFromFeature; };
+        
+        
+    public: // non-serialized properties (for programmatic use only)
+
+        /** Explicit model to use for model placement */
+        void setModel( osg::Node* node ) { _node = node; }
+        osg::Node* getModel() const { return _node.get(); }
+
+    public:
+        virtual Config getConfig() const;
+        virtual void mergeConfig( const Config& conf );
+        static void parseSLD(const Config& c, class Style& style);
+    
+    public: // InstanceSymbol
+        /** Creates a new (empty) resource appropriate for this symbol */
+        virtual InstanceResource* createResource() const;
+
+    protected:
+        optional<bool>               _autoScale;
+		optional<double>			 _minAutoScale;
+		optional<double>			 _maxAutoScale;
+        osg::ref_ptr<osg::Node>      _node;
+        optional<float>              _maxSizeX;
+        optional<float>              _maxSizeY;
+        optional<bool>               _orientationFromFeature;
+    };
+} // namespace osgEarth
+
+#endif

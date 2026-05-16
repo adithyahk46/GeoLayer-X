@@ -1,0 +1,182 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarth/Common>
+#include <osgEarth/Expression>
+#include <osgEarth/Config>
+#include <osgEarth/URI>
+#include <osg/Referenced>
+#include <vector>
+
+namespace osgEarth
+{
+    class Style;
+    
+    /**
+     * Abstract base class for all Symbol types.
+     */
+    class OSGEARTH_EXPORT Symbol : public osg::Object
+    {
+    public:
+        //! Scripting code that can be accessed by various symbols.
+        OE_OPTION(Expression<String>, script);
+
+        //! Name of the resource library to use with this symbol.
+        OE_OPTION(std::string, library);
+
+        /** URI context (relative paths, etc) associated with this symbol */
+        URIContext& uriContext() { return _uriContext; }
+        const URIContext& uriContext() const { return _uriContext; }
+
+        virtual Config getConfig() const;   
+	    virtual void mergeConfig(const Config& conf);
+
+        //! First Config used to construct this object
+        Config getOriginalConfig() const { return _ctorConfig; }
+
+    public:
+        /* methods required by osg::Object */
+        META_Object(osgEarth, Symbol);
+
+        Symbol(const Symbol& rhs,const osg::CopyOp& copyop=osg::CopyOp::SHALLOW_COPY);
+
+    protected:
+        URIContext _uriContext;
+        Config _ctorConfig;
+
+        static bool match(const std::string& key, const char* pattern);
+
+        Symbol(const Config& conf = {});
+
+        virtual ~Symbol() { }
+    };
+
+    typedef std::vector<osg::ref_ptr<Symbol> > SymbolVector;
+    typedef std::vector<osg::ref_ptr<Symbol> > SymbolList;
+
+    namespace Util
+    {
+        using SymbolCreateFunction = std::function<Symbol*(const Config&)>;
+        using SymbolParseSLDFunction = std::function<void(const Config&, class Style&)>;
+
+        /**
+         * A Factory that can create a Symbol from a Config
+         */
+        class OSGEARTH_EXPORT SymbolFactory : public osg::Referenced
+        {
+        public:
+            virtual Symbol* create( const Config& conf ) = 0;
+
+            virtual void parseSLD(const Config& c, class Style& style) const = 0;
+        };    
+
+        typedef std::list< osg::ref_ptr< SymbolFactory > > SymbolFactoryList;
+
+        /**
+         * A registry of Symbol plugins
+         */
+        class OSGEARTH_EXPORT SymbolRegistry : public osg::Referenced
+        {         
+        public:
+            //! The singleton instance of the factory
+            static SymbolRegistry* instance();
+
+            //! Adds a new SymbolFactory to the list
+            void add( SymbolFactory* factory );
+
+            //! Creates a Symbol with the registered plugins from the given Config
+            Symbol* create( const Config& conf );
+
+            //! Parses the given SLD config into the given Style using all of the registered symbols
+            void parseSLD(const Config& c, Style& style) const;
+
+        protected:
+            SymbolRegistry() = default;
+            SymbolFactoryList _factories;
+        };
+
+        template<class T>
+        struct SimpleSymbolFactory : public SymbolFactory
+        {
+            SimpleSymbolFactory(const std::string& key):_key(key){}
+
+            virtual Symbol* create(const Config& conf) override
+            {
+                if (conf.key() == _key) return new T(conf);            
+                return 0;
+            }
+                
+            virtual void parseSLD(const Config& c, class Style& style) const override
+            {
+                T::parseSLD( c, style );
+            }
+
+            std::string _key;
+        };
+
+        struct LambdaSymbolFactory : public SymbolFactory
+        {
+            LambdaSymbolFactory(const std::string& key, SymbolCreateFunction create, SymbolParseSLDFunction parseSLD) : 
+                _key(key), _create(create), _parseSLD(parseSLD) { }
+
+            std::string _key;
+            SymbolCreateFunction _create;
+            SymbolParseSLDFunction _parseSLD;
+
+            Symbol* create(const Config& conf) override {
+                if (_key == conf.key())
+                    return _create(conf);
+                else
+                    return {};
+            }
+
+            void parseSLD(const Config& c, class Style& style) const override {
+                return _parseSLD(c, style);
+            }
+        };
+
+        template<class T>
+        struct RegisterSymbolProxy
+        {
+            RegisterSymbolProxy( T* factory) { SymbolRegistry::instance()->add( factory ); }
+            RegisterSymbolProxy() { SymbolRegistry::instance()->add( new T ); }
+        };
+
+        struct RegisterLambdaSymbolProxy
+        {
+            RegisterLambdaSymbolProxy(const std::string& key, SymbolCreateFunction create, SymbolParseSLDFunction parse) {
+                SymbolRegistry::instance()->add(new LambdaSymbolFactory(key, create, parse));
+            }
+        };
+
+    #define OSGEARTH_REGISTER_SYMBOL( CLASSNAME )\
+        extern "C" void osgearth_symbol_##CLASSNAME(void) {} \
+        static osgEarth::RegisterSymbolProxy<CLASSNAME> s_osgEarthRegisterSymbolProxy_##CLASSNAME;
+    
+    #define USE_OSGEARTH_SYMBOL( CLASSNAME ) \
+        extern "C" void osgearth_symbol_##CLASSNAME(void); \
+        static osgDB::PluginFunctionProxy proxy_osgearth_symbol_##CLASSNAME(osgearth_symbol_##CLASSNAME);
+
+    #define OSGEARTH_REGISTER_SIMPLE_SYMBOL( KEY, CLASSNAME )\
+        extern "C" void osgearth_simple_symbol_##KEY(void) {} \
+        static osgEarth::RegisterSymbolProxy< osgEarth::SimpleSymbolFactory<CLASSNAME> > s_osgEarthRegisterSymbolProxy_##CLASSNAME##KEY(new osgEarth::SimpleSymbolFactory<CLASSNAME>(#KEY));
+    
+    #define USE_OSGEARTH_SIMPLE_SYMBOL( KEY ) \
+        extern "C" void osgearth_simple_symbol_##KEY(void); \
+        static osgDB::PluginFunctionProxy proxy_osgearth_simple_symbol_##KEY(osgearth_simple_symbol_##KEY);
+
+    #define OSGEARTH_REGISTER_SIMPLE_SYMBOL_LAMBDA( KEY, CREATE, PARSESLD ) \
+        extern "C" void __oe_osgearth_symbol_##KEY(void) {} \
+        struct __OE_OBJECTFACTORY_##KEY##_INSTALLER { \
+            __OE_OBJECTFACTORY_##KEY##_INSTALLER () { \
+                osgEarth::Util::SymbolRegistry::instance()->add( \
+                    new osgEarth::Util::LambdaSymbolFactory(#KEY, CREATE, PARSESLD) ); \
+        } }; \
+        __OE_OBJECTFACTORY_##KEY##_INSTALLER __oe_objectFactory_##KEY ;
+        //static osgEarth::RegisterLambdaSymbolProxy s_osgEarthRegisterSymbolProxy_##KEY(#KEY, CREATE, PARSESLD);
+    }
+
+} // namespace osgEarth

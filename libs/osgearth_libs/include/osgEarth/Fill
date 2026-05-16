@@ -1,0 +1,45 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTHSYMBOLOGY_FILL_H
+#define OSGEARTHSYMBOLOGY_FILL_H 1
+
+#include <osgEarth/Common>
+#include <osgEarth/Color>
+#include <osgEarth/Config>
+
+
+namespace osgEarth
+{
+    /**
+     * Drawing parameters for a filled area.
+     */
+    class OSGEARTH_EXPORT Fill
+    {
+    public:
+        Fill();
+        Fill(const Fill& rhs);
+        Fill( float r, float g, float b, float a );
+        Fill( const Color& color );
+        Fill( const Config& conf );
+
+        virtual ~Fill() { }
+
+        Color& color() { return _color; }
+        const Color& color() const { return _color; }
+
+    public:
+        virtual Config getConfig() const;
+        virtual void mergeConfig( const Config& conf );
+
+    protected:
+        Color _color;
+        void init();
+    };
+} // namespace osgEarth
+
+OSGEARTH_SPECIALIZE_CONFIG(osgEarth::Fill);
+
+#endif // OSGEARTHSYMBOLOGY_FILL_H

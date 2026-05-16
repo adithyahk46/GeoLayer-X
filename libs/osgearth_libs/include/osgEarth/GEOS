@@ -1,0 +1,35 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTHSYMBOLOGY_GEOS_H
+#define OSGEARTHSYMBOLOGY_GEOS_H 1
+
+#include <osgEarth/Common>
+
+#ifdef OSGEARTH_HAVE_GEOS
+
+#include <osgEarth/Style>
+#include <osgEarth/Geometry>
+
+// Use the GEOS C API.
+// The GEOS code clearly states that its C++ API is unstable.
+#define GEOS_USE_ONLY_R_API
+#include <geos_c.h>
+
+namespace osgEarth { namespace Util
+{
+    class GEOS
+    {
+    public:
+        static Geometry* exportGeometry(GEOSContextHandle_t handle, const GEOSGeometry* input, Geometry::Type acceptType);
+
+        static GEOSGeometry* importGeometry(GEOSContextHandle_t handle, const Geometry* input);
+    };
+} }
+
+#endif // OSGEARTH_HAVE_GEOS
+
+#endif // OSGEARTHSYMBOLOGY_GEOS_H
+

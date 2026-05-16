@@ -1,0 +1,83 @@
+/* osgEarth
+* Copyright 2008-2012 Pelican Mapping
+* MIT License
+*/
+#pragma once
+
+#include <osgEarth/VisibleLayer>
+#include <osgEarth/Color>
+#include <osg/Texture1D>
+#include <osg/Texture2D>
+#include <osg/TransferFunction>
+
+namespace osgEarth
+{
+    /**
+     * Layer that renders a color ramp based on Elevation data in the Map.
+     */
+    class OSGEARTH_EXPORT ContourMapLayer : public VisibleLayer
+    {
+    public:
+        class OSGEARTH_EXPORT Options : public VisibleLayer::Options {
+        public:
+            META_LayerOptions(osgEarth, Options, VisibleLayer::Options);
+            struct Stop {
+                float elevation;
+                Color color;
+            };
+            OE_OPTION_VECTOR(Stop, stops);
+            OE_OPTION(std::string, vdatum, "egm96");
+            virtual Config getConfig() const;
+            static Config getMetadata();
+        private:
+            void fromConfig(const Config& conf);
+        };
+
+    public:
+        META_Layer(osgEarth, ContourMapLayer, Options, VisibleLayer, ContourMap);
+
+        //! Sets a transfer function that maps elevations to colors.
+        //! To change the color ramp at runtime, it is not sufficient to simply
+        //! edit the transfer function - you must call dirty() or setTransferFunction()
+        //! on this layer to apply properly.
+        void setTransferFunction(osg::TransferFunction1D* xf);
+
+        //! Gets the transfer function
+        osg::TransferFunction1D* getTransferFunction() const { return _xfer.get(); }
+
+        //! Re-applies the transfer function after editing it
+        void dirty();
+
+    public: // Layer
+
+        //! Called by constructors
+        void init() override;
+
+        //! MapNode will call this function when terrain resources are available
+        void prepareForRendering(TerrainEngine*) override;
+
+        //! Release resources on close
+        Status closeImplementation() override;
+
+    protected:
+
+        //! Destructor
+        virtual ~ContourMapLayer() { }
+
+#if defined(OSG_GLES2_AVAILABLE) || defined(OSG_GLES3_AVAILABLE)
+        typedef osg::Texture2D TextureType;
+#else
+        typedef osg::Texture1D TextureType;
+#endif
+
+        TextureImageUnitReservation _reservationColorRamp;
+        TextureImageUnitReservation _reservationGeoid;
+        osg::ref_ptr<osg::TransferFunction1D> _xfer;
+        osg::ref_ptr<TextureType> _xferTexture;
+        osg::ref_ptr<osg::Uniform> _xferSampler;
+        osg::ref_ptr<osg::Uniform> _xferMin;
+        osg::ref_ptr<osg::Uniform> _xferRange;
+    };
+
+}
+OSGEARTH_SPECIALIZE_CONFIG(osgEarth::ContourMapLayer::Options);

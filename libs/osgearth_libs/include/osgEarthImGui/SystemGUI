@@ -1,0 +1,259 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarthImGui/ImGuiPanel>
+#include <osgEarth/Threading>
+#include <osgEarth/MemoryUtils>
+#include <osgEarth/GLUtils>
+#include <osgEarth/ShaderLoader>
+#include <osgEarth/Registry>
+#include <osgEarth/Capabilities>
+#include <osgEarth/FeatureNode>
+#include <chrono>
+#include <list>
+#include <vector>
+#include <thread>
+#include <algorithm>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <osgViewer/api/Win32/GraphicsWindowWin32>
+#endif
+
+namespace osgEarth
+{
+    using namespace osgEarth::Threading;
+
+    namespace
+    {
+        const int frame_count = 300;
+        using Counts = std::vector<unsigned>;
+        using Timings = std::vector<std::chrono::nanoseconds>;
+        Timings frame_times(frame_count);
+        Counts total_jobs(frame_count);
+        Counts ico_jobs(frame_count);
+        std::chrono::time_point<std::chrono::steady_clock> t_previous;
+        int frame_num = 0;
+        char buf[256];
+        float get_counts(void* data, int index) {
+            return (float)(*(Counts*)data)[index];
+        };
+        unsigned long long get_average_timing_ns(void* data, int count, int start) {
+            Timings& t = *(Timings*)(data);
+            unsigned long long total = 0;
+            int s = start - count; if (s < 0) s += frame_count;
+            for (int i = s; i <= s + count; i++)
+                total += t[i % frame_count].count();
+            return (total / count);
+        }
+        float get_timing_ms(void* data, int index) {
+            return 1e-6 * get_average_timing_ns(data, 4, index - 3);
+        };
+    };
+
+    class SystemGUI : public ImGuiPanel
+    {
+    private:
+        std::string _renderMode;
+        bool _renderViewNormals;
+        bool _renderModelNormals;
+        bool _renderWinding;
+        bool _renderOutlines;
+        bool _showArenaControls;
+        float _dpr = 1.0f;
+        float _fontScale = 1.0f;
+        bool _first = true;
+
+    public:
+        SystemGUI() : ImGuiPanel("System"),
+            _renderViewNormals(false), _renderModelNormals(false),
+            _renderWinding(false), _renderOutlines(false),
+            _showArenaControls(false) {}
+
+        void load(const Config& conf) override
+        {
+            conf.get("System.fontScale", _fontScale);
+        }
+
+        void save(Config& conf) override
+        {
+            conf.set("System.fontScale", _fontScale);
+        }
+
+        void draw(osg::RenderInfo& ri) override
+        {
+            if (!isVisible())
+                return;
+
+            _dpr = Registry::instance()->getDevicePixelRatio(ri.getCurrentCamera()->getGraphicsContext());
+            ImGui::GetIO().FontGlobalScale = _dpr * _fontScale;
+
+            ImGui::Begin(name(), visible());
+            {
+                auto pb = Memory::getProcessPrivateUsage();
+                ImGui::Text("Mem Alloc: %.1lf MB",
+                    (double)(pb - osgEarth::g_startupPrivateBytes) / 1048576.0);
+                ImGui::SameLine();
+                ImGui::Text(" Total: %.1lf MB", (double)pb / 1048576.0);
+
+                ImGui::Separator();
+                auto flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg;
+                if (ImGui::BeginTable("thread pools", 6, flags))
+                {
+                    auto metrics = jobs::get_metrics();
+
+                    auto all_pool_metrics = metrics->all();
+
+                    ImGui::TableNextColumn(); ImGui::Text("Pool");
+                    ImGui::TableNextColumn(); ImGui::Text("Run"); //ImGui::SetItemTooltip("Running");
+                    ImGui::TableNextColumn(); ImGui::Text("Mrg"); //ImGui::SetItemTooltip("Merging / postprocessing");
+                    ImGui::TableNextColumn(); ImGui::Text("Que"); //ImGui::SetItemTooltip("Queued jobs (waiting to run)");
+                    ImGui::TableNextColumn(); ImGui::Text("Max"); //ImGui::SetItemTooltip("Number of available threads");
+                    ImGui::TableNextColumn();
+
+                    for (auto pool_metrics : all_pool_metrics)
+                    {
+                        if (pool_metrics && pool_metrics->total > 0)
+                        {
+                            ImGui::TableNextColumn();
+                            ImGui::Text("%s", (pool_metrics->name.empty() ? "default" : pool_metrics->name.c_str()));
+
+                            ImGui::TableNextColumn(); ImGui::Text("%d", (int)pool_metrics->running);
+                            ImGui::TableNextColumn(); ImGui::Text("%d", (int)pool_metrics->postprocessing);
+                            ImGui::TableNextColumn(); ImGui::Text("%d", (int)pool_metrics->pending);
+                            //ImGui::TableNextColumn(); ImGui::Text("%d", (int)pool_metrics->canceled);
+                            ImGui::TableNextColumn(); ImGui::Text("%d", (int)pool_metrics->concurrency);
+
+                            ImGui::TableNextColumn();
+                            ImGui::PushID((std::uintptr_t)pool_metrics);
+                            int pc = pool_metrics->concurrency;
+                            if (ImGui::InputInt("", &pc))
+                                jobs::get_pool(pool_metrics->name)->set_concurrency(
+                                    std::max(1, std::min(pc, (int)std::thread::hardware_concurrency())));
+                            ImGui::SameLine();
+                            ImGui::Checkbox("##visible", &pool_metrics->visible);
+                            ImGui::PopID();
+                        }
+                    }
+                    ImGui::EndTable();
+                }
+
+                ImGui::Separator();
+
+                if (ImGuiLTable::Begin("SystemGUIPlots"))
+                {
+                    int f = frame_num++ % frame_count;
+                    auto now = std::chrono::steady_clock::now();
+                    frame_times[f] = now - t_previous;
+                    t_previous = now;
+                    auto avg_timing_ms = 1e-6 * (float)get_average_timing_ns(&frame_times, 120, f);
+                    snprintf( buf, sizeof(buf), "%.2f ms / %d fps", avg_timing_ms, (int)std::ceil(1000.0 / avg_timing_ms));
+                    ImGuiLTable::PlotLines("Frame", get_timing_ms, &frame_times, frame_count, frame_num, buf, 0.0f, 32.0f);
+
+                    total_jobs[f] = jobs::get_metrics()->total();
+                    snprintf(buf, sizeof(buf), "%d", total_jobs[f]);
+                    ImGuiLTable::PlotLines("Jobs", get_counts, &total_jobs, frame_count, frame_num, buf, 0u, 100u);
+
+                    auto pager = view(ri)->getDatabasePager();
+                    if (pager) {
+                        auto ico = pager->getIncrementalCompileOperation();
+                        if (ico) {
+                            ico_jobs[f] = ico->getToCompile().size();
+                            snprintf(buf, sizeof(buf), "%d", ico_jobs[f]);
+                            ImGuiLTable::PlotLines("ICO", get_counts, &ico_jobs, frame_count, frame_num, buf, 0u, 4u);
+                        }
+                    }
+
+                    static unsigned zeroJobFrames = 0;
+                    static unsigned zeroJobFramesThreshold = 3;
+                    static std::chrono::steady_clock::time_point lastZeroJobTime = now;
+                    static long long surgeDuration_ms = 0;
+
+                    if (zeroJobFrames < zeroJobFramesThreshold)
+                        surgeDuration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastZeroJobTime).count();
+                    else
+                        lastZeroJobTime = now;
+
+                    if (total_jobs[f] == 0)
+                        ++zeroJobFrames;
+                    else
+                        zeroJobFrames = 0;
+
+                    ImGuiLTable::Text("Surge:", "%d ms", surgeDuration_ms);
+
+                    ImGuiLTable::Text("Canceled:", "%s", std::to_string(jobs::get_metrics()->total_canceled()).c_str());
+                    ImGuiLTable::End();
+                }
+
+                ImGui::Separator();
+
+                if (ImGuiLTable::Begin("FontScale"))
+                {
+                    if (ImGuiLTable::SliderFloat("Font Scale", &_fontScale, 0.5f, 2.5f, "%.2f", 0))
+                        dirtySettings();
+
+                    ImGuiLTable::End();
+                }
+
+                ImGui::Separator();
+                if (ImGuiLTable::Begin("caps"))
+                {
+                    auto& caps = osgEarth::Registry::capabilities();
+                    ImGuiLTable::Text("osgEarth", "%s", osgEarthGetVersion());
+                    ImGuiLTable::Text("OSG", "%s", osgGetVersion());
+                    ImGuiLTable::Text("GL_RENDERER", "%s", caps.getRenderer().c_str());
+                    ImGuiLTable::Text("GL_VERSION", "%s", caps.getVersion().c_str());
+                    ImGuiLTable::Text("GL Profile", "%s", caps.isCoreProfile() ? "Core" : "Compatibility");
+                    ImGuiLTable::End();
+                }
+
+#ifdef _WIN32
+                ImGui::Separator();
+                static bool autoDPR = false;
+                static float manualDPR = 1.0f;
+                if (ImGui::Checkbox("Automatic DPR", &autoDPR))
+                {
+                    if (autoDPR)
+                    {
+                        // configure osgEarth:
+                        Registry::instance()->setDevicePixelRatioFunction([](osg::GraphicsContext* gc)
+                            {
+                                if (gc)
+                                {
+                                    auto win = dynamic_cast<osgViewer::GraphicsWindowWin32*>(gc);
+                                    if (win) return GetDpiForWindow(win->getHWND()) / 96.0f;
+                                }
+                                return GetDpiForSystem() / 96.0f;
+                            });
+                    }
+                    else
+                    {
+                        Registry::instance()->setDevicePixelRatioFunction(
+                            [&](osg::GraphicsContext*) { return 1.0f; });
+
+                    }
+                }
+
+                if (autoDPR)
+                {
+                    ImGui::SameLine();
+                    ImGui::Text("(%.1f)", _dpr);
+                }
+                else
+                {
+                    if (ImGui::SliderFloat("Manual DPR", &manualDPR, 0.5f, 2.0f))
+                    {
+                        Registry::instance()->setDevicePixelRatioFunction(
+                            [&](osg::GraphicsContext*) { return manualDPR; });
+                    }
+                }
+#endif
+            }
+            ImGui::End();
+            _first = false;
+        }
+    };
+}

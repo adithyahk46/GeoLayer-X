@@ -1,0 +1,60 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarth/Symbol>
+#include <osgEarth/Stroke>
+
+namespace osgEarth
+{
+    /** 
+     * Symbol that describes how to draw linear geometry.
+     */
+    class OSGEARTH_EXPORT LineSymbol : public Symbol
+    {
+    public:
+        META_Object(osgEarth, LineSymbol);
+
+        LineSymbol(const LineSymbol& rhs,const osg::CopyOp& copyop=osg::CopyOp::SHALLOW_COPY);
+        LineSymbol(const Config& conf =Config());
+
+        /** dtor */
+        virtual ~LineSymbol() { }
+
+        /** Line stroking parameters */
+        OE_OPTION(Stroke, stroke);
+
+        /** Tessellate the line geometry such that no segment is longer than this value */
+        OE_OPTION(Distance, tessellationSize);
+
+        /** Tessellate the line geometry such that each source segment is divided into this many parts. */
+        OE_OPTION(unsigned, tessellation);
+
+        /** Minimum angle (deg) for which to create creases where applicable (like when outlining) */
+        OE_OPTION(float, creaseAngle);
+
+        /** URI of an image to load and use to texture lines */
+        OE_OPTION(URI, imageURI);
+
+        //! Length of the image (y dimension) in meters
+        OE_OPTION(float, imageLength);
+
+        //! Whether to force the use of legacy OpenGL lines (default=false)
+        //! instead of the GPU-based lines that are required by GLCORE/GLES
+        OE_OPTION(bool, useGLLines);
+
+        //! 3D line as a wire
+        OE_OPTION(bool, useWireLines);
+
+        //! Whether to duplicate polygonized geometry on both sides with opposite normals
+        OE_OPTION(bool, doubleSided, false);
+
+    public:
+        Config getConfig() const override;
+        void mergeConfig(const Config& conf) override;
+        static void parseSLD(const Config& c, class Style& style);
+    };
+
+} // namespace osgEarth

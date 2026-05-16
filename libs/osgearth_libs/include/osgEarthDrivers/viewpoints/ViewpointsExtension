@@ -1,0 +1,82 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#ifndef OSGEARTH_VIEWPOINTS_EXTENSION
+#define OSGEARTH_VIEWPOINTS_EXTENSION 1
+
+#include <osgEarth/Extension>
+#include <osgEarth/Viewpoint>
+#include <osgGA/GUIEventAdapter>
+#include <osgGA/GUIEventHandler>
+#include <osg/View>
+#include <vector>
+
+#ifdef OSGEARTH_HAVE_CONTROLS_API
+#include <osgEarth/Controls>
+using namespace osgEarth::Util::Controls;
+#endif
+
+namespace osgEarth { namespace Viewpoints
+{
+    using namespace osgEarth;
+
+    /**
+     * Loads a collection of viewpoints and makes them available
+     * through a Controls UI.
+     */
+#ifdef OSGEARTH_HAVE_CONTROLS_API
+    class ViewpointsExtension : 
+        public Extension,
+        public ExtensionInterface<osg::View>,
+        public ExtensionInterface<Control>,
+        public ConfigOptions
+#else
+    class ViewpointsExtension : 
+        public Extension,
+        public ExtensionInterface<osg::View>,
+        public ConfigOptions
+#endif
+    {
+    public:
+        META_OE_Extension(osgEarth, ViewpointsExtension, viewpoints);
+
+        // CTORs
+        ViewpointsExtension();
+        ViewpointsExtension(const ConfigOptions& options);
+
+        // DTOR
+        virtual ~ViewpointsExtension();
+
+
+    public: // Extension
+
+        void setDBOptions(const osgDB::Options* dbOptions);
+
+        // Use "this" since this class derives from ConfigOptions.
+        const ConfigOptions& getConfigOptions() const { return *this; }
+
+
+    public: // ExtensionInterface<osg::View>
+
+        bool connect(osg::View* view);
+
+        bool disconnect(osg::View* view);
+
+
+#ifdef OSGEARTH_HAVE_CONTROLS_API
+    public: // ExtensionInterface<Control>
+
+        bool connect(Control* control);
+
+        bool disconnect(Control* control);
+#endif
+
+    private:
+        osg::ref_ptr<const osgDB::Options>   _dbOptions;
+        osg::ref_ptr<osgGA::GUIEventHandler> _handler;
+    };
+
+} } // namespace osgEarth::Viewpoints
+
+#endif // OSGEARTH_VIEWPOINTS_EXTENSION

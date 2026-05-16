@@ -1,0 +1,106 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTH_GEOMETRY_CLAMPER
+#define OSGEARTH_GEOMETRY_CLAMPER 1
+
+#include <osgEarth/Common>
+#include <osgEarth/SpatialReference>
+#include <osgEarth/Terrain>
+#include <osgUtil/LineSegmentIntersector>
+#include <osg/NodeVisitor>
+#include <osg/fast_back_stack>
+
+namespace osgEarth { namespace Util
+{
+    /**
+     * Utility that takes existing OSG geometry and modifies it so that
+     * it "conforms" with a terrain patch.
+     */
+    class OSGEARTH_EXPORT GeometryClamper : public osg::NodeVisitor
+    {
+    public:
+        class GeometryData {
+            osg::ref_ptr<osg::Vec3Array> _verts;
+            osg::ref_ptr<osg::FloatArray> _altitudes;
+            friend class GeometryClamper;
+        };
+
+        using LocalData = std::unordered_map<osg::Drawable*, GeometryData>;
+
+    public:
+        //! Construct a geometry clamper, passing in a data structure managed
+        //! by the caller.
+        GeometryClamper(LocalData& data);
+
+        virtual ~GeometryClamper() { }
+
+        //! Terrain graph the clamper should use to sample in-memory terrain
+        void setTerrainPatch(osg::Node* node) { _terrainPatch = node; }
+        osg::Node* getTerrainPatch() const { return _terrainPatch.get(); }
+
+        //! SRS of the terrain model in memory
+        void setTerrainSRS(const SpatialReference* srs) { _terrainSRS = srs; }
+        const SpatialReference* getTerrainSRS() const   { return _terrainSRS.get(); }
+
+        //! Whether to incorporate (add) the original vertex's altitude to the result
+        //! of the clamping operation. Default=true. If false, the vert's height information 
+        //! is ignored.
+        void setUseVertexZ(bool value) { _useVertexZ = value; }
+        bool getUseVertexZ() const     { return _useVertexZ; }
+
+        void setScale(float scale) { _scale = scale; }
+        float getScale() const     { return _scale; }
+
+        void setOffset(float offset) { _offset = offset; }
+        float getOffset() const      { return _offset; }
+
+        //! Whether to revert a previous clamping operation (default=false)
+        void setRevert(bool value) { _revert = value; }
+
+    public: // osg::NodeVisitor
+
+        void apply( osg::Drawable& );
+        void apply( osg::Transform& );
+
+    protected:
+
+        LocalData&                           _localData;
+        osg::ref_ptr<osg::Node>              _terrainPatch;
+        osg::ref_ptr<const SpatialReference> _terrainSRS;
+        bool                                 _useVertexZ;
+        bool                                 _revert;
+        float                                _scale;
+        float                                _offset;
+        osg::fast_back_stack<osg::Matrixd>   _matrixStack;
+        osg::ref_ptr<osgUtil::LineSegmentIntersector> _lsi;
+    };
+
+
+    class GeometryClamperCallback : public osgEarth::TerrainCallback
+    {
+    public:
+        GeometryClamperCallback();
+
+        virtual ~GeometryClamperCallback() { }
+
+        /** Access to configure the underlying clamper */
+        GeometryClamper& getClamper()             { return _clamper; }
+        const GeometryClamper& getClamper() const { return _clamper; }
+
+    public: // TerrainCallback
+        
+        virtual void onTileUpdate(
+            const TileKey&          key, 
+            osg::Node*              tile, 
+            TerrainCallbackContext& context);
+
+    protected:
+        GeometryClamper _clamper;
+    };
+
+} }
+
+#endif // OSGEARTH_GEOMETRY_CLAMPER

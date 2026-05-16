@@ -1,0 +1,85 @@
+/* osgEarth
+* Copyright 2025 Pelican Mapping
+* MIT License
+*/
+#ifndef OSGEARTH_ANNOTATION_ANNOTATION_DATA_H
+#define OSGEARTH_ANNOTATION_ANNOTATION_DATA_H 1
+
+#include <osgEarth/Common>
+#include <osgEarth/Viewpoint>
+#include <osgEarth/DateTimeRange>
+
+namespace osgEarth
+{    
+    /**
+     * Stores annotation metadata/extra information that can be stored
+     * in a UserData slot
+     *
+     * NOTE: This is only here to support the KML loader, and should be
+     * refactored out of here.
+     */
+    class OSGEARTH_EXPORT AnnotationData : public osg::Referenced
+    {
+    public:
+        /**
+         * Construct a new annotation data structure.
+         */
+        AnnotationData();
+
+        /**
+         * Deserialize an annotation data structure.
+         */
+        AnnotationData( const Config& conf );
+
+    public:
+        /**
+         * Readable name of the annotation.
+         */
+        void setName( const std::string& value ) { _name = value; }
+        const std::string& getName() const { return _name; }
+
+        /**
+         * Readable description of the annotation.
+         */
+        void setDescription( const std::string& value ) { _description = value; }
+        const std::string& getDescription() const { return _description; }
+
+        /**
+         * Viewpoint associated with this annotation.
+         */
+        void setViewpoint( const Viewpoint& vp ) {
+            if ( _viewpoint )
+                delete _viewpoint;
+            _viewpoint = new Viewpoint(vp);
+        }
+
+        const Viewpoint* getViewpoint() const {
+            return _viewpoint;
+        }
+
+        /**
+        * DateTime range of the annotation
+        */
+        void setDateTimeRange(const DateTimeRange& value) { _dateTimeRange = value; }
+        const DateTimeRange& getDateTimeRange() const { return _dateTimeRange; }
+
+
+    public: // serialization
+
+        virtual void mergeConfig(const Config& conf);
+        Config getConfig() const;
+
+    public:
+        virtual ~AnnotationData();
+
+    protected:
+        std::string   _name;
+        std::string   _description;
+        float         _priority;
+        Viewpoint*    _viewpoint;
+        DateTimeRange _dateTimeRange;
+    };
+
+}
+
+#endif //OSGEARTH_ANNOTATION_ANNOTATION_DATA_H

@@ -1,0 +1,36 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+
+#ifndef OSGEARTH_TERRAIN_TILE_NODE_H
+#define OSGEARTH_TERRAIN_TILE_NODE_H 1
+
+#include <osgEarth/Common>
+#include <vector>
+
+namespace osg {
+    class RenderInfo;
+}
+
+namespace osgEarth
+{
+    class TileKey;
+
+    /**
+     * Base class for a terrain engine's representation of a tile.
+     * This is largely for internal use and subject to change, so
+     * be careful relying on the structure of this object.
+     */
+    class TerrainTile
+    {
+    public:    
+        //! TileKey represented by this tile node
+        virtual const TileKey& getKey() const = 0;
+    };
+
+    //! Synonym
+    using TerrainTileNode = TerrainTile;
+};
+
+#endif // OSGEARTH_TILE_NODE_H

@@ -1,7 +1,7 @@
 #include "MyMapCallback.h"
 #include <QDebug>
 
-#include <app/LayerManagerWidget.h>
+#include <LayersManager/LayerManagerWidget.h>
 
 
 using namespace osgEarth;

@@ -1,0 +1,57 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarthImGui/ImGuiPanel>
+#include <osgEarth/EarthManipulator>
+
+#if defined(__has_include)
+#if __has_include(<third_party/portable-file-dialogs/portable-file-dialogs.h>)
+#include <third_party/portable-file-dialogs/portable-file-dialogs.h>
+#define OSGEARTH_HAVE_OPEN_EARTH_FILE_GUI
+#endif
+#endif
+
+#ifdef OSGEARTH_HAVE_OPEN_EARTH_FILE_GUI
+namespace osgEarth
+{
+    class OpenEarthFileGUI : public ImGuiPanel
+    {
+    public:
+        OpenEarthFileGUI() : ImGuiPanel("Open Earth File") { }
+
+        void draw(osg::RenderInfo& ri) override
+        {
+            auto f = pfd::open_file("Choose files to read", pfd::path::home(),
+                { "Earth Files", "*.earth", "All Files", "*" },
+                pfd::opt::none);
+
+            if (f.result().size() > 0)
+            {
+                std::string earthFile = f.result()[0];
+                osg::ref_ptr< osg::Node > node = osgDB::readRefNodeFile(earthFile);
+                if (node.valid())
+                {
+                    MapNode* mapNode = MapNode::findMapNode(node);
+                    osgViewer::View* view = dynamic_cast<osgViewer::View*>(ri.getView());
+                    if (view && mapNode)
+                    {
+                        mapNode->open();
+                        auto* em = dynamic_cast<Util::EarthManipulator*>(view->getCameraManipulator());
+                        if (em)
+                        {
+                            em->setNode(nullptr);
+                            em->setNode(mapNode);
+                        }
+                        view->setSceneData(mapNode);
+                    }
+                }
+            }
+
+            setVisible(false);
+        }
+    };
+}
+#endif

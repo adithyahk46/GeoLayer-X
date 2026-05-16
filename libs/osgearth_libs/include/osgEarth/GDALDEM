@@ -1,0 +1,99 @@
+/* osgEarth
+ * Copyright 2025 Pelican Mapping
+ * MIT License
+ */
+#pragma once
+
+#include <osgEarth/Common>
+#include <osgEarth/ImageLayer>
+#include <osgEarth/ElevationLayer>
+#include <osgEarth/LayerReference>
+
+namespace osgEarth
+{
+    class Map;
+
+    /**
+     * ImageLayer that exposes gdal's dem processing capabilities.
+     */
+    class OSGEARTH_EXPORT GDALDEMLayer : public ImageLayer
+    {
+    public: // serialization
+        class OSGEARTH_EXPORT Options : public ImageLayer::Options {
+        public:
+            META_LayerOptions(osgEarth, Options, ImageLayer::Options);
+            OE_OPTION_LAYER(ElevationLayer, elevationLayer);
+            OE_OPTION(std::string, processing, "hillshade");
+            OE_OPTION(float, azimuth, 0.0f);
+            OE_OPTION(float, lightAltitude, 0.0f);
+            OE_OPTION(bool, multidirectional, false);
+            OE_OPTION(bool, combined, false);
+            OE_OPTION(bool, alpha, false);
+            OE_OPTION(URI, color_filename);
+            virtual Config getConfig() const;
+        private:
+            void fromConfig(const Config& conf);
+        };
+
+    public:
+        META_Layer(osgEarth, GDALDEMLayer, Options, ImageLayer, GDALDEMLayer);
+
+    public:
+
+        //! Processing option.  Depends on GDAL version; typical options: hillshade; slope; aspect; color-relief; TRI; TPI; roughness
+        void setProcessing(const std::string& value);
+        const std::string& getProcessing() const;
+
+        //! Azimuth of the light, in degrees. 0 if it comes from the top of the raster, 90 from the east; typically 315; useful only for hillshade processing.
+        void setAzimuth(const float& value);
+        float getAzimuth() const;
+
+        //! Altitude of the light, in degrees. 90 if the light comes from above the DEM, 0 if it is raking light; for hillshade processing
+        void setLightAltitude(const float& value);
+        float getLightAltitude() const;
+
+        //! Multidirectional shading, a combination of hillshading illuminated from 225 deg, 270 deg, 315 deg, and 360 deg azimuth; useful only for hillshade processing.
+        void setMultidirectional(const bool& value);
+        bool getMultidirectional() const;
+
+        //! Combined shading, a combination of slope and oblique shading; useful only for hillshade processing.
+        void setCombined(const bool& value);
+        bool getCombined() const;
+
+        //! Color output supports alpha; useful only for color-relief processing.
+        void setAlpha(const bool& value);
+        bool getAlpha() const;
+
+        //! Color text file containing lines of format "elevation_value red green blue [alpha]"; useful only for color-relief processing.
+        void setColorFilename(const URI& value);
+        const URI& getColorFilename() const;
+
+
+    public: // Layer
+
+        //! open succesfully
+        Status openImplementation() override;
+
+        //! Close all composited layers
+        Status closeImplementation() override;
+
+        //! Creates a raster image for the given tile key
+        GeoImage createImageImplementation(const TileKey& key, ProgressCallback* progress) const override;
+
+        //! Called when a layer is added to the map
+        void addedToMap(const Map* map) override;
+        void removedFromMap(const Map* map) override;
+
+    protected: // Layer
+
+        //! Called by constructors
+        void init() override;
+
+        std::string _colorRampFilename;
+        osg::observer_ptr<ElevationLayer> _elevationLayer;
+        osg::observer_ptr<const Map> _map;
+    };
+
+} // namespace osgEarth
+
+OSGEARTH_SPECIALIZE_CONFIG(osgEarth::GDALDEMLayer::Options);
