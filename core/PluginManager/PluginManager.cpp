@@ -321,7 +321,6 @@ PluginManager::PluginManager(QObject* parent)
 		QDir::cleanPath(QCoreApplication::applicationDirPath() + QStringLiteral("/../plugins"))};
 
 	loadEnabledState();
-	scanPlugins();
 }
 
 PluginManager::~PluginManager()
@@ -329,15 +328,7 @@ PluginManager::~PluginManager()
 	clearRuntimeLoaders();
 }
 
-void PluginManager::setHostContext(const PluginHostContext& context)
-{
-	_context = context;
-}
-
-PluginHostContext PluginManager::hostContext() const
-{
-	return _context;
-}
+// Host context APIs removed; plugins should use App singleton instead.
 
 void PluginManager::setPluginSearchPaths(const QStringList& paths)
 {
@@ -560,7 +551,7 @@ bool PluginManager::loadPlugin(const QString& pluginId, QString* errorMessage)
 	}
 
 	QString lifecycleError;
-	if (!iface->load(_context, &lifecycleError) || !iface->activate(&lifecycleError))
+	if (!iface->load(&lifecycleError) || !iface->activate(&lifecycleError))
 	{
 		loader->unload();
 		delete loader;

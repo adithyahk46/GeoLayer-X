@@ -11,7 +11,6 @@ DEFINES += PLUGINMANAGER_STATIC
 DESTDIR = $$clean_path($$PWD/../bin)
 
 INCLUDEPATH += \
-        $$PWD/../app \
 	$$PWD/../core
 
 SOURCES += \
@@ -28,7 +27,7 @@ SOURCES += \
 	../core/UIManager/StatusBarHandler.cpp \
 	MapLoadModuleDialog.cpp \
 	MyMapCallback.cpp \
-	app.cpp
+	../core/app.cpp
 
 HEADERS += \
 	$$PWD/MainWindow.h \
@@ -45,7 +44,7 @@ HEADERS += \
 	../core/UIManager/StatusBarHandler.h \
 	MapLoadModuleDialog.h \
 	MyMapCallback.h \
-	app.h
+	../core/app.h
 
 FORMS += \
 	$$PWD/MainWindow.ui \

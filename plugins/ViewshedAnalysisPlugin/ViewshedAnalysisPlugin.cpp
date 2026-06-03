@@ -1,20 +1,7 @@
-#include "ViewshedAnalysis.h"
+#include "ViewshedAnalysisPlugin.h"
 
-#include "ui_ViewshedAnalysis.h"
 
 #include <QMainWindow>
-
-ViewshedAnalysisDialog::ViewshedAnalysisDialog(QWidget* parent)
-	: QDialog(parent)
-	, ui(new Ui::ViewshedAnalysis)
-{
-	ui->setupUi(this);
-}
-
-ViewshedAnalysisDialog::~ViewshedAnalysisDialog()
-{
-	delete ui;
-}
 
 ViewshedAnalysisPlugin::ViewshedAnalysisPlugin(QObject* parent)
 	: PluginInterface(parent)
@@ -87,10 +74,27 @@ bool ViewshedAnalysisPlugin::executeCommand(
 		return false;
 	}
 
-	QWidget* parent = hostContext().mainWindow;
+    QWidget* parent = getMainWindow();
+	if(!parent)
+	{
+		if (errorMessage)
+		{
+			*errorMessage = QStringLiteral("Main window not available.");
+		}
+		return false;
+	}
+    osgEarth::MapNode* mapNode = getMapNode();
+	if (!mapNode)
+	{
+		if (errorMessage)
+		{
+			*errorMessage = QStringLiteral("Map node not available.");
+		}
+		return false;
+	}
 	if (!_dialog)
 	{
-		_dialog = new ViewshedAnalysisDialog(parent);
+        _dialog = new ViewshedAnalysisWidget(mapNode, parent);
 		_dialog->setAttribute(Qt::WA_DeleteOnClose, true);
 		QObject::connect(_dialog, &QObject::destroyed, this, [this]() {
 			_dialog = nullptr;

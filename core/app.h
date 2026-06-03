@@ -13,6 +13,7 @@ class App
 public:
     static App* getInstance(){
         if(!_app){
+            qDebug()<<"App Constructor called";
             _app = new App();
         }
         return _app;

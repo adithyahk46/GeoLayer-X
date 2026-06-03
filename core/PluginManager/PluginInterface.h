@@ -8,6 +8,9 @@
 #include <QStringList>
 #include <QVariantMap>
 #include <QVersionNumber>
+#include <QMainWindow>
+
+#include "app.h"
 
 class QAction;
 class QDockWidget;
@@ -20,14 +23,7 @@ namespace osgEarth {
 class MapNode;
 }
 
-struct PLUGINMANAGER_EXPORT PluginHostContext
-{
-    QObject* application = nullptr;
-    QMainWindow* mainWindow = nullptr;
-    osgEarth::MapNode* mapNode = nullptr;
-    QVariantMap sharedState;
-    QVariantMap services;
-};
+// PluginHostContext removed: plugins access host state via `App::getInstance()`.
 
 struct PLUGINMANAGER_EXPORT PluginDescriptor
 {
@@ -122,7 +118,7 @@ public:
     virtual QStringList optionalDependencies() const;
 
     // Lifecycle hooks.
-    virtual bool load(const PluginHostContext& context, QString* errorMessage = nullptr);
+    virtual bool load(QString* errorMessage = nullptr);
     virtual bool activate(QString* errorMessage = nullptr);
     virtual bool deactivate(QString* errorMessage = nullptr);
     virtual bool unload(QString* errorMessage = nullptr);
@@ -146,14 +142,21 @@ public:
 
     virtual bool onHostEvent(const QString& eventName, const QVariantMap& payload);
 
+
+    osgEarth::MapNode* getMapNode(){return App::getInstance()->getMapNode();}
+
+    QMainWindow* getMainWindow(){ return App::getInstance()->getMainwindow();}
+
+
+
+
 protected:
     void setState(LifecycleState newState);
 
-    const PluginHostContext& hostContext() const;
-    PluginHostContext& hostContext();
+    // Host context access removed; use `App::getInstance()` instead.
 
 private:
-    PluginHostContext _hostContext;
+    // Host context removed; plugins should use App singleton.
     LifecycleState _state = LifecycleState::Constructed;
 
 signals:

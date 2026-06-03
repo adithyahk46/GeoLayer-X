@@ -1,7 +1,7 @@
 #include "StatusBarHandler.h"
 
 #include "MapController/MouseEventHandler.h"
-#include "../../app/app.h"
+#include "../app.h"
 
 #include <osgGA/GUIEventHandler>
 

@@ -2,5 +2,5 @@ TEMPLATE = subdirs
 CONFIG += ordered
 
 SUBDIRS += \
-    ViewshedAnalysis \
+    ViewshedAnalysisPlugin \
     # RadialViewshed

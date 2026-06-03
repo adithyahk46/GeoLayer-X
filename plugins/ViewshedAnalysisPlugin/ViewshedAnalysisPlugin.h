@@ -5,21 +5,8 @@
 
 #include <PluginManager/PluginInterface.h>
 
-namespace Ui {
-class ViewshedAnalysis;
-}
+#include "ViewshedAnalysisWidget.h"
 
-class ViewshedAnalysisDialog : public QDialog
-{
-	Q_OBJECT
-
-public:
-	explicit ViewshedAnalysisDialog(QWidget* parent = nullptr);
-	~ViewshedAnalysisDialog() override;
-
-private:
-	Ui::ViewshedAnalysis* ui = nullptr;
-};
 
 class ViewshedAnalysisPlugin : public PluginInterface
 {
@@ -48,7 +35,7 @@ public:
 		QString* errorMessage = nullptr) override;
 
 private:
-	ViewshedAnalysisDialog* _dialog = nullptr;
+    ViewshedAnalysisWidget* _dialog = nullptr;
 };
 
 #endif // VIEWSHED_ANALYSIS_PLUGIN_H

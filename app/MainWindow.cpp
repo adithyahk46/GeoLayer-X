@@ -48,11 +48,8 @@ MainWindow::MainWindow(QWidget* parent)
         StatusBarHandler::getInstance()->setStatusbar(ui->statusBar);
         StatusBarHandler::getInstance()->CreatMapReaders();
 
-        PluginHostContext pluginContext;
-        pluginContext.application = qApp;
-        pluginContext.mainWindow = this;
-        pluginContext.mapNode = osgWidget->getMapNode();
-        _pluginManager->setHostContext(pluginContext);
+        // Plugins access application state via App::getInstance(),
+        // so we no longer construct or set a PluginHostContext here.
         _pluginManager->scanPlugins();
 
 

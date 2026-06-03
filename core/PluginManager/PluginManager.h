@@ -52,8 +52,7 @@ public:
 
     ~PluginManager() override;
 
-    void setHostContext(const PluginHostContext& context);
-    PluginHostContext hostContext() const;
+    // Host context APIs removed; plugins should use App singleton instead.
 
     void setPluginSearchPaths(const QStringList& paths);
     QStringList pluginSearchPaths() const;
@@ -106,7 +105,7 @@ private:
 
     static PluginManager* _instance;
 
-    PluginHostContext _context;
+    // PluginHostContext removed.
     QStringList _pluginSearchPaths;
     QSet<QString> _enabledIds;
     QHash<QString, RuntimePlugin> _plugins;

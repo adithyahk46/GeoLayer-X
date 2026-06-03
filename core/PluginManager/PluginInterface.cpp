@@ -81,10 +81,9 @@ QStringList PluginInterface::optionalDependencies() const
 	return {};
 }
 
-bool PluginInterface::load(const PluginHostContext& context, QString* errorMessage)
+bool PluginInterface::load(QString* errorMessage)
 {
 	Q_UNUSED(errorMessage)
-	_hostContext = context;
 	initialize();
 	setState(LifecycleState::Initialized);
 	return true;
@@ -95,7 +94,7 @@ bool PluginInterface::activate(QString* errorMessage)
 	Q_UNUSED(errorMessage)
 	if (_state == LifecycleState::Constructed)
 	{
-		if (!load(_hostContext, errorMessage))
+		if (!load(errorMessage))
 		{
 			setState(LifecycleState::Error);
 			return false;
@@ -201,6 +200,12 @@ bool PluginInterface::onHostEvent(const QString& eventName, const QVariantMap& p
 	return false;
 }
 
+// App *PluginInterface::getApp()
+// {
+//     qDebug()<<"getApp Called";
+//     return App::getInstance();
+// }
+
 void PluginInterface::setState(LifecycleState newState)
 {
 	if (_state == newState)
@@ -213,12 +218,4 @@ void PluginInterface::setState(LifecycleState newState)
 	emit lifecycleStateChanged(previousState, _state);
 }
 
-const PluginHostContext& PluginInterface::hostContext() const
-{
-	return _hostContext;
-}
-
-PluginHostContext& PluginInterface::hostContext()
-{
-	return _hostContext;
-}
+// hostContext removed; use App singleton instead.
