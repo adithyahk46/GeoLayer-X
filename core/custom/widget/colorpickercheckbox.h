@@ -4,8 +4,10 @@
 
 #include <QCheckBox>
 #include <QColor>
+#include "../../core_global.h"
 
-class ColorPickerCheckBox : public QCheckBox
+
+class GEOLAYERCORE_EXPORT ColorPickerCheckBox : public QCheckBox
 {
     Q_OBJECT
 

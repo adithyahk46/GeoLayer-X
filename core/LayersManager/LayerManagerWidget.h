@@ -2,8 +2,9 @@
 #define LAYERMANAGERWIDGET_H
 
 #include <QDockWidget>
+#include "../core_global.h"
 
-class LayerManagerWidget : public QDockWidget
+class GEOLAYERCORE_EXPORT LayerManagerWidget : public QDockWidget
 {
     Q_OBJECT
 public:

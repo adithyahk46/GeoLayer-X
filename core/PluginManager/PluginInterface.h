@@ -1,7 +1,7 @@
 #ifndef PLUGIN_INTERFACE_H
 #define PLUGIN_INTERFACE_H
 
-#include "PluginManager_global.h"
+#include "../core_global.h"
 
 #include <QFlags>
 #include <QObject>
@@ -25,7 +25,7 @@ class MapNode;
 
 // PluginHostContext removed: plugins access host state via `App::getInstance()`.
 
-struct PLUGINMANAGER_EXPORT PluginDescriptor
+struct GEOLAYERCORE_EXPORT PluginDescriptor
 {
     QString id;
     QString name;
@@ -43,7 +43,7 @@ struct PLUGINMANAGER_EXPORT PluginDescriptor
     QVariantMap custom;
 };
 
-class PLUGINMANAGER_EXPORT PluginInterface : public QObject
+class GEOLAYERCORE_EXPORT PluginInterface : public QObject
 {
     Q_OBJECT
 

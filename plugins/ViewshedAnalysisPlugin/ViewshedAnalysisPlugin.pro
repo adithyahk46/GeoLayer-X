@@ -13,29 +13,27 @@ TARGET = ViewshedAnalysisPlugin
 DESTDIR = $$PLUGINS_DIR
 
 INCLUDEPATH += \
-    $$PWD/../../core
+    $$PROJECT_ROOT/core
+
+LIBS += -L"$$PROJECT_ROOT/install"
+CONFIG(debug, debug|release) {
+    LIBS += -lGeoLayerCored
+} else {
+    LIBS += -lGeoLayerCore
+}
+
 
 HEADERS += \
     ViewshedAnalysis.h \
     ViewshedAnalysisPlugin.h \
-    $$PWD/../../core/PluginManager/PluginInterface.h \
-    $$PWD/../../core/PluginManager/PluginManager_global.h \
-    $$PWD/../../core/MapController/MouseEventHandler.h \
-    $$PWD/../../core/custom/widget/colorpickercheckbox.h \
-    $$PWD/../../core/app.h \
     ViewshedAnalysisWidget.h
 
 SOURCES += \
     ViewshedAnalysis.cpp \
     ViewshedAnalysisPlugin.cpp \
-    $$PWD/../../core/PluginManager/PluginInterface.cpp \
-    $$PWD/../../core/MapController/MouseEventHandler.cpp \
-    $$PWD/../../core/custom/widget/colorpickercheckbox.cpp \
-    $$PWD/../../core/app.cpp \
     ViewshedAnalysisWidget.cpp
 
 FORMS += \
-    ViewshedAnalysisPlugin.ui \
     ViewshedAnalysisWidget.ui
 
 

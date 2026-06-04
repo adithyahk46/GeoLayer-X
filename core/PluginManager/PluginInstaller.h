@@ -1,11 +1,10 @@
 #ifndef PLUGIN_INSTALLER_H
 #define PLUGIN_INSTALLER_H
 
-#include "PluginManager_global.h"
-
+#include "../core_global.h"
 #include <QString>
 
-class PLUGINMANAGER_EXPORT PluginInstaller
+class GEOLAYERCORE_EXPORT PluginInstaller
 {
 public:
 	static bool installPackage(const QString& sourcePath, const QString& destinationDir, QString* errorMessage = nullptr);

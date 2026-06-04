@@ -3,13 +3,14 @@
 
 #include <QString>
 #include <QVector>
+#include "../core_global.h"
 
 namespace osgEarth {
 class MapNode;
 }
 
 
-class MapLoadModule
+class GEOLAYERCORE_EXPORT MapLoadModule
 {
 public:
     struct LoadedVectorLayerInfo

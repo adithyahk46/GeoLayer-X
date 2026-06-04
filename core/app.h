@@ -6,9 +6,9 @@
 #include <osgEarth/MapNode>
 #include <osgEarth/EarthManipulator>
 
+#include "core_global.h"
 
-
-class App
+class GEOLAYERCORE_EXPORT App
 {
 public:
     static App* getInstance(){

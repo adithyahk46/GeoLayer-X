@@ -4,8 +4,9 @@
 
 #include <QStatusBar>
 #include <QObject>
+#include "../core_global.h"
 
-class StatusBarHandler: public QObject
+class GEOLAYERCORE_EXPORT StatusBarHandler: public QObject
 {
     Q_OBJECT
 

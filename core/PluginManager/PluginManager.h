@@ -2,7 +2,7 @@
 #define PLUGIN_MANAGER_H
 
 #include "PluginInterface.h"
-#include "PluginManager_global.h"
+#include "../core_global.h"
 
 #include <QHash>
 #include <QObject>
@@ -12,7 +12,7 @@
 class QDialog;
 class QPluginLoader;
 
-class PLUGINMANAGER_EXPORT PluginManager : public QObject
+class GEOLAYERCORE_EXPORT PluginManager : public QObject
 {
     Q_OBJECT
 

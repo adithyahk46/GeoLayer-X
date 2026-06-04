@@ -2,9 +2,10 @@
 #define MOUSEEVENTHANDLER_H
 
 #include <iostream>
+#include "../core_global.h"
 
 
-class MouseEventHandler :public QObject, public osgGA::GUIEventHandler
+class GEOLAYERCORE_EXPORT MouseEventHandler :public QObject, public osgGA::GUIEventHandler
 {
     Q_OBJECT
 

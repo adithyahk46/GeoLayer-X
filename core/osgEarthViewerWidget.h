@@ -11,12 +11,9 @@
 #include <osgEarth/MapNode>
 #include <osgEarth/EarthManipulator>
 
-#ifndef OSGEARTHVIEWERWIDGET_EXPORT
-#define OSGEARTHVIEWERWIDGET_EXPORT
-#endif
+#include "core_global.h"
 
-
-class OSGEARTHVIEWERWIDGET_EXPORT OsgEarthViewerWidget : public osgQOpenGLWidget
+class GEOLAYERCORE_EXPORT OsgEarthViewerWidget : public osgQOpenGLWidget
 {
     Q_OBJECT
 
