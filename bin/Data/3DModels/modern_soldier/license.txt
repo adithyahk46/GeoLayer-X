@@ -1,8 +1,0 @@
-Model Information:
-* title:	Modern Soldier
-* source:	https://sketchfab.com/3d-models/modern-soldier-5f7581d5c0db4e4c812f2533c1d34276
-* author:	illustros (https://sketchfab.com/illustros)
-
-Model License:
-* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
-* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

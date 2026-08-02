@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>icons/mActionZoomFullExtent.svg</file>
+        <file>icons/mActionZoomIn.svg</file>
+        <file>icons/mActionZoomLast.svg</file>
+        <file>icons/mActionZoomNext.svg</file>
+        <file>icons/mActionZoomOut.svg</file>
+        <file>icons/mActionZoomTo.svg</file>
+        <file>icons/mActionZoomToArea.svg</file>
+        <file>icons/mActionZoomToLayer.svg</file>
+    </qresource>
+</RCC>
