@@ -148,8 +148,6 @@ public:
     QMainWindow* getMainWindow(){ return App::getInstance()->getMainwindow();}
 
 
-
-
 protected:
     void setState(LifecycleState newState);
 

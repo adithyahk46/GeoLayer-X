@@ -5,6 +5,7 @@
 
 #include <osgEarth/MapNode>
 #include <osgEarth/EarthManipulator>
+#include <osgViewer/Viewer>
 
 #include "core_global.h"
 

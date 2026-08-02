@@ -1,12 +1,12 @@
 
 #include "osgEarthViewerWidget.h"
 
-// #include <QCoreApplication>
-// #include <QDebug>
-// #include <QObject>
+#include <QCoreApplication>
+#include <QDebug>
+#include <QObject>
 
-// #include <osgDB/ReadFile>
-// #include <osgUtil/Optimizer>
+#include <osgDB/ReadFile>
+#include <osgUtil/Optimizer>
 
 OsgEarthViewerWidget* OsgEarthViewerWidget::_instance = nullptr;
 

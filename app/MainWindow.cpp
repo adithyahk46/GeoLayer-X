@@ -52,9 +52,8 @@ MainWindow::MainWindow(QWidget* parent)
         // so we no longer construct or set a PluginHostContext here.
         _pluginManager->scanPlugins();
 
-
-
     });
+    
     addDockWidget(Qt::LeftDockWidgetArea,LayerManagerWidget::getInstance());
 
     setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
