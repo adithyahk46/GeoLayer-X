@@ -1,0 +1,8 @@
+set(__QT_DEPLOY_TARGET_geoLayer_app_FILE C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/build/output/Release/bin/geoLayer_app.exe)
+set(__QT_DEPLOY_TARGET_geoLayer_app_TYPE EXECUTABLE)
+set(__QT_DEPLOY_TARGET_geoLayer_app_RUNTIME_DLLS C:/Qt/6.10.2/msvc2022_64/bin/Qt6Concurrent.dll;C:/Users/pnmt1054/Adithya_working_directory/QT_PROJECTS/INDIGIS_DEPS/osgearth_libs/bin/gdal.dll;C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/build/output/Release/bin/geoLayer_core.dll;C:/Users/pnmt1054/Adithya_working_directory/QT_PROJECTS/INDIGIS_DEPS/osgearth_libs/bin/osgEarth.dll;C:/Qt/6.10.2/msvc2022_64/bin/Qt6OpenGLWidgets.dll;C:/Qt/6.10.2/msvc2022_64/bin/Qt6Widgets.dll;C:/Qt/6.10.2/msvc2022_64/bin/Qt6OpenGL.dll;C:/Qt/6.10.2/msvc2022_64/bin/Qt6Gui.dll;C:/Qt/6.10.2/msvc2022_64/bin/Qt6Core.dll)
+set(__QT_DEPLOY_TARGET_geoLayer_core_FILE C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/build/output/Release/bin/geoLayer_core.dll)
+set(__QT_DEPLOY_TARGET_geoLayer_core_TYPE SHARED_LIBRARY)
+set(__QT_DEPLOY_TARGET_geoLayer_core_RUNTIME_DLLS C:/Qt/6.10.2/msvc2022_64/bin/Qt6OpenGLWidgets.dll;C:/Users/pnmt1054/Adithya_working_directory/QT_PROJECTS/INDIGIS_DEPS/osgearth_libs/bin/osgEarth.dll;C:/Qt/6.10.2/msvc2022_64/bin/Qt6Widgets.dll;C:/Qt/6.10.2/msvc2022_64/bin/Qt6OpenGL.dll;C:/Qt/6.10.2/msvc2022_64/bin/Qt6Gui.dll;C:/Qt/6.10.2/msvc2022_64/bin/Qt6Core.dll)
+set(__QT_DEPLOY_TARGET_UiFiles_FILE C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/build/output/Release/lib/UiFiles.lib)
+set(__QT_DEPLOY_TARGET_UiFiles_TYPE STATIC_LIBRARY)

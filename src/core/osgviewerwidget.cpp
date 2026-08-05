@@ -38,10 +38,15 @@ void OSGViewerWidget::setMapNode(osgEarth::MapNode *mapNode)
     _mapNode = mapNode;
 }
 
-void OSGViewerWidget::setManipulator(osgEarth::Util::EarthManipulator *manipulator)
+void OSGViewerWidget::setManipulator(osgEarth::EarthManipulator *manipulator)
 {
     _manipulator= nullptr;
     _manipulator = manipulator;
+    _manipulator->getSettings()->setThrowingEnabled(true);
+    if(_viewer)
+    {
+        _viewer->setCameraManipulator(_manipulator.get());
+    }
 }
 
 void OSGViewerWidget::setViewer(osgViewer::Viewer *viewer)
@@ -57,6 +62,7 @@ OSGViewerWidget::OSGViewerWidget(QWidget* parent)
     _root = new osg::Group();
     _mapNode = new osgEarth::MapNode;
     _root->addChild(_mapNode);
+
     _manipulator = new osgEarth::EarthManipulator();
     _manipulator->getSettings()->setThrowingEnabled(true);
 
@@ -67,7 +73,9 @@ OSGViewerWidget::OSGViewerWidget(QWidget* parent)
     // }
     // optimizer.reset();
 
-    QObject::connect(this, &osgQOpenGLWidget::initialized, [this] { setupOsgEarth();
+    QObject::connect(this, &osgQOpenGLWidget::initialized, [this] {
+        setupOsgEarth();
+        emit setupCompleted();
     });
 }
 
@@ -91,7 +99,9 @@ bool OSGViewerWidget::setupOsgEarth()
     OE_WARN << "Forcing --SingleThreaded mode because we are sharing an OSG Graphics Context (GC), "
         "and OSG does not support multi-threading of a shared GC" << std::endl;
     _viewer->setRealizeOperation(new osgEarth::GL3RealizeOperation());
+
     _viewer->setCameraManipulator(_manipulator.get());
+
     int width  = this->width();
     int height = this->height();
 

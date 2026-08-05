@@ -1,17 +1,15 @@
 #ifndef LAYERMANAGERWIDGET_H
 #define LAYERMANAGERWIDGET_H
 
-#include <QDockWidget>
 #include <QTreeWidget>
 
-
+#include "DockWidgetPanels.h"
 
 #include <osgEarth/MapNode>
 #include <osgEarth/MapCallback>
 
-#include "osgearthcore_global.h"
 
-class OSGEARTHCORE_EXPORT LayerManagerWidget : public QDockWidget, public osgEarth::MapCallback
+class  LayerManagerWidget : public DockWidgetPanels, public osgEarth::MapCallback
 {
     Q_OBJECT
 public:

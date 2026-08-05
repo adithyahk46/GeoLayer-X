@@ -1,0 +1,46 @@
+{
+	"backtrace" : 0,
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : 
+		[
+			"src/app/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			}
+		]
+	},
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 0,
+			"id" : "geoLayer_core::@0618756b1ff51bca1a0e"
+		},
+		{
+			"backtrace" : 0,
+			"id" : "Resources::@0c8d8ab3459368375fe6"
+		},
+		{
+			"backtrace" : 0,
+			"id" : "UiFiles::@e0ce1d6ecae3dc67b834"
+		}
+	],
+	"folder" : 
+	{
+		"name" : "QtInternalTargets"
+	},
+	"id" : "geoLayer_app_autogen_timestamp_deps::@ff93792cf40911dae1b8",
+	"isGeneratorProvided" : true,
+	"name" : "geoLayer_app_autogen_timestamp_deps",
+	"paths" : 
+	{
+		"build" : "src/app",
+		"source" : "src/app"
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}

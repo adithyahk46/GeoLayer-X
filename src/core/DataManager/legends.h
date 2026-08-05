@@ -27,8 +27,9 @@
 #include <osgEarth/ModelLayer>
 
 
+#include "osgearthcore_global.h"
 
-class Legends : public QCheckBox {
+class OSGEARTHCORE_EXPORT Legends : public QCheckBox {
     Q_OBJECT
 public:
     explicit Legends(osgEarth::Layer* mapLayer = nullptr, osgEarth::MapNode* mapNode = nullptr,

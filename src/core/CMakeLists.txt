@@ -2,10 +2,14 @@ set(CORE_TARGET_NAME geoLayer_core)
 add_library(${CORE_TARGET_NAME} SHARED
     osgviewerwidget.h
     osgviewerwidget.cpp
-    DataManager/MyMapCallback.cpp DataManager/MyMapCallback.h
+
     DataManager/MapLoadModule.cpp DataManager/MapLoadModule.h
     SettingsManager/SettingsManager.cpp SettingsManager/SettingsManager.h
-    DataManager/LayerManagerWidget.cpp DataManager/LayerManagerWidget.h DataManager/legends.cpp DataManager/legends.h
+    DataManager/legends.cpp DataManager/legends.h
+    MapController.h MapController.cpp
+    MapController/MouseEventHandler.cpp MapController/MouseEventHandler.h
+    App.h App.cpp
+    DrawingTool/CircleTool.cpp DrawingTool/CircleTool.h DrawingTool/DrawingManager.cpp DrawingTool/DrawingManager.h DrawingTool/DrawingTool.cpp DrawingTool/DrawingTool.h DrawingTool/FeatureStore.cpp DrawingTool/FeatureStore.h DrawingTool/LineTool.cpp DrawingTool/LineTool.h DrawingTool/PointTool.cpp DrawingTool/PointTool.h DrawingTool/PolygonTool.cpp DrawingTool/PolygonTool.h DrawingTool/RectangleTool.cpp DrawingTool/RectangleTool.h
 
 
 )

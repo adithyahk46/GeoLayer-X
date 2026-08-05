@@ -1,12 +1,70 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <QFileDialog>
-#include "DataManager/MapLoadModule.h"
-#include "DataManager/MyMapCallback.h"
-#include "DataManager/LayerManagerWidget.h"
+#include <iostream>
+#include <string>
+#include <fstream>
+using namespace std;
 
-#include "MapLoadModuleDialog.h"
+#include <osg/Notify>
+#include <osgDB/FileUtils>
+#include <osgEarth/Registry>
+
+
+#include <QActionGroup>
+#include <QFileDialog>
+#include <QKeyEvent>
+#include <QToolButton>
+
+#include "App.h"
+#include "DataManager/MapLoadModule.h"
+#include "DrawingTool/CircleTool.h"
+#include "DrawingTool/LineTool.h"
+#include "DrawingTool/PointTool.h"
+#include "DrawingTool/PolygonTool.h"
+#include "DrawingTool/RectangleTool.h"
+#include "SettingsManager/SettingsManager.h"
+
+
+void qtLogToFile(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    const std::string logTypes[] = { "Debug", "Warning", "Critical", "Fatal", "Info" };
+
+    std::cout << "[Qt]    [" << logTypes[type] << "]    "
+              << msg.toLocal8Bit().constData();
+
+#ifndef NDEBUG
+    std::cout << "    (" << context.file << ": " << context.line
+              << ", " << context.function << ")";
+#endif
+
+    std::cout << std::endl;
+}
+
+class LogFileHandler : public osg::NotifyHandler
+{
+public:
+    LogFileHandler(std::ofstream* log) : _log(log) {}
+
+    void notify(osg::NotifySeverity severity, const char* msg) override
+    {
+        const char* tags[] = {
+            "ALWAYS", "FATAL", "WARN", "NOTICE",
+            "INFO", "DEBUG_INFO", "DEBUG_FP"
+        };
+
+        std::cout << "[OSG]   [" << tags[severity] << "]    " << msg;
+
+        if (_log)
+        {
+            (*_log) << "[OSG]   [" << tags[severity] << "]    " << msg;
+            _log->flush();
+        }
+    }
+
+private:
+    std::ofstream* _log = nullptr;
+};
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -15,17 +73,307 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+}
+
+MainWindow::~MainWindow()
+{
+
+    saveAllSettings();
+
+    SettingsManager::instance()
+           .saveMainWindowState(this);
+
+       SettingsManager::instance().sync();
+       delete ui;
+
+}
+
+void MainWindow::saveAllSettings()
+{
+    SettingsManager::instance().setValue("theme",ui->actionTheame->isChecked()?"dark":"light");
+}
+
+void MainWindow::restoreAllSettings()
+{
+    auto& settings = SettingsManager::instance();
+
+   const QString theme = settings.value("theme", "light").toString();
+   ui->actionTheame->setChecked(theme == "dark");
+   setApplicationTheme(theme == "dark");
+
+}
+
+void MainWindow::initAll()
+{
+    // initLogs();
 
     initCore();
 
     initSignalsAndSlots();
 
+    App::getInstance()->setMainwindow(this);
+
+    SettingsManager::instance().restoreMainWindowState(this);
+
+    QMenu *fileMenu = new QMenu("", this);
+
+    QAction *openAction = fileMenu->addAction("Open");
+    QAction *saveAction = fileMenu->addAction("Save");
+
+    QToolButton *fileButton = new QToolButton(this);
+    fileButton->setText("File");
+    fileButton->setMenu(fileMenu);
+    fileButton->setPopupMode(QToolButton::InstantPopup);
+
+    ui->toolbarProject->addWidget(fileButton);
+
+    restoreAllSettings();
+}
+
+
+QMenu *MainWindow::dockPanelsMenu() const { return ui->menuDockPanels;}
+
+void MainWindow::osgViewerSetup()
+{
+    OSGViewerWidget::instance()->getOsgViewer()->addEventHandler(_mousePicker);
+}
+
+void MainWindow::initLogs()
+{
+    std::string glx_prefix_path =
+        std::getenv("GLX_PREFIX_PATH") ?
+        std::getenv("GLX_PREFIX_PATH") :
+        QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("..").toStdString();
+
+    std::string glx_log_path =
+        std::getenv("GLX_LOG_PATH") ?
+        std::getenv("GLX_LOG_PATH") :
+        glx_prefix_path + "/logs";
+
+    if (!osgDB::fileExists(glx_log_path))
+        osgDB::makeDirectory(glx_log_path);
+
+    std::string logPath = glx_log_path + "/GLXLogs.txt";
+
+    _log = new std::ofstream(logPath, std::ios::out | std::ios::app);
+
+    if (!_log || !_log->is_open())
+        return;
+
+    // IMPORTANT: Don't redirect cout/cerr.
+    // They remain connected to the console.
+
+    qInstallMessageHandler(qtLogToFile);
+
+    osgEarth::setNotifyLevel(osg::INFO);
+    osgEarth::setNotifyHandler(new LogFileHandler(_log));
+
+    osg::setNotifyLevel(osg::NOTICE);
+    osg::setNotifyHandler(new LogFileHandler(_log));
+
+    std::cout << "Program started: "
+              << QDateTime::currentDateTime()
+                     .toString("yyyy-MM-dd hh:mm:ss")
+                     .toStdString()
+              << std::endl;
+}
+
+void MainWindow::initCore()
+{
+
+    layerManager = LayerManagerWidget::getInstance(this);
+    addDockWidget(Qt::RightDockWidgetArea, layerManager);
+    //create central layout and central StackedWidget and insert osgwidget into it
+
+    osgwidget = OSGViewerWidget::instance();
+    osgwidget->setManipulator(new MapController);
+    osgwidget->getMapNode()->getMap()->addMapCallback(layerManager);
+    setCentralWidget(osgwidget);
+    QObject::connect(OSGViewerWidget::instance(), &OSGViewerWidget::setupCompleted,this, &MainWindow::osgViewerSetup);
+
+    MapLoadModule::LoadTMSLayer(osgwidget->getMapNode(), "https://readymap.org/readymap/tiles/1.0.0/7/");
+
+
+    // MouseEventHandler is the shared core of all plugins
+    _mousePicker = MouseEventHandler::Instance(osgwidget->getMapNode());
+
+    m_drawingManager = std::make_unique<DrawingManager>(osgwidget->getMapNode(), this);
+
+    const auto resetDrawingUi = [this]() {
+        if (!m_drawingManager || m_drawingManager->hasActiveTool()) {
+            return;
+        }
+
+        if (m_drawingActionGroup != nullptr) {
+            m_drawingActionGroup->setExclusive(false);
+            for (QAction* action : m_drawingActionGroup->actions()) {
+                action->setChecked(false);
+            }
+            m_drawingActionGroup->setExclusive(true);
+        }
+
+        if (_mousePicker != nullptr) {
+            _mousePicker->disableMouseAction(false);
+        }
+    };
+
+    mStatusBarWidget = new StatusbarHandlerWidget();
+    statusBar()->addPermanentWidget(mStatusBarWidget);
+    statusBar()->setMinimumHeight(20);
+    statusBar()->layout()->setContentsMargins(0, 0, 0, 0);
+    QObject::connect(_mousePicker, &MouseEventHandler::mouseMoveEvent, mStatusBarWidget, &StatusbarHandlerWidget::updateGeoCoordinates);
+
+    QObject::connect(_mousePicker, &MouseEventHandler::mouseClickEvent, this, [this, resetDrawingUi](const osgEarth::GeoPoint& point) {
+        if (m_drawingManager && m_drawingManager->hasActiveTool()) {
+            m_drawingManager->mousePress(point, Qt::LeftButton);
+        }
+        resetDrawingUi();
+    });
+
+    QObject::connect(_mousePicker, &MouseEventHandler::mouseMoveEvent, this, [this](const osgEarth::GeoPoint& point) {
+        if (m_drawingManager && m_drawingManager->hasActiveTool()) {
+            m_drawingManager->mouseMove(point);
+        }
+    });
+
+    QObject::connect(_mousePicker, &MouseEventHandler::mouseDoubleClickEvent, this, [this, resetDrawingUi](const osgEarth::GeoPoint&) {
+        if (m_drawingManager && m_drawingManager->hasActiveTool()) {
+            m_drawingManager->finish();
+        }
+        resetDrawingUi();
+    });
+
 
 }
 
-MainWindow::~MainWindow()
+void MainWindow::initSignalsAndSlots()
 {
-    delete ui;
+    //connect signals and slots here
+    QObject::connect(ui->actionOpenEarthFile, &QAction::triggered, this, [this]() {
+        QString filePath = QFileDialog::getOpenFileName(this, "Open Earth File", "", "Earth Files (*.earth)");
+        if (!filePath.isEmpty()) {
+            MapLoadModule::LoadEarthFile(filePath);
+        }
+    });
+
+    QObject::connect(ui->actionTheame, &QAction::toggled, this, [=](bool dark){
+        setApplicationTheme(dark);
+    });
+
+    QObject::connect(ui->actionFullScreen, &QAction::triggered, this, [this](){
+        if(isFullScreen()){showNormal();}
+        else{showFullScreen(); }
+    });
+
+    QObject::connect(ui->actionLoad_layers, &QAction::triggered, this, [this](){
+        //clear the memeory when dialog is closed
+        MapLoadModuleDialog* dialog = new MapLoadModuleDialog(this);
+        QObject::connect(dialog, &QDialog::finished, dialog, [&dialog](){
+            // dialog->deleteLater();
+            dialog = nullptr;
+        });
+        dialog->show();
+
+    });
+
+    QObject::connect(ui->mActionZoomIn, &QAction::triggered, this, [this](){
+        MapController::zoomIn();
+    });
+
+    QObject::connect(ui->mActionZoomOut, &QAction::triggered, this, [this](){
+        MapController::zoomOut();
+    });
+    QObject::connect(ui->mActionZoomToFullExtent, &QAction::triggered, this, [this](){
+        MapController::zoomToFullExtent();
+    });
+    QObject::connect(ui->mActionZoomToArea, &QAction::triggered, this, [this](){
+        //allow user to select a rectangle on the map and zoom to that area
+        MapController::zoomToExtent(1.5);
+    });
+
+    m_drawingActionGroup = new QActionGroup(this);
+    m_drawingActionGroup->setExclusive(true);
+
+    m_drawingActionGroup->addAction(ui->actionDrawCircle);
+    m_drawingActionGroup->addAction(ui->actionDrawPolygon);
+    m_drawingActionGroup->addAction(ui->actionDrawPolyLine);
+    m_drawingActionGroup->addAction(ui->actionDrawRectangle);
+    m_drawingActionGroup->addAction(ui->actionAddPoints);
+
+
+    QObject::connect(ui->actionDrawCircle, &QAction::triggered, this, [this](bool checked) {
+        if (!checked || !m_drawingManager) {
+            return;
+        }
+        m_drawingManager->setTool(std::make_unique<CircleTool>());
+        _mousePicker->disableMouseAction(true);
+    });
+
+    QObject::connect(ui->actionDrawPolygon, &QAction::triggered, this, [this](bool checked) {
+        if (!checked || !m_drawingManager) {
+            return;
+        }
+        m_drawingManager->setTool(std::make_unique<PolygonTool>());
+        _mousePicker->disableMouseAction(true);
+    });
+
+    QObject::connect(ui->actionDrawPolyLine, &QAction::triggered, this, [this](bool checked) {
+        if (!checked || !m_drawingManager) {
+            return;
+        }
+        m_drawingManager->setTool(std::make_unique<LineTool>());
+        _mousePicker->disableMouseAction(true);
+    });
+
+    QObject::connect(ui->actionDrawRectangle, &QAction::triggered, this, [this](bool checked) {
+        if (!checked || !m_drawingManager) {
+            return;
+        }
+        m_drawingManager->setTool(std::make_unique<RectangleTool>());
+        _mousePicker->disableMouseAction(true);
+    });
+
+    QObject::connect(ui->actionAddPoints, &QAction::triggered, this, [this](bool checked) {
+        if (!checked || !m_drawingManager) {
+            return;
+        }
+        m_drawingManager->setTool(std::make_unique<PointTool>());
+        _mousePicker->disableMouseAction(true);
+    });
+
+    QObject::connect(m_drawingActionGroup, &QActionGroup::triggered, this, [this](QAction*) {
+        if (!m_drawingActionGroup || m_drawingActionGroup->checkedAction() != nullptr) {
+            return;
+        }
+
+        if (m_drawingManager) {
+            m_drawingManager->cancel();
+        }
+        _mousePicker->disableMouseAction(false);
+    });
+
+
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* event)
+{
+    if (m_drawingManager && m_drawingManager->hasActiveTool()) {
+        m_drawingManager->keyPress(event);
+
+        if (!m_drawingManager->hasActiveTool()) {
+            if (m_drawingActionGroup != nullptr) {
+                m_drawingActionGroup->setExclusive(false);
+                for (QAction* action : m_drawingActionGroup->actions()) {
+                    action->setChecked(false);
+                }
+                m_drawingActionGroup->setExclusive(true);
+            }
+
+            _mousePicker->disableMouseAction(false);
+        }
+    }
+
+    QMainWindow::keyPressEvent(event);
 }
 
 void MainWindow::setApplicationTheme(bool dark)
@@ -78,51 +426,5 @@ void MainWindow::setApplicationTheme(bool dark)
     }
 
     QApplication::setPalette(palette);
-
-}
-
-void MainWindow::initCore()
-{
-
-    LayerManagerWidget* layerManager = LayerManagerWidget::getInstance(this);
-    addDockWidget(Qt::RightDockWidgetArea, layerManager);
-    //create central layout and central StackedWidget and insert osgwidget into it
-
-    osgwidget = OSGViewerWidget::instance();
-    osgwidget->getMapNode()->getMap()->addMapCallback(layerManager);
-    setCentralWidget(osgwidget);
-
-    MapLoadModule::LoadTMSLayer(osgwidget->getMapNode(), "https://readymap.org/readymap/tiles/1.0.0/7/");
-}
-
-void MainWindow::initSignalsAndSlots()
-{
-    //connect signals and slots here
-    QObject::connect(ui->actionOpenEarthFile, &QAction::triggered, this, [this]() {
-        QString filePath = QFileDialog::getOpenFileName(this, "Open Earth File", "", "Earth Files (*.earth)");
-        if (!filePath.isEmpty()) {
-            MapLoadModule::LoadEarthFile(filePath);
-        }
-    });
-
-    QObject::connect(ui->actionTheame, &QAction::toggled, this, [=](bool dark){
-        setApplicationTheme(dark);
-    });
-
-    QObject::connect(ui->actionFullScreen, &QAction::triggered, this, [this](){
-        if(isFullScreen()){showNormal();}
-        else{showFullScreen(); }
-    });
-
-    QObject::connect(ui->actionLoad_layers, &QAction::triggered, this, [this](){
-        //clear the memeory when dialog is closed
-        MapLoadModuleDialog* dialog = new MapLoadModuleDialog(this);
-        QObject::connect(dialog, &QDialog::finished, dialog, [&dialog](){
-            // dialog->deleteLater();
-            dialog = nullptr;
-        });
-        dialog->show();
-
-    });
 
 }

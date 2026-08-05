@@ -43,6 +43,9 @@ public:
 
     void setBaseMap(BaseMapType type);
 
+signals:
+    void setupCompleted();
+
 private:
     bool setupOsgEarth();
 

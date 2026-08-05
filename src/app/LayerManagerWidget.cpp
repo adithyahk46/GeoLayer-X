@@ -2,14 +2,14 @@
 
 #include <osgEarth/TMS>
 
-#include "legends.h"
+#include "DataManager/legends.h"
 #include <osgviewerwidget.h>
 
 
 LayerManagerWidget* LayerManagerWidget::_layerManager = nullptr;
 
 LayerManagerWidget::LayerManagerWidget(QWidget* parent)
-    : QDockWidget(parent)
+    : DockWidgetPanels(parent)
 {
     this->setWindowTitle("Layers");
     setObjectName("LayerManagerWidget");

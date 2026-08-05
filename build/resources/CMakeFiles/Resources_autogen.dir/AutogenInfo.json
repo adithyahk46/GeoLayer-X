@@ -1,0 +1,57 @@
+{
+	"AUTOGEN_COMMAND_LINE_LENGTH_MAX" : 32000,
+	"BUILD_DIR" : "C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/build/resources/Resources_autogen",
+	"CMAKE_BINARY_DIR" : "C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/build",
+	"CMAKE_CURRENT_BINARY_DIR" : "C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/build/resources",
+	"CMAKE_CURRENT_SOURCE_DIR" : "C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/resources",
+	"CMAKE_EXECUTABLE" : "C:/Qt/Tools/CMake_64/bin/cmake.exe",
+	"CMAKE_LIST_FILES" : 
+	[
+		"C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/resources/CMakeLists.txt",
+		"C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/resources/themes/themes.qrc",
+		"C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/resources/images/images.qrc"
+	],
+	"CMAKE_SOURCE_DIR" : "C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X",
+	"CROSS_CONFIG" : false,
+	"DEP_FILE" : "C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/build/resources/Resources_autogen/deps",
+	"DEP_FILE_RULE_NAME" : "Resources_autogen/timestamp",
+	"HEADERS" : [],
+	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
+	"INCLUDE_DIR" : "C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/build/resources/Resources_autogen/include",
+	"MOC_COMPILATION_FILE" : "C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/build/resources/Resources_autogen/mocs_compilation.cpp",
+	"MOC_DEFINITIONS" : [ "WIN32" ],
+	"MOC_DEPEND_FILTERS" : 
+	[
+		[
+			"Q_PLUGIN_METADATA",
+			"[\n][ \t]*Q_PLUGIN_METADATA[ \t]*\\([^\\)]*FILE[ \t]*\"([^\"]+)\""
+		]
+	],
+	"MOC_INCLUDES" : [],
+	"MOC_MACRO_NAMES" : 
+	[
+		"Q_OBJECT",
+		"Q_GADGET",
+		"Q_NAMESPACE",
+		"Q_NAMESPACE_EXPORT",
+		"Q_GADGET_EXPORT",
+		"Q_ENUM_NS"
+	],
+	"MOC_OPTIONS" : [],
+	"MOC_PATH_PREFIX" : false,
+	"MOC_PREDEFS_CMD" : [],
+	"MOC_PREDEFS_FILE" : "",
+	"MOC_RELAXED_MODE" : false,
+	"MOC_SKIP" : [],
+	"MULTI_CONFIG" : false,
+	"PARALLEL" : 4,
+	"PARSE_CACHE_FILE" : "C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/build/resources/CMakeFiles/Resources_autogen.dir/ParseCache.txt",
+	"QT_MOC_EXECUTABLE" : "C:/Qt/6.10.2/msvc2022_64/bin/moc.exe",
+	"QT_UIC_EXECUTABLE" : "",
+	"QT_VERSION_MAJOR" : 6,
+	"QT_VERSION_MINOR" : 10,
+	"SETTINGS_FILE" : "C:/Users/pnmt1054/Adithya_working_directory/GeoLayer-X/build/resources/CMakeFiles/Resources_autogen.dir/AutogenUsed.txt",
+	"SOURCES" : [],
+	"USE_BETTER_GRAPH" : true,
+	"VERBOSITY" : 0
+}

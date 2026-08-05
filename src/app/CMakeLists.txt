@@ -12,6 +12,8 @@ add_executable(${TARGET_APP_NAME}
     DockWidgetPanels.cpp DockWidgetPanels.h
     MapLoadModuleDialog.cpp MapLoadModuleDialog.h
     mainwindow.h mainwindow.cpp
+    LayerManagerWidget.cpp LayerManagerWidget.h
+    StatusbarHandlerWidget.cpp StatusbarHandlerWidget.h
 
 
 

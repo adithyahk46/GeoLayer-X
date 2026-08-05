@@ -1,0 +1,38 @@
+{
+	"backtrace" : 0,
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : 
+		[
+			"src/ui/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			}
+		]
+	},
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 0,
+			"id" : "Resources::@0c8d8ab3459368375fe6"
+		}
+	],
+	"folder" : 
+	{
+		"name" : "QtInternalTargets"
+	},
+	"id" : "UiFiles_autogen_timestamp_deps::@e0ce1d6ecae3dc67b834",
+	"isGeneratorProvided" : true,
+	"name" : "UiFiles_autogen_timestamp_deps",
+	"paths" : 
+	{
+		"build" : "src/ui",
+		"source" : "src/ui"
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}

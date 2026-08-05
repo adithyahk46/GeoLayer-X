@@ -54,14 +54,14 @@
     <property name="title">
      <string>&amp;View</string>
     </property>
-    <widget class="QMenu" name="menuPanels">
+    <widget class="QMenu" name="menuDockPanels">
      <property name="title">
       <string>Panels</string>
      </property>
     </widget>
     <addaction name="actionFullScreen"/>
     <addaction name="actionToolbars"/>
-    <addaction name="menuPanels"/>
+    <addaction name="menuDockPanels"/>
     <addaction name="actionTheame"/>
    </widget>
    <widget class="QMenu" name="menuTools">
@@ -129,9 +129,26 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionZoomIn"/>
-   <addaction name="actionZOut"/>
-   <addaction name="actionZToArea"/>
+   <addaction name="mActionZoomIn"/>
+   <addaction name="mActionZoomOut"/>
+   <addaction name="mActionZoomToArea"/>
+   <addaction name="mActionZoomToFullExtent"/>
+  </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionDrawPolygon"/>
+   <addaction name="actionDrawPolyLine"/>
+   <addaction name="actionDrawCircle"/>
+   <addaction name="actionDrawRectangle"/>
+   <addaction name="actionAddPoints"/>
   </widget>
   <action name="actionOpenEarthFile">
    <property name="text">
@@ -158,6 +175,10 @@
    </property>
   </action>
   <action name="actionSky">
+   <property name="icon">
+    <iconset>
+     <normaloff>../../../../Downloads/polygon (1).svg</normaloff>../../../../Downloads/polygon (1).svg</iconset>
+   </property>
    <property name="text">
     <string>Sky</string>
    </property>
@@ -203,7 +224,7 @@
     <string>Dark Mode</string>
    </property>
   </action>
-  <action name="actionZoomIn">
+  <action name="mActionZoomIn">
    <property name="icon">
     <iconset resource="../../resources/images/images.qrc">
      <normaloff>:/images/themes/default/mActionZoomIn.svg</normaloff>:/images/themes/default/mActionZoomIn.svg</iconset>
@@ -218,7 +239,7 @@
     <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
-  <action name="actionZOut">
+  <action name="mActionZoomOut">
    <property name="icon">
     <iconset resource="../../resources/images/images.qrc">
      <normaloff>:/images/themes/default/mActionZoomOut.svg</normaloff>:/images/themes/default/mActionZoomOut.svg</iconset>
@@ -233,7 +254,7 @@
     <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
-  <action name="actionZToArea">
+  <action name="mActionZoomToArea">
    <property name="icon">
     <iconset resource="../../resources/images/images.qrc">
      <normaloff>:/images/themes/default/mActionZoomToArea.svg</normaloff>:/images/themes/default/mActionZoomToArea.svg</iconset>
@@ -248,6 +269,90 @@
   <action name="actionLoad_layers">
    <property name="text">
     <string>Load layers...</string>
+   </property>
+  </action>
+  <action name="mActionZoomToFullExtent">
+   <property name="icon">
+    <iconset resource="../../resources/images/images.qrc">
+     <normaloff>:/images/themes/default/mActionZoomFullExtent.svg</normaloff>:/images/themes/default/mActionZoomFullExtent.svg</iconset>
+   </property>
+   <property name="text">
+    <string>ZoomToFullExtent</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionDrawPolygon">
+   <property name="icon">
+    <iconset resource="../../resources/images/images.qrc">
+     <normaloff>:/images/themes/default/mActionAddPolygon.svg</normaloff>:/images/themes/default/mActionAddPolygon.svg</iconset>
+   </property>
+   <property name="text">
+    <string>DrawPolygon</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw Polygon</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionDrawPolyLine">
+   <property name="icon">
+    <iconset resource="../../resources/images/images.qrc">
+     <normaloff>:/images/themes/default/mActionAddPolyline.svg</normaloff>:/images/themes/default/mActionAddPolyline.svg</iconset>
+   </property>
+   <property name="text">
+    <string>DrawPolyLine</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw Poly Line</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionDrawCircle">
+   <property name="icon">
+    <iconset resource="../../resources/images/images.qrc">
+     <normaloff>:/images/themes/default/mActionAddCircle.png</normaloff>:/images/themes/default/mActionAddCircle.png</iconset>
+   </property>
+   <property name="text">
+    <string>DrawCircle</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw Circle</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionDrawRectangle">
+   <property name="icon">
+    <iconset resource="../../resources/images/images.qrc">
+     <normaloff>:/images/themes/default/mActionAddRectangle.png</normaloff>:/images/themes/default/mActionAddRectangle.png</iconset>
+   </property>
+   <property name="text">
+    <string>DrawRectangle</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw Rectangle</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionAddPoints">
+   <property name="icon">
+    <iconset resource="../../resources/images/images.qrc">
+     <normaloff>:/images/themes/default/mActionAddPoints.png</normaloff>:/images/themes/default/mActionAddPoints.png</iconset>
+   </property>
+   <property name="text">
+    <string>DrawPoints</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
  </widget>

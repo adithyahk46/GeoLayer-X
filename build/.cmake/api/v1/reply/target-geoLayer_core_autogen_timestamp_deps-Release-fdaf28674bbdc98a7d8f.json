@@ -1,0 +1,31 @@
+{
+	"backtrace" : 0,
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : 
+		[
+			"src/core/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			}
+		]
+	},
+	"folder" : 
+	{
+		"name" : "QtInternalTargets"
+	},
+	"id" : "geoLayer_core_autogen_timestamp_deps::@0618756b1ff51bca1a0e",
+	"isGeneratorProvided" : true,
+	"name" : "geoLayer_core_autogen_timestamp_deps",
+	"paths" : 
+	{
+		"build" : "src/core",
+		"source" : "src/core"
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}

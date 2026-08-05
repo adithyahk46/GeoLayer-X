@@ -4,6 +4,8 @@
 #include <QDockWidget>
 #include <QObject>
 
+#include "App.h"
+
 class DockWidgetPanels : public QDockWidget
 {
     Q_OBJECT

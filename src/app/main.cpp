@@ -20,14 +20,6 @@ QString loadFile(const QString& path) {
     return QString();
 }
 
-void setTheme(QApplication& app, const QString& colorThemeName) {
-    // 1. Read layout/structural rules
-    QString baseStyle = loadFile(":/themes/base.qss");
-    // 2. Read color rules (e.g., "dark" or "light")
-    QString colorStyle = loadFile(":/themes/" + colorThemeName + ".qss");
-    // 3. Combine them together!
-    app.setStyleSheet(baseStyle + "\n" + colorStyle);
-}
 
 #define LC "[osgearth_windows] "
 
@@ -50,7 +42,9 @@ using namespace osgEarth::Util;
 int main(int argc, char* argv[])
 {
 
-
+    //set osgNotification level to WARN
+    osg::setNotifyLevel(osg::WARN);
+    
     osgEarth::initialize();
     osgEarth::Registry::instance()->unRefImageDataAfterApply() = false;
 
@@ -77,28 +71,16 @@ int main(int argc, char* argv[])
     QSurfaceFormat::setDefaultFormat(format);
 
 
-
     QApplication app(argc, argv);
 
-    QCoreApplication::setOrganizationName("MyCompany");
-    QCoreApplication::setApplicationName("MyGIS");
-
-    // QGuiApplication::styleHints()->setColorScheme(Qt::ColorScheme::Light);
-
-    // setTheme(app, "light");
-    // Set default palette provided by the current style
+    QCoreApplication::setOrganizationName("SpereGIS");
+    QCoreApplication::setApplicationName("GeoLayer-X");
 
 
-    for (const QString &style : QStyleFactory::keys())
-        qDebug() << style;
-
-    // QApplication::setStyle(QStyleFactory::create("Fusion"));
-
-    // qApp->setStyleSheet("");
     QApplication::setStyle("Fusion");
-    // QApplication::setPalette(QApplication::style()->standardPalette());
 
     MainWindow window;
+    window.initAll();
     window.showMaximized();
 
     qDebug() << qApp->styleSheet();
