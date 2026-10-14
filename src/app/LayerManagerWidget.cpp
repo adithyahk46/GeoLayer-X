@@ -4,14 +4,62 @@
 
 #include "DataManager/legends.h"
 #include <osgviewerwidget.h>
+#include "App.h"
+#include <QMetaObject>
+#include <QPointer>
 
+namespace
+{
+class LayerManagerMapCallback final : public osgEarth::MapCallback
+{
+public:
+    explicit LayerManagerMapCallback(LayerManagerWidget* target)
+        : _target(target)
+    {
+    }
+
+    void onLayerAdded(osgEarth::Layer* layer, unsigned index) override
+    {
+        if (!_target || !layer)
+            return;
+
+        QPointer<LayerManagerWidget> target = _target;
+        osg::ref_ptr<osgEarth::Layer> layerRef = layer;
+        QMetaObject::invokeMethod(target.data(), [target, layerRef, index] {
+            if (target)
+                target->onLayerAdded(layerRef.get(), index);
+        }, Qt::QueuedConnection);
+    }
+
+    void onLayerRemoved(osgEarth::Layer* layer, unsigned index) override
+    {
+        if (!_target || !layer)
+            return;
+
+        QPointer<LayerManagerWidget> target = _target;
+        osg::ref_ptr<osgEarth::Layer> layerRef = layer;
+        QMetaObject::invokeMethod(target.data(), [target, layerRef, index] {
+            if (target)
+                target->onLayerRemoved(layerRef.get(), index);
+        }, Qt::QueuedConnection);
+    }
+
+private:
+    QPointer<LayerManagerWidget> _target;
+};
+}
 
 LayerManagerWidget* LayerManagerWidget::_layerManager = nullptr;
+
+osgEarth::MapCallback* LayerManagerWidget::createMapCallback(LayerManagerWidget* target)
+{
+    return new LayerManagerMapCallback(target);
+}
 
 LayerManagerWidget::LayerManagerWidget(QWidget* parent)
     : DockWidgetPanels(parent)
 {
-    this->setWindowTitle("Layers");
+    setWindowTitle("Layers");
     setObjectName("LayerManagerWidget");
     treeWidget= new QTreeWidget(this);
     this->setWidget(treeWidget);
@@ -31,7 +79,8 @@ void LayerManagerWidget::addLayer(osgEarth::Layer *layer)
     if (!layer) return;
 
     // Create the legend for this layer
-    Legends* legend = new Legends(layer, OSGViewerWidget::instance()->getMapNode(), OSGViewerWidget::instance()->getManipulator());
+    OSGViewerWidget* viewerWidget = App::getThreedWindow();
+    Legends* legend = new Legends(layer, viewerWidget->getMapNode(), viewerWidget->getManipulator());
 
     // Determine layer type and add to corresponding category in QTreeWidget
     QString category;

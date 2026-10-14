@@ -31,6 +31,10 @@ public:
     explicit EnvironmentGUI(QWidget *parent = nullptr);
     ~EnvironmentGUI() override;
 
+protected:
+    void setWindowTitle(const QString &title) override { QDockWidget::setWindowTitle(title); }
+    void setObjectName(const QString &name) override { QDockWidget::setObjectName(name); }
+
  private:
     QScopedPointer<Ui::EnvironmentGUI> ui;
 

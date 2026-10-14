@@ -7,6 +7,7 @@
 #include <QObject>
 
 #include <osg/Group>
+#include <osg/Vec3d>
 #include <osg/ref_ptr>
 #include <osgEarth/GeoData>
 #include <osgEarth/MapNode>
@@ -44,6 +45,7 @@ public:
 
 private:
     void commitActiveToolGeometry();
+    std::vector<osg::Vec3d> toWorldPoints(const std::vector<osgEarth::GeoPoint>& points) const;
     std::vector<osgEarth::GeoPoint> rectanglePoints(const std::vector<osgEarth::GeoPoint>& points) const;
     std::vector<osgEarth::GeoPoint> circlePoints(const std::vector<osgEarth::GeoPoint>& points) const;
 

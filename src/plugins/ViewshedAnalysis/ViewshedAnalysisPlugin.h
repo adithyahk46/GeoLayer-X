@@ -1,0 +1,34 @@
+#ifndef VIEWSHED_ANALYSIS_PLUGIN_H
+#define VIEWSHED_ANALYSIS_PLUGIN_H
+
+#include <QDialog>
+
+#include <PluginManager/PluginInterface.h>
+
+#include "ViewshedAnalysisWidget.h"
+
+
+class ViewshedAnalysisPlugin : public PluginInterface
+{
+	Q_OBJECT
+    Q_PLUGIN_METADATA(IID "com.geolayerx.plugins.PluginInterface/1.0" FILE "ViewshedAnalysisPlugin.json")
+	Q_INTERFACES(PluginInterface)
+
+public:
+	explicit ViewshedAnalysisPlugin(QObject* parent = nullptr);
+	~ViewshedAnalysisPlugin() override;
+
+	QString pluginName() const override;
+	void initialize() override;
+
+	bool executeCommand(
+		const QString& commandId,
+		const QVariantMap& arguments,
+		QVariantMap* result = nullptr,
+		QString* errorMessage = nullptr) override;
+
+private:
+    ViewshedAnalysisWidget* _dialog = nullptr;
+};
+
+#endif // VIEWSHED_ANALYSIS_PLUGIN_H

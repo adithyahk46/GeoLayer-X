@@ -5,61 +5,52 @@
 
 #include <QDebug>
 
-#include <osgEarth/Feature>
-#include <osgEarth/FeatureNode>
-#include <osgEarth/Style>
+#include <osg/Geometry>
+#include <osg/Geode>
+#include <osg/LineWidth>
+#include <osg/Point>
+#include <osg/StateSet>
 
 namespace
 {
-osgEarth::Style styleForShape(DrawingTool::ShapeType shapeType)
+osg::ref_ptr<osg::Geode> createRenderable(
+	const std::vector<osg::Vec3d>& points,
+	GLenum primitive,
+	const osg::Vec4& color,
+	float lineWidth,
+	float pointSize)
 {
-	osgEarth::Style style;
-
-	auto* altitude = style.getOrCreate<osgEarth::AltitudeSymbol>();
-	altitude->clamping() = osgEarth::AltitudeSymbol::CLAMP_TO_TERRAIN;
-	altitude->technique() = osgEarth::AltitudeSymbol::TECHNIQUE_DRAPE;
-
-	auto* render = style.getOrCreate<osgEarth::RenderSymbol>();
-	render->lighting() = false;
-	render->depthOffset()->enabled() = true;
-	render->depthOffset().mutable_value().automatic() = true;
-
-	switch (shapeType)
-	{
-		case DrawingTool::ShapeType::Point:
-		{
-			auto* point = style.getOrCreate<osgEarth::PointSymbol>();
-			point->fill() = osgEarth::Color(1.0f, 0.2f, 0.2f, 1.0f);
-			point->size() = 9.0f;
-			point->smooth() = true;
-			break;
-		}
-
-		case DrawingTool::ShapeType::Polyline:
-		{
-			auto* line = style.getOrCreate<osgEarth::LineSymbol>();
-			line->stroke().mutable_value().color() = osgEarth::Color(1.0f, 0.95f, 0.15f, 1.0f);
-			line->stroke().mutable_value().width() = osgEarth::Distance(3.0f, osgEarth::Units::PIXELS);
-			line->tessellationSize() = osgEarth::Distance(75000.0, osgEarth::Units::METERS);
-			break;
-		}
-
-		case DrawingTool::ShapeType::Polygon:
-		case DrawingTool::ShapeType::Rectangle:
-		case DrawingTool::ShapeType::Circle:
-		{
-			auto* poly = style.getOrCreate<osgEarth::PolygonSymbol>();
-			poly->fill()->color() = osgEarth::Color(0.2f, 1.0f, 0.35f, 0.35f);
-
-			auto* line = style.getOrCreate<osgEarth::LineSymbol>();
-			line->stroke().mutable_value().color() = osgEarth::Color(0.2f, 1.0f, 0.35f, 1.0f);
-			line->stroke().mutable_value().width() = osgEarth::Distance(3.0f, osgEarth::Units::PIXELS);
-			line->tessellationSize() = osgEarth::Distance(75000.0, osgEarth::Units::METERS);
-			break;
-		}
+	if (points.empty()) {
+		return nullptr;
 	}
 
-	return style;
+	osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
+	vertices->reserve(points.size());
+	for (const auto& point : points) {
+		vertices->push_back(point);
+	}
+
+	osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
+	geometry->setVertexArray(vertices);
+	geometry->addPrimitiveSet(new osg::DrawArrays(primitive, 0, static_cast<GLsizei>(vertices->size())));
+
+	osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
+	colors->push_back(color);
+	geometry->setColorArray(colors, osg::Array::BIND_OVERALL);
+
+	osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+	geode->addDrawable(geometry);
+
+	osg::StateSet* stateSet = geode->getOrCreateStateSet();
+	stateSet->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+
+	if (primitive == GL_POINTS) {
+		stateSet->setAttributeAndModes(new osg::Point(pointSize), osg::StateAttribute::ON);
+	} else {
+		stateSet->setAttributeAndModes(new osg::LineWidth(lineWidth), osg::StateAttribute::ON);
+	}
+
+	return geode;
 }
 }
 
@@ -207,61 +198,63 @@ void DrawingManager::commitActiveToolGeometry()
 		geoPoints = circlePoints(geoPoints);
 	}
 
-	if (geoPoints.empty()) {
+	const std::vector<osg::Vec3d> worldPoints = toWorldPoints(geoPoints);
+	if (worldPoints.empty()) {
 		return;
 	}
 
-	const osgEarth::SpatialReference* mapSrs = m_mapNode->getMapSRS();
-	if (mapSrs == nullptr) {
-		return;
-	}
-
-	osg::ref_ptr<osgEarth::Geometry> geometry;
+	osg::ref_ptr<osg::Geode> geode;
 	switch (shapeType)
 	{
 		case DrawingTool::ShapeType::Point:
-			if (!geoPoints.empty()) {
-				auto* pointSet = new osgEarth::PointSet();
-				pointSet->push_back(osg::Vec3d(geoPoints.front().x(), geoPoints.front().y(), geoPoints.front().z()));
-				geometry = pointSet;
-			}
+			geode = createRenderable(worldPoints, GL_POINTS, osg::Vec4(1.0f, 0.2f, 0.2f, 1.0f), 2.0f, 9.0f);
 			break;
 
 		case DrawingTool::ShapeType::Polyline:
-			if (geoPoints.size() >= 2) {
-				auto* line = new osgEarth::LineString();
-				for (const auto& point : geoPoints) {
-					line->push_back(osg::Vec3d(point.x(), point.y(), point.z()));
-				}
-				geometry = line;
+			if (worldPoints.size() >= 2) {
+				geode = createRenderable(worldPoints, GL_LINE_STRIP, osg::Vec4(1.0f, 0.95f, 0.15f, 1.0f), 3.0f, 1.0f);
 			}
 			break;
 
 		case DrawingTool::ShapeType::Polygon:
 		case DrawingTool::ShapeType::Rectangle:
 		case DrawingTool::ShapeType::Circle:
-			if (geoPoints.size() >= 3) {
-				auto* polygon = new osgEarth::Polygon();
-				for (const auto& point : geoPoints) {
-					polygon->push_back(osg::Vec3d(point.x(), point.y(), point.z()));
-				}
-				geometry = polygon;
+			if (worldPoints.size() >= 3) {
+				geode = createRenderable(worldPoints, GL_LINE_LOOP, osg::Vec4(0.2f, 1.0f, 0.35f, 1.0f), 3.0f, 1.0f);
 			}
 			break;
 	}
 
-	if (!geometry.valid()) {
-		return;
+	if (geode.valid()) {
+		m_drawingGroup->addChild(geode);
+	}
+}
+
+std::vector<osg::Vec3d> DrawingManager::toWorldPoints(const std::vector<osgEarth::GeoPoint>& points) const
+{
+	std::vector<osg::Vec3d> worldPoints;
+	if (!m_mapNode.valid() || m_mapNode->getMapSRS() == nullptr) {
+		return worldPoints;
 	}
 
-	osg::ref_ptr<osgEarth::Feature> feature = new osgEarth::Feature(geometry, mapSrs);
-	feature->geoInterp() = osgEarth::GEOINTERP_RHUMB_LINE;
+	const osgEarth::SpatialReference* mapSrs = m_mapNode->getMapSRS();
+	worldPoints.reserve(points.size());
 
-	osgEarth::Style style = styleForShape(shapeType);
-	osg::ref_ptr<osgEarth::FeatureNode> featureNode = new osgEarth::FeatureNode(feature, style);
+	for (const auto& sourcePoint : points) {
+		osgEarth::GeoPoint mapPoint;
+		if (sourcePoint.getSRS() == mapSrs) {
+			mapPoint = sourcePoint;
+		} else {
+			sourcePoint.transform(mapSrs, mapPoint);
+		}
 
-	m_drawingGroup->addChild(featureNode);
-	m_featureStore.addFeature(feature);
+		osg::Vec3d worldPoint;
+		if (mapPoint.toWorld(worldPoint)) {
+			worldPoints.push_back(worldPoint);
+		}
+	}
+
+	return worldPoints;
 }
 
 std::vector<osgEarth::GeoPoint> DrawingManager::rectanglePoints(const std::vector<osgEarth::GeoPoint>& points) const

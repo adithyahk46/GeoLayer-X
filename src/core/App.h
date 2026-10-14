@@ -7,6 +7,10 @@
 #include <osgEarth/EarthManipulator>
 #include <osgViewer/Viewer>
 
+#include "osgviewerwidget.h"
+
+class OSGViewerWidget;
+
 
 #include "osgearthcore_global.h"
 
@@ -16,33 +20,26 @@ class OSGEARTHCORE_EXPORT App
 public:
     static App* getInstance();
     ~App();
+    static void setThreedWindow(OSGViewerWidget* window){_threeDWindow = window;}
+    static OSGViewerWidget* getThreedWindow(){return _threeDWindow;}
 
-    void setMapNode(osgEarth::MapNode* mapNode){_mapNode = mapNode;}
-    osgEarth::MapNode* getMapNode(){return _mapNode;}
-
-    void setManipulator(osgEarth::EarthManipulator* manip){_manip = manip;}
-    osgEarth::EarthManipulator* getManipulator(){return _manip;}
-
-    void setOsgViewer(osgViewer::Viewer* viewer){_viewer = viewer;}
-    osgViewer::Viewer* getOsgViewer(){return _viewer;}
+    static void set2DWindow(OSGViewerWidget* window){_2DWindow = window;}
+    static OSGViewerWidget* get2DWindow(){return _2DWindow;}
 
     static void setMainwindow(QMainWindow* window){_mainWindow = window;}
     static QMainWindow* getMainwindow(){return _mainWindow;}
 
-private:
-    App(){
+    void sync2D3DView(OSGViewerWidget* ViewerWidget2D, OSGViewerWidget* ViewerWidget3D);
+    void unsync2D3DView(OSGViewerWidget* ViewerWidget2D, OSGViewerWidget* ViewerWidget3D);
+    bool is2D3DViewSynced(OSGViewerWidget* ViewerWidget2D, OSGViewerWidget* ViewerWidget3D);
 
-    }
+private:
+    App() = default;
 
     static App* _app;
     static QMainWindow* _mainWindow;
-
-    osg::ref_ptr<osgEarth::MapNode> _mapNode;
-    osg::ref_ptr<osgEarth::EarthManipulator> _manip;
-    osg::ref_ptr<osgViewer::Viewer> _viewer;
-
-
-
+    static OSGViewerWidget* _threeDWindow;
+    static OSGViewerWidget* _2DWindow;
 };
 
 #endif // APP_H

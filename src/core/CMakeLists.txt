@@ -1,4 +1,5 @@
 set(CORE_TARGET_NAME geoLayer_core)
+
 add_library(${CORE_TARGET_NAME} SHARED
     osgviewerwidget.h
     osgviewerwidget.cpp
@@ -6,10 +7,14 @@ add_library(${CORE_TARGET_NAME} SHARED
     DataManager/MapLoadModule.cpp DataManager/MapLoadModule.h
     SettingsManager/SettingsManager.cpp SettingsManager/SettingsManager.h
     DataManager/legends.cpp DataManager/legends.h
-    MapController.h MapController.cpp
-    MapController/MouseEventHandler.cpp MapController/MouseEventHandler.h
-    App.h App.cpp
-    DrawingTool/CircleTool.cpp DrawingTool/CircleTool.h DrawingTool/DrawingManager.cpp DrawingTool/DrawingManager.h DrawingTool/DrawingTool.cpp DrawingTool/DrawingTool.h DrawingTool/FeatureStore.cpp DrawingTool/FeatureStore.h DrawingTool/LineTool.cpp DrawingTool/LineTool.h DrawingTool/PointTool.cpp DrawingTool/PointTool.h DrawingTool/PolygonTool.cpp DrawingTool/PolygonTool.h DrawingTool/RectangleTool.cpp DrawingTool/RectangleTool.h
+    MapController/GLXEarthManipulator.cpp MapController/GLXEarthManipulator.h
+    PluginManager/PluginInterface.h PluginManager/PluginInterface.cpp
+    PluginManager/PluginInstaller.h PluginManager/PluginInstaller.cpp
+    PluginManager/PluginManager.h PluginManager/PluginManager.cpp
+    App.cpp
+    DrawingTool/DrawTool.cpp DrawingTool/DrawTool.h DrawingTool/PolygonDrawTool.cpp DrawingTool/PolygonDrawTool.h
+    App.cpp App.h
+
 
 
 )
@@ -39,7 +44,7 @@ find_library(OSG_QOPENGL_LIBRARY NAMES osgQOpenGL
         ${CMAKE_PREFIX_PATH}/lib
 )
 
-target_link_libraries(${CORE_TARGET_NAME} PRIVATE
+target_link_libraries(${CORE_TARGET_NAME} PUBLIC
     ${OSG_QOPENGL_LIBRARY}
 )
 
@@ -70,5 +75,3 @@ install(TARGETS ${CORE_TARGET_NAME}
   ARCHIVE DESTINATION ${QGIS_LIB_DIR}
   PUBLIC_HEADER DESTINATION ${QGIS_INCLUDE_DIR}
 )
-
-

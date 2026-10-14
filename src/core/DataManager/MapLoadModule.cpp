@@ -8,10 +8,10 @@
 #include <osgEarth/OGRFeatureSource>
 #include <osgEarth/FeatureModelLayer>
 #include <osgEarth/XYZ>
-#include <osgEarth/TMS>
 #include <osgEarth/StyleSheet>
 
 #include "osgviewerwidget.h"
+#include "App.h"
 
 
 MapLoadModule::MapLoadModule()
@@ -29,7 +29,7 @@ void MapLoadModule::LoadEarthFile(QString FilePath)
         osg::ref_ptr<osgEarth::MapNode> new_mapNode = osgEarth::MapNode::findMapNode(node);
         if (new_mapNode)
         {
-            osgEarth::MapNode* currentMapNode = OSGViewerWidget::getMapNode();
+            osgEarth::MapNode* currentMapNode = App::getThreedWindow()->getMapNode();
             if (!currentMapNode || !currentMapNode->getMap() || !new_mapNode->getMap())
             {
                 OE_WARN << "Failed to load .earth file: invalid source or destination map" << std::endl;
@@ -55,12 +55,12 @@ void MapLoadModule::LoadEarthFile(QString FilePath)
             // currentMap->clear();
             // currentMap->endUpdate();
 
-            // OSGViewerWidget::getRoot()->removeChild(OSGViewerWidget::getMapNode());
-            // OSGViewerWidget::setMapNode(new_mapNode.get());
+            // App::getThreedWindow()->getRoot()->removeChild(App::getThreedWindow()->getMapNode());
+            // App::getThreedWindow()->setMapNode(new_mapNode.get());
             // new_mapNode->open();
-            // OSGViewerWidget::getRoot()->addChild(new_mapNode);
-            // OSGViewerWidget::getRoot()->dirtyBound();
-            // OSGViewerWidget::getViewer()->realize();
+            // App::getThreedWindow()->getRoot()->addChild(new_mapNode);
+            // App::getThreedWindow()->getRoot()->dirtyBound();
+            // App::getThreedWindow()->getViewer()->realize();
         }
     }
     else{

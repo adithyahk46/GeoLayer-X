@@ -1,0 +1,10 @@
+{
+    "id": "radial.viewshed.analysis",
+    "name": "Radial Viewshed Analysis",
+    "version": "0.1.0",
+    "description": "Radial viewshed analysis plugin.",
+    "category": "Analysis",
+    "vendor": "GeoLayer X",
+    "tags": ["radial", "viewshed", "analysis", "terrain"],
+    "dependencies": []
+}

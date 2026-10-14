@@ -3,6 +3,8 @@ file(GLOB UI_FILES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/OE_Tools/*.ui"
 )
 
+list(REMOVE_ITEM UI_FILES "${CMAKE_CURRENT_SOURCE_DIR}/NewVectorLayerDialogBase.ui")
+
 qt_wrap_ui(UI_GENERATED_HEADERS
     ${UI_FILES}
 )

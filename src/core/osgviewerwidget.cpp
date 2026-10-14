@@ -10,22 +10,6 @@
 #include <osgEarth/XYZ>
 #include <osgUtil/Optimizer>
 
-OSGViewerWidget* OSGViewerWidget::_instance = nullptr;
-
-osg::ref_ptr<osg::Group> OSGViewerWidget::_root = nullptr;
-osg::ref_ptr<osgViewer::Viewer> OSGViewerWidget::_viewer = nullptr;
-osg::ref_ptr<osgEarth::MapNode> OSGViewerWidget::_mapNode = nullptr;
-osg::ref_ptr<osgEarth::EarthManipulator> OSGViewerWidget::_manipulator = nullptr;
-
-OSGViewerWidget* OSGViewerWidget::instance()
-{
-    if (!_instance)
-    {
-        _instance = new OSGViewerWidget();
-    }
-    return _instance;
-}
-
 void OSGViewerWidget::setRoot(osg::Group *root)
 {
     _root = nullptr;
@@ -34,16 +18,30 @@ void OSGViewerWidget::setRoot(osg::Group *root)
 
 void OSGViewerWidget::setMapNode(osgEarth::MapNode *mapNode)
 {
-    _mapNode = nullptr;
-    _mapNode = mapNode;
+    if(mapNode)
+    {
+        _root->removeChild(_mapNode);
+        _mapNode = nullptr;
+        _mapNode = mapNode;
+        _manipulator->setMapNode(_mapNode.get());
+        _root->addChild(mapNode);
+    }
+    
+    
 }
 
-void OSGViewerWidget::setManipulator(osgEarth::EarthManipulator *manipulator)
+void OSGViewerWidget::setManipulator(GLXEarthManipulator* manipulator)
 {
-    _manipulator= nullptr;
+    if (!manipulator)
+    {
+        qWarning() << "Cannot set a null earth manipulator.";
+        return;
+    }
+
     _manipulator = manipulator;
+    _manipulator->setMapNode(_mapNode.get());
     _manipulator->getSettings()->setThrowingEnabled(true);
-    if(_viewer)
+    if (_viewer)
     {
         _viewer->setCameraManipulator(_manipulator.get());
     }
@@ -63,7 +61,7 @@ OSGViewerWidget::OSGViewerWidget(QWidget* parent)
     _mapNode = new osgEarth::MapNode;
     _root->addChild(_mapNode);
 
-    _manipulator = new osgEarth::EarthManipulator();
+    _manipulator = new GLXEarthManipulator(_mapNode.get());
     _manipulator->getSettings()->setThrowingEnabled(true);
 
     // osgUtil::Optimizer optimizer;

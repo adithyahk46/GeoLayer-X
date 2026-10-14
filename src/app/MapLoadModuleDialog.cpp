@@ -1,4 +1,5 @@
 #include "MapLoadModuleDialog.h"
+#include "App.h"
 #include "ui_MapLoadModuleDialog.h"
 
 
@@ -259,7 +260,7 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
         if (ui->le_rasterUrl->text().isEmpty() )
             return;
 
-            MapLoadModule::LoadRasters(OSGViewerWidget::instance()->getMapNode(), ui->le_rasterUrl->text(), ui->le_rasterLabelName->text());
+            MapLoadModule::LoadRasters(App::getThreedWindow()->getMapNode(), ui->le_rasterUrl->text(), ui->le_rasterLabelName->text());
 
     }
 
@@ -273,7 +274,7 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
 
                QMetaObject::invokeMethod(this, [=]() {
 
-                   MapLoadModule::LoadVectors(OSGViewerWidget::instance()->getMapNode(), ui->le_vectorUrl->text(), ui->le_vectorLayerName->text());
+                   MapLoadModule::LoadVectors(App::getThreedWindow()->getMapNode(), ui->le_vectorUrl->text(), ui->le_vectorLayerName->text());
 
                   }, Qt::QueuedConnection);
            });
@@ -281,10 +282,10 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
 
     else if(ui->tabWidget->currentIndex() == 2){
 
-        if (ui->le_eleUrl->text().isEmpty() || !OSGViewerWidget::instance()->getMapNode())
+        if (ui->le_eleUrl->text().isEmpty() || !App::getThreedWindow()->getMapNode())
             return;
 
-        MapLoadModule::LoadElevation(OSGViewerWidget::instance()->getMapNode(),ui->le_eleUrl->text() , ui->le_eleLayerName->text());
+        MapLoadModule::LoadElevation(App::getThreedWindow()->getMapNode(),ui->le_eleUrl->text() , ui->le_eleLayerName->text());
     }
 
     else if(ui->tabWidget->currentIndex() == 3){
@@ -298,7 +299,7 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
         QString LayerName = ui->le_sceneLayerName->text();
         QString heightText = "["+ui->cb_heightAttribute->currentText()+"]";
 
-        MapLoadModule::Load3Dbuildings(OSGViewerWidget::instance()->getMapNode(), ui->le_sceanUrl->text().trimmed(), heightText, LayerName, "" );
+        MapLoadModule::Load3Dbuildings(App::getThreedWindow()->getMapNode(), ui->le_sceanUrl->text().trimmed(), heightText, LayerName, "" );
 
     }
 
@@ -353,7 +354,7 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
             }
 
             ui->warning_label->clear();
-            MapLoadModule::LoadXYZTiles(OSGViewerWidget::instance()->getMapNode(),LayerUrl, ui->le_xyzLayername->text());
+            MapLoadModule::LoadXYZTiles(App::getThreedWindow()->getMapNode(),LayerUrl, ui->le_xyzLayername->text());
         }
 
     else if(ui->tabWidget->currentIndex() == 5)
@@ -361,5 +362,4 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
 
     }
 }
-
 

@@ -10,6 +10,7 @@
 #include <osgEarth/MapNode>
 #include <osgEarth/EarthManipulator>
 
+#include "MapController/GLXEarthManipulator.h"
 #include "osgearthcore_global.h"
 
 class OSGEARTHCORE_EXPORT OSGViewerWidget : public osgQOpenGLWidget
@@ -25,23 +26,24 @@ public:
         Mapbox,
         ArcGIS
     };
-    static OSGViewerWidget* instance();
+    osg::Group* getRoot()  { return _root.get(); }
+    void setRoot(osg::Group* root);
 
-    static osg::Group* getRoot()  { return _root.get(); }
-    static void setRoot(osg::Group* root);
+    osgEarth::MapNode* getMapNode() { return _mapNode.get(); }
+    void setMapNode(osgEarth::MapNode* mapNode);
 
-    static osgEarth::MapNode* getMapNode() { return _mapNode.get(); }
-    static void setMapNode(osgEarth::MapNode* mapNode);
+    GLXEarthManipulator* getManipulator()  { return _manipulator.get(); }
+    void setManipulator(GLXEarthManipulator* manipulator);
 
-    static osgEarth::EarthManipulator* getManipulator()  { return _manipulator.get(); }
-    static void setManipulator(osgEarth::EarthManipulator* manipulator);
-
-    static void setViewer(osgViewer::Viewer* viewer);
-    static osgViewer::Viewer* getViewer()  { return _viewer.get(); }
+    void setViewer(osgViewer::Viewer* viewer);
+    osgViewer::Viewer* getViewer()  { return _viewer.get(); }
 
     void setViewerColor(const osg::Vec4& color);
 
     void setBaseMap(BaseMapType type);
+
+    explicit OSGViewerWidget(QWidget* parent = nullptr);
+    ~OSGViewerWidget() override;
 
 signals:
     void setupCompleted();
@@ -49,17 +51,11 @@ signals:
 private:
     bool setupOsgEarth();
 
-protected:
-    OSGViewerWidget(QWidget* parent = nullptr);
-
-    ~OSGViewerWidget() override;
-
 private:
-    static OSGViewerWidget* _instance;
-    static osg::ref_ptr<osg::Group> _root;
-    static osg::ref_ptr<osgViewer::Viewer> _viewer;
-    static osg::ref_ptr<osgEarth::MapNode> _mapNode;
-    static osg::ref_ptr<osgEarth::EarthManipulator> _manipulator;
+    osg::ref_ptr<osg::Group> _root;
+    osg::ref_ptr<osgViewer::Viewer> _viewer;
+    osg::ref_ptr<osgEarth::MapNode> _mapNode;
+    osg::ref_ptr<GLXEarthManipulator> _manipulator;
 
     osg::Vec4 _viewerColor = osg::Vec4(0.2f, 0.2f, 0.2f, 1.0f);
 

@@ -1,0 +1,2 @@
+add_subdirectory(ViewshedAnalysis)
+add_subdirectory(RadialViewshedAnalysis)

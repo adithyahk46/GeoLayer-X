@@ -5,6 +5,7 @@
 #include "osgearthcore_global.h"
 
 #include <osgEarth/MapNode>
+#include <osgEarth/TMS>
 
 
 class OSGEARTHCORE_EXPORT MapLoadModule

@@ -2,22 +2,24 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QList>
 #include <memory>
 
+#include <PluginManager/PluginManager.h>
 
-#include "MapController/MouseEventHandler.h"
+#include "MapController/GLXEarthManipulator.h"
 
 #include "osgviewerwidget.h"
-#include "MapController.h"
-
-#include "DrawingTool/DrawingManager.h"
 
 #include "MapLoadModuleDialog.h"
 #include "LayerManagerWidget.h"
 #include "StatusbarHandlerWidget.h"
 
 class QActionGroup;
+class QAction;
 class QKeyEvent;
+class PluginsDockWidget;
+class QSplitter;
 
 namespace Ui {
 class MainWindow;
@@ -51,19 +53,24 @@ private:
     std::ofstream *_log;
 
 
-    OSGViewerWidget* osgwidget= nullptr;
+    OSGViewerWidget* osgwidget3D= nullptr;
+    OSGViewerWidget* osgwidget2D = nullptr;
+    QSplitter* mapViewSplitter = nullptr;
     StatusbarHandlerWidget* mStatusBarWidget = nullptr;
-    osg::ref_ptr<MouseEventHandler> _mousePicker = nullptr;
+    osg::ref_ptr<GLXEarthManipulator> _earthManipulator = nullptr;
+    osgEarth::MapCallback* _layerManagerCallback = nullptr;
+    PluginManager* _pluginManager = nullptr;
     LayerManagerWidget* layerManager = nullptr;
-    
-    std::unique_ptr<DrawingManager> m_drawingManager;
+    PluginsDockWidget* pluginsDockWidget = nullptr;
     QActionGroup* m_drawingActionGroup = nullptr;
+    QList<QAction*> _pluginActions;
 
 
 //declare private functions here
     void initCore();
     void initSignalsAndSlots();
     void initLogs();
+    void initPlugins();
 };
 
 #endif // MAINWINDOW_H

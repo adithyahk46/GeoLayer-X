@@ -5,18 +5,13 @@ set(TARGET_APP_NAME geoLayer_app)
 add_executable(${TARGET_APP_NAME}
     main.cpp
 
-
-
-
     Tools/EnvironmentGUI.cpp Tools/EnvironmentGUI.h
     DockWidgetPanels.cpp DockWidgetPanels.h
     MapLoadModuleDialog.cpp MapLoadModuleDialog.h
     mainwindow.h mainwindow.cpp
     LayerManagerWidget.cpp LayerManagerWidget.h
     StatusbarHandlerWidget.cpp StatusbarHandlerWidget.h
-
-
-
+    PluginsDockWidget.cpp PluginsDockWidget.h
 
 )
 # add_executable(GeoLayer-X WIN32 mainwin.cpp)
