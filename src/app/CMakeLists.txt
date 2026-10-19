@@ -12,6 +12,7 @@ add_executable(${TARGET_APP_NAME}
     LayerManagerWidget.cpp LayerManagerWidget.h
     StatusbarHandlerWidget.cpp StatusbarHandlerWidget.h
     PluginsDockWidget.cpp PluginsDockWidget.h
+    GLXProjectsDialog.h GLXProjectsDialog.cpp
 
 )
 # add_executable(GeoLayer-X WIN32 mainwin.cpp)
@@ -46,6 +47,10 @@ target_link_libraries(${TARGET_APP_NAME} PRIVATE
     GDAL::GDAL
 
     geoLayer_core
+)
+
+target_compile_definitions(${TARGET_APP_NAME} PRIVATE
+    GLX_BUILD_2D_MAP=$<BOOL:${GLX_BUILD_2D_MAP}>
 )
 
 # Link OSG libraries

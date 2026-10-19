@@ -19,7 +19,7 @@ MapLoadModule::MapLoadModule()
 
 }
 
-void MapLoadModule::LoadEarthFile(QString FilePath)
+bool MapLoadModule::LoadEarthFile(const QString& FilePath)
 {
     //clear the data from the existing mapNode and load the new .earth file
 
@@ -33,7 +33,7 @@ void MapLoadModule::LoadEarthFile(QString FilePath)
             if (!currentMapNode || !currentMapNode->getMap() || !new_mapNode->getMap())
             {
                 OE_WARN << "Failed to load .earth file: invalid source or destination map" << std::endl;
-                return;
+                return false;
             }
 
             // Replace the current map's layer stack with the layers from the loaded earth map.
@@ -45,8 +45,8 @@ void MapLoadModule::LoadEarthFile(QString FilePath)
             {
                 if (layer)
                 {
-                    layer->open(); 
-                   currentMapNode->getMap()->addLayer(layer);
+                    layer->open();
+                    currentMapNode->getMap()->addLayer(layer);
 
                 }
             }
@@ -67,6 +67,7 @@ void MapLoadModule::LoadEarthFile(QString FilePath)
         // Handle error: failed to load the .earth file
         OE_WARN<<"Failed to load .earth file: " <<  FilePath.toStdString().c_str() ;
     }
+    return true;
 }
 
 void MapLoadModule::LoadRasters(osgEarth::MapNode* mapNode, QString FilePath,  QString LayerName )

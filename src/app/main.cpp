@@ -9,6 +9,7 @@
 #include <QPalette>
 #include <QStyleFactory>
 #include <QSurfaceFormat>
+#include <QTimer>
 
 #include <osgEarth/MapNode>
 
@@ -82,6 +83,7 @@ int main(int argc, char* argv[])
     MainWindow window;
     window.initAll();
     window.showMaximized();
+    QTimer::singleShot(0, &window, &MainWindow::showWelcomeScreen);
 
     qDebug() << qApp->styleSheet();
 

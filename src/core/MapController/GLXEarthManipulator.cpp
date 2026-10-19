@@ -6,7 +6,7 @@
 
 GLXEarthManipulator::GLXEarthManipulator(osgEarth::MapNode* mapNode, QObject* parent)
     : QObject(parent),
-      _mapNode(mapNode)
+    _mapNode(mapNode)
 {
     qRegisterMetaType<osgEarth::GeoPoint>("osgEarth::GeoPoint");
 }
@@ -33,27 +33,27 @@ bool GLXEarthManipulator::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIAct
     {
         switch (eventType)
         {
-            case osgGA::GUIEventAdapter::PUSH:
-                emit mouseClickEvent(_currentGeoPos);
-                break;
-            case osgGA::GUIEventAdapter::DOUBLECLICK:
-                emit mouseDoubleClickEvent(_currentGeoPos);
-                break;
-            case osgGA::GUIEventAdapter::MOVE:
-            case osgGA::GUIEventAdapter::DRAG:
-                emit mouseMoveEvent(_currentGeoPos);
-                break;
-            case osgGA::GUIEventAdapter::SCROLL:
-                emit mouseScrollEvent(_currentGeoPos);
-                break;
-            default:
-                break;
+        case osgGA::GUIEventAdapter::PUSH:
+            emit mouseClickEvent(_currentGeoPos);
+            break;
+        case osgGA::GUIEventAdapter::DOUBLECLICK:
+            emit mouseDoubleClickEvent(_currentGeoPos);
+            break;
+        case osgGA::GUIEventAdapter::MOVE:
+        case osgGA::GUIEventAdapter::DRAG:
+            emit mouseMoveEvent(_currentGeoPos);
+            break;
+        case osgGA::GUIEventAdapter::SCROLL:
+            emit mouseScrollEvent(_currentGeoPos);
+            break;
+        default:
+            break;
         }
     }
 
     const bool handledByEarthManipulator = _disableMouseAction
-        ? false
-        : osgEarth::EarthManipulator::handle(ea, aa);
+                                               ? false
+                                               : osgEarth::EarthManipulator::handle(ea, aa);
     return _disableMouseAction || handledByEarthManipulator;
 }
 
@@ -109,10 +109,11 @@ void GLXEarthManipulator::flyTo(double lon,
     flyTo(osgEarth::Viewpoint("", lon, lat, altitude, heading, pitch, range), duration);
 }
 
-void GLXEarthManipulator::zoomToExtent(double duration)
+void GLXEarthManipulator::zoomToExtent(osgEarth::GeoExtent extent, double duration)
 {
-    Q_UNUSED(duration);
+
 }
+
 
 osgEarth::Viewpoint GLXEarthManipulator::currentViewpoint() const
 {

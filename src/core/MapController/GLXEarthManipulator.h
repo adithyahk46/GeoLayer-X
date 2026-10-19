@@ -27,7 +27,13 @@ public:
     void flyTo(const osgEarth::Viewpoint& viewpoint, double duration = 1.0);
     void flyTo(double lon, double lat, double altitude, double range,
                double heading = 0.0, double pitch = -90.0, double duration = 1.0);
-    void zoomToExtent(double duration = 1.5);
+    /**
+     * @brief Zoom to a specific geographic extent.
+     * @param extent The geographic extent to zoom to.
+     * @param duration The duration of the zoom animation in seconds. Default is 1.5 seconds.
+     * @note
+     */
+    void zoomToExtent(osgEarth::GeoExtent extent , double duration = 1.5);
     osgEarth::Viewpoint currentViewpoint() const;
     const osgEarth::GeoPoint& currentGeoPosition() const { return _currentGeoPos; }
     const osg::Vec3d& currentWorldPosition() const { return _currentWorldPos; }

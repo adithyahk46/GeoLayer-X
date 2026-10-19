@@ -121,7 +121,7 @@ bool OSGViewerWidget::setupOsgEarth()
 
 void OSGViewerWidget::setViewerColor(const osg::Vec4& color)
 {
-            _viewerColor = color;
+    _viewerColor = color;
 
     if (_viewer)
     {

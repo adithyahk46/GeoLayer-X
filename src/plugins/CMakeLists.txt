@@ -1,2 +1,3 @@
 add_subdirectory(ViewshedAnalysis)
 add_subdirectory(RadialViewshedAnalysis)
+add_subdirectory(ViewshedByExtent)

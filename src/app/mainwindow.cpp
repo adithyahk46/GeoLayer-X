@@ -12,6 +12,7 @@ using namespace std;
 
 
 #include <QActionGroup>
+#include <QFileInfo>
 #include <QFileDialog>
 #include <QKeyEvent>
 #include <QMessageBox>
@@ -116,7 +117,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::saveAllSettings()
 {
-    SettingsManager::instance().setValue("theme",ui->actionTheame->isChecked()?"dark":"light");
 }
 
 void MainWindow::restoreAllSettings()
@@ -124,7 +124,7 @@ void MainWindow::restoreAllSettings()
     auto& settings = SettingsManager::instance();
 
    const QString theme = settings.value("theme", "light").toString();
-   ui->actionTheame->setChecked(theme == "dark");
+   // ui->actionTheme->setChecked(theme == "dark");
    setApplicationTheme(theme == "dark");
 
 }
@@ -141,19 +141,14 @@ void MainWindow::initAll()
 
     SettingsManager::instance().restoreMainWindowState(this);
 
-    QMenu *fileMenu = new QMenu("", this);
-
-    QAction *openAction = fileMenu->addAction("Open");
-    QAction *saveAction = fileMenu->addAction("Save");
-
-    QToolButton *fileButton = new QToolButton(this);
-    fileButton->setText("File");
-    fileButton->setMenu(fileMenu);
-    fileButton->setPopupMode(QToolButton::InstantPopup);
-
-    ui->toolbarProject->addWidget(fileButton);
-
     restoreAllSettings();
+}
+
+void MainWindow::showWelcomeScreen()
+{
+    GLXProjectsDialog dialog(this);
+
+    dialog.exec();
 }
 
 
@@ -214,26 +209,37 @@ void MainWindow::initCore()
     osgwidget3D = new OSGViewerWidget(this);
     App::setThreedWindow(osgwidget3D);
 
+#if GLX_BUILD_2D_MAP
+    //2D widget setUp
     osgwidget2D = new OSGViewerWidget(this);
     App::set2DWindow(osgwidget2D);
     osgwidget2D->getMapNode()->getMap()->setProfile(osgEarth::Profile::create(osgEarth::Profile::PLATE_CARREE));
+    osgwidget2D->getManipulator()->getSettings()->bindMouse(
+    osgEarth::Util::EarthManipulator::ACTION_NULL,osgGA::GUIEventAdapter::MIDDLE_MOUSE_BUTTON,0);
+#endif
 
-
-
+#if GLX_BUILD_2D_MAP
     mapViewSplitter = new QSplitter(Qt::Horizontal, this);
     mapViewSplitter->addWidget(osgwidget2D);
     mapViewSplitter->addWidget(osgwidget3D);
     mapViewSplitter->setStretchFactor(0, 1);
     mapViewSplitter->setStretchFactor(1, 1);
+#endif
 
     _layerManagerCallback = LayerManagerWidget::createMapCallback(layerManager);
     osgwidget3D->getMapNode()->getMap()->addMapCallback(_layerManagerCallback);
+#if GLX_BUILD_2D_MAP
     setCentralWidget(mapViewSplitter);
+#else
+    setCentralWidget(osgwidget3D);
+#endif
 
     QObject::connect(osgwidget3D, &OSGViewerWidget::setupCompleted,this, &MainWindow::osgViewerSetup);
 
     MapLoadModule::LoadTMSLayer(osgwidget3D->getMapNode(), "https://readymap.org/readymap/tiles/1.0.0/7/");
+#if GLX_BUILD_2D_MAP
     MapLoadModule::LoadTMSLayer(osgwidget2D->getMapNode(), "https://readymap.org/readymap/tiles/1.0.0/7/");
+#endif
 
 
     mStatusBarWidget = new StatusbarHandlerWidget();
@@ -241,7 +247,9 @@ void MainWindow::initCore()
     statusBar()->setMinimumHeight(20);
     statusBar()->layout()->setContentsMargins(0, 0, 0, 0);
     QObject::connect(osgwidget3D->getManipulator(), &GLXEarthManipulator::mouseMoveEvent, mStatusBarWidget, &StatusbarHandlerWidget::updateGeoCoordinates);
+#if GLX_BUILD_2D_MAP
     QObject::connect(osgwidget2D->getManipulator(), &GLXEarthManipulator::mouseMoveEvent, mStatusBarWidget, &StatusbarHandlerWidget::updateGeoCoordinates);
+#endif
 
 
 
@@ -252,10 +260,14 @@ void MainWindow::initSignalsAndSlots()
 {
     //menubar "VIEW"
     {
+#if GLX_BUILD_2D_MAP
       QObject::connect(ui->actionShow_2D, &QAction::triggered, this, [this](bool checked){
          osgwidget2D->setVisible(!osgwidget2D->isVisible());
          ui->actionShow_2D->setChecked(osgwidget2D->isVisible());
       });
+#else
+      ui->actionShow_2D->setVisible(false);
+#endif
       QObject::connect(ui->actionShow_3D, &QAction::triggered, this, [this](bool checked){
             osgwidget3D->setVisible(!osgwidget3D->isVisible());
             ui->actionShow_3D->setChecked(osgwidget3D->isVisible());
@@ -289,20 +301,89 @@ void MainWindow::initSignalsAndSlots()
 
     });
 
-    QObject::connect(ui->mActionZoomIn, &QAction::triggered, this, [this](){
-        osgwidget3D->getManipulator()->zoomIn();
-    });
 
-    QObject::connect(ui->mActionZoomOut, &QAction::triggered, this, [this](){
-        osgwidget3D->getManipulator()->zoomOut();
-    });
-    QObject::connect(ui->mActionZoomToFullExtent, &QAction::triggered, this, [this](){
-        osgwidget3D->getManipulator()->zoomToFullExtent();
-    });
-    QObject::connect(ui->mActionZoomToArea, &QAction::triggered, this, [this](){
-        //allow user to select a rectangle on the map and zoom to that area
-        osgwidget3D->getManipulator()->zoomToExtent(1.5);
-    });
+    /*setup mapInteraction toolbar
+     * This setup tells to which manipulator apply the changes, so user can have the control using mapInteraction buttons
+     * add manipulatorButton to  ui->toolbarMapIntraction at the first place
+     * manipulatorButton text shows which manipulators receive the changes
+     */
+    {
+#if GLX_BUILD_2D_MAP
+        QMenu *manipulatorMenu = new QMenu("", this);
+
+        QAction *manip2d = manipulatorMenu->addAction("2D");
+        QAction *manip3d = manipulatorMenu->addAction("3D");
+
+        manip2d->setCheckable(true);
+        manip3d->setCheckable(true);
+        manip3d->setChecked(true);
+
+        QToolButton *manipulatorButton = new QToolButton(this);
+        const auto updateManipulatorButtonText = [manipulatorButton, manip2d, manip3d]() {
+            if (manip2d->isChecked() && manip3d->isChecked())
+              //  :/images/themes/default/sync_views.svg
+                manipulatorButton->setIcon(QIcon(":/images/themes/default/sync_views.svg"));
+            else if (manip2d->isChecked())
+                manipulatorButton->setText("2D");
+            else if (manip3d->isChecked())
+                manipulatorButton->setText("3D");
+            else
+                manipulatorButton->setText("None");
+        };
+        updateManipulatorButtonText();
+        manipulatorButton->setMenu(manipulatorMenu);
+        manipulatorButton->setPopupMode(QToolButton::InstantPopup);
+
+        ui->toolbarMapIntraction->addWidget(manipulatorButton);
+#endif
+
+#if GLX_BUILD_2D_MAP
+        QObject::connect(manip2d, &QAction::toggled, this, [updateManipulatorButtonText](bool) {
+            updateManipulatorButtonText();
+        });
+        QObject::connect(manip3d, &QAction::toggled, this, [updateManipulatorButtonText](bool) {
+            updateManipulatorButtonText();
+        });
+
+        const auto applyToCheckedManipulators = [this, manip2d, manip3d](auto operation) {
+            if (manip2d->isChecked())
+                operation(osgwidget2D->getManipulator());
+            if (manip3d->isChecked())
+                operation(osgwidget3D->getManipulator());
+        };
+#else
+        const auto applyToCheckedManipulators = [this](auto operation) {
+            operation(osgwidget3D->getManipulator());
+        };
+#endif
+
+        QObject::connect(ui->mActionZoomIn, &QAction::triggered, this, [applyToCheckedManipulators]() {
+            applyToCheckedManipulators([](GLXEarthManipulator *manipulator) {
+                manipulator->zoomIn();
+            });
+        });
+
+        QObject::connect(ui->mActionZoomOut, &QAction::triggered, this, [applyToCheckedManipulators]() {
+            applyToCheckedManipulators([](GLXEarthManipulator *manipulator) {
+                manipulator->zoomOut();
+            });
+        });
+
+        QObject::connect(ui->mActionZoomToFullExtent, &QAction::triggered, this, [applyToCheckedManipulators]() {
+            applyToCheckedManipulators([](GLXEarthManipulator *manipulator) {
+                manipulator->zoomToFullExtent();
+            });
+        });
+
+        QObject::connect(ui->mActionZoomToArea, &QAction::triggered, this, [applyToCheckedManipulators]() {
+            //allow user to select a rectangle on the map and zoom to that area
+            applyToCheckedManipulators([](GLXEarthManipulator *manipulator) {
+                // manipulator->zoomToExtent(1.5);
+            });
+        });
+    }
+
+
 
     m_drawingActionGroup = new QActionGroup(this);
     m_drawingActionGroup->setExclusive(true);
@@ -421,5 +502,20 @@ void MainWindow::setApplicationTheme(bool dark)
     }
 
     QApplication::setPalette(palette);
+    if(dark){
+        SettingsManager::instance().setValue("theme","dark");
+#if GLX_BUILD_2D_MAP
+        osgwidget2D->setViewerColor(osg::Vec4(0.2f, 0.2f, 0.2f, 1.0f));
+#endif
+        osgwidget3D->setViewerColor(osg::Vec4(0.2f, 0.2f, 0.2f, 1.0f));
+    }
+    else{
+        SettingsManager::instance().setValue("theme","light");
+#if GLX_BUILD_2D_MAP
+        osgwidget2D->setViewerColor(osg::Vec4(0.9f, 0.9f, 0.9f, 1.0f));
+#endif
+        osgwidget3D->setViewerColor(osg::Vec4(0.9f, 0.9f, 0.9f, 1.0f));
+    }
+
 
 }

@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(GeoLayer-X CXX)
 set(APP_NAME GLX)
+
+option(GLX_BUILD_2D_MAP "Build the 2D map view" OFF)
+
 # C++ Standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

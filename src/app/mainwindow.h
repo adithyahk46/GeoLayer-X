@@ -12,12 +12,12 @@
 #include "osgviewerwidget.h"
 
 #include "MapLoadModuleDialog.h"
+#include "GLXProjectsDialog.h"
 #include "LayerManagerWidget.h"
 #include "StatusbarHandlerWidget.h"
 
 class QActionGroup;
 class QAction;
-class QKeyEvent;
 class PluginsDockWidget;
 class QSplitter;
 
@@ -34,6 +34,7 @@ public:
     ~MainWindow();
 
     void initAll();
+    void showWelcomeScreen();
 
     void setApplicationTheme(bool dark);
 
@@ -52,10 +53,11 @@ private:
     Ui::MainWindow *ui;
     std::ofstream *_log;
 
-
     OSGViewerWidget* osgwidget3D= nullptr;
+#if GLX_BUILD_2D_MAP
     OSGViewerWidget* osgwidget2D = nullptr;
     QSplitter* mapViewSplitter = nullptr;
+#endif
     StatusbarHandlerWidget* mStatusBarWidget = nullptr;
     osg::ref_ptr<GLXEarthManipulator> _earthManipulator = nullptr;
     osgEarth::MapCallback* _layerManagerCallback = nullptr;
@@ -64,7 +66,6 @@ private:
     PluginsDockWidget* pluginsDockWidget = nullptr;
     QActionGroup* m_drawingActionGroup = nullptr;
     QList<QAction*> _pluginActions;
-
 
 //declare private functions here
     void initCore();

@@ -24,3 +24,8 @@
 ![radarDome](https://github.com/user-attachments/assets/a22c1c9b-ff48-4b8e-95c2-dd329d4e2828)
 
 ![radarDome_with_LOS](https://github.com/user-attachments/assets/c86db835-f9e6-4706-8428-39368d8ab43f)
+
+## Build options
+
+The 2D map view is disabled by default. Enable it at configure time with
+`-DGLX_BUILD_2D_MAP=ON`.
