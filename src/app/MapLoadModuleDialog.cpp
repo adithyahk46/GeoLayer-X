@@ -289,18 +289,21 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
     }
 
     else if(ui->tabWidget->currentIndex() == 3){
-        if(ui->le_sceanUrl->text().isEmpty() || ui->le_sceneXml->text().isEmpty())
+        if(ui->le_sceanUrl->text().isEmpty())
             return;
 
         if(ui->le_sceneLayerName->text().isEmpty()) return;
 
-       // if(ui->le_heightAttribute->text().isEmpty()) return;
-
         QString LayerName = ui->le_sceneLayerName->text();
-        QString heightText = "["+ui->cb_heightAttribute->currentText()+"]";
+        QString heightText = ui->cb_heightAttribute->currentText().trimmed();
+        if (heightText.isEmpty())
+            heightText = "10";
 
-        MapLoadModule::Load3Dbuildings(App::getThreedWindow()->getMapNode(), ui->le_sceanUrl->text().trimmed(), heightText, LayerName, "" );
-
+        MapLoadModule::Load3Dbuildings(App::getThreedWindow()->getMapNode(),
+                                       ui->le_sceanUrl->text().trimmed(),
+                                       heightText,
+                                       LayerName,
+                                       ui->le_sceneXml->text().trimmed());
     }
 
     else if(ui->tabWidget->currentIndex() == 4)

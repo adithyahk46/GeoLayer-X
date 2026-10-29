@@ -47,6 +47,8 @@ public:
 private slots:
     void osgViewerSetup();
 
+    void createShapeFile();
+
 private:
     void keyPressEvent(QKeyEvent* event) override;
 

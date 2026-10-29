@@ -27,6 +27,7 @@ using namespace std;
 #include "DataManager/MapLoadModule.h"
 #include "DrawingTool/PolygonDrawTool.h"
 #include "PluginsDockWidget.h"
+#include "qgis/GLXNewVectorLayerDialog.h"
 
 
 
@@ -159,6 +160,12 @@ void MainWindow::osgViewerSetup()
     App::getInstance()->setMainwindow(this);
 }
 
+void MainWindow::createShapeFile()
+{
+    GLXNewVectorLayerDialog dialog(this);
+    dialog.exec();
+}
+
 void MainWindow::initLogs()
 {
     std::string glx_prefix_path =
@@ -286,7 +293,7 @@ void MainWindow::initSignalsAndSlots()
     });
 
     QObject::connect(ui->actionFullScreen, &QAction::triggered, this, [this](){
-        if(isFullScreen()){showNormal();}
+        if(isFullScreen()){showMaximized();}
         else{showFullScreen(); }
     });
 
@@ -419,9 +426,7 @@ void MainWindow::initSignalsAndSlots()
 
     });
 
-    QObject::connect(ui->actionNew_Shapefile_Layer, &QAction::triggered, this, [this](){
-        PolygonDrawTool* polygonDrawTool = new PolygonDrawTool(osgwidget3D->getMapNode(), osgwidget3D->getManipulator(), this);
-    });
+    QObject::connect(ui->actionNew_Shapefile_Layer, &QAction::triggered, this, &MainWindow::createShapeFile);
 
 
 }

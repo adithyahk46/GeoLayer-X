@@ -1,6 +1,8 @@
 #include "MapLoadModule.h"
 
+#include <QFile>
 #include <QFileInfo>
+#include <QXmlStreamReader>
 
 #include <osgDB/ReadFile>
 
@@ -9,10 +11,44 @@
 #include <osgEarth/FeatureModelLayer>
 #include <osgEarth/XYZ>
 #include <osgEarth/StyleSheet>
+#include <osgEarth/FeatureImageLayer>
 
 #include "osgviewerwidget.h"
 #include "App.h"
 
+namespace
+{
+// Keeps generating a different color for each feature layer loaded by LoadVectors.
+static unsigned sNextFeatureColor = 0;
+
+osgEarth::Color getNextFeatureColor()
+{
+    const unsigned index = sNextFeatureColor++;
+    const float hue = static_cast<float>((index * 137 + 20) % 360) / 360.0f;
+    const float saturation = 0.72f;
+    const float value = 0.95f;
+
+    const float sector = hue * 6.0f;
+    const unsigned sectorIndex = static_cast<unsigned>(sector) % 6;
+    const float fraction = sector - static_cast<float>(static_cast<unsigned>(sector));
+    const float p = value * (1.0f - saturation);
+    const float q = value * (1.0f - saturation * fraction);
+    const float t = value * (1.0f - saturation * (1.0f - fraction));
+
+    float r = 0.0f, g = 0.0f, b = 0.0f;
+    switch (sectorIndex)
+    {
+        case 0: r = value; g = t; b = p; break;
+        case 1: r = q; g = value; b = p; break;
+        case 2: r = p; g = value; b = t; break;
+        case 3: r = p; g = q; b = value; break;
+        case 4: r = t; g = p; b = value; break;
+        default: r = value; g = p; b = q; break;
+    }
+
+    return osgEarth::Color(r, g, b, 0.75f);
+}
+}
 
 MapLoadModule::MapLoadModule()
 {
@@ -115,6 +151,18 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
         return;
     }
 
+    if (const osgEarth::FeatureProfile* profile = features->getFeatureProfile())
+    {
+        const osgEarth::GeoExtent& extent = features->getExtent();
+        const osgEarth::SpatialReference* srs = extent.getSRS();
+        qDebug() << "Vector profile SRS:" << (srs ? QString::fromStdString(srs->getName()) : QStringLiteral("unknown"))
+                 << "geographic:" << (srs ? srs->isGeographic() : false)
+                 << "extent:" << extent.xMin() << extent.yMin() << extent.xMax() << extent.yMax();
+    }
+
+    const osgEarth::Color featureColor = getNextFeatureColor();
+    qDebug() << "New feature color:" << QString::fromStdString(featureColor.toHTML());
+
     osgEarth::Style style;
     QString geomTypeStr = "UNKNOWN";
 
@@ -126,7 +174,7 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
             geomTypeStr = "UNKNOWN";
 
             osgEarth::LineSymbol* ls = style.getOrCreateSymbol<osgEarth::LineSymbol>();
-            ls->stroke().mutable_value().color() = osgEarth::Color::Yellow;
+            ls->stroke().mutable_value().color() = featureColor;
             ls->stroke().mutable_value().width() = osgEarth::Distance(2.0, osgEarth::Units::PIXELS);
             break;
         }
@@ -138,7 +186,7 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
             osgEarth::PointSymbol* pointSymbol = style.getOrCreateSymbol<osgEarth::PointSymbol>();
             style.getOrCreate<osgEarth::AltitudeSymbol>()->clamping() = osgEarth::AltitudeSymbol::CLAMP_TO_TERRAIN;
 
-            pointSymbol->fill() = osgEarth::Color::Red;
+            pointSymbol->fill() = featureColor;
             pointSymbol->size() = 10.0f;
             pointSymbol->smooth() = 10.0f;
             break;
@@ -149,9 +197,9 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
             geomTypeStr = (type == osgEarth::Geometry::TYPE_LINESTRING) ? "LINESTRING" : "RING";
 
             osgEarth::LineSymbol* ls = style.getOrCreateSymbol<osgEarth::LineSymbol>();
-            ls->stroke().mutable_value().color() = osgEarth::Color::Yellow;
+            ls->stroke().mutable_value().color() = featureColor;
             ls->stroke().mutable_value().width() = osgEarth::Distance(2.0f, osgEarth::Units::PIXELS);
-            ls->tessellationSize() = osgEarth::Distance(100, osgEarth::Units::KILOMETERS);
+            ls->tessellationSize() = osgEarth::Distance(100, osgEarth::Units::METERS);
 
             osgEarth::AltitudeSymbol* alt = style.getOrCreate<osgEarth::AltitudeSymbol>();
             alt->clamping() = osgEarth::AltitudeSymbol::CLAMP_TO_TERRAIN;
@@ -168,27 +216,51 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
             geomTypeStr = "POLYGON";
 
             osgEarth::PolygonSymbol* poly = style.getOrCreate<osgEarth::PolygonSymbol>();
-            poly->fill()->color() = osgEarth::Color::White;
+            poly->fill().mutable_value().color() = featureColor;
 
-            osgEarth::AltitudeSymbol* alt = style.getOrCreate<osgEarth::AltitudeSymbol>();
-            alt->clamping() = osgEarth::AltitudeSymbol::CLAMP_TO_TERRAIN;
-            alt->binding() = osgEarth::AltitudeSymbol::BINDING_VERTEX;
-
-            osgEarth::RenderSymbol* render = style.getOrCreate<osgEarth::RenderSymbol>();
-            render->depthOffset()->range() = osgEarth::Distance(100.0, osgEarth::Units::PIXELS);
-            break;
-        }
-        case osgEarth::Geometry::TYPE_MULTI:
-        {
-            geomTypeStr = "MULTI";
-
-            osgEarth::LineSymbol* ls = style.getOrCreateSymbol<osgEarth::LineSymbol>();
-            ls->stroke().mutable_value().color() = osgEarth::Color::Yellow;
-            ls->stroke().mutable_value().width() = osgEarth::Distance(2.0, osgEarth::Units::PIXELS);
+            // osgEarth::LineSymbol* outline = style.getOrCreate<osgEarth::LineSymbol>();
+            // outline->stroke().mutable_value().color() = osgEarth::Color::Yellow;
+            // outline->stroke().mutable_value().width() = osgEarth::Distance(1.5, osgEarth::Units::PIXELS);
 
             osgEarth::AltitudeSymbol* alt = style.getOrCreate<osgEarth::AltitudeSymbol>();
             alt->clamping() = osgEarth::AltitudeSymbol::CLAMP_TO_TERRAIN;
             alt->technique() = osgEarth::AltitudeSymbol::TECHNIQUE_DRAPE;
+            alt->binding() = osgEarth::AltitudeSymbol::BINDING_CENTROID;
+            alt->verticalOffset() = osgEarth::Distance(0.5, osgEarth::Units::METERS);
+
+            osgEarth::RenderSymbol* render = style.getOrCreate<osgEarth::RenderSymbol>();
+            render->lighting() = false;
+            render->depthOffset()->enabled() = true;
+            render->depthOffset().mutable_value().automatic() = true;
+            break;
+        }
+        case osgEarth::Geometry::TYPE_MULTI:
+        {
+            geomTypeStr = "MULTI-POLYGON/MULTI-GEOMETRY";
+
+            osgEarth::PolygonSymbol* poly = style.getOrCreate<osgEarth::PolygonSymbol>();
+            poly->fill().mutable_value().color() = featureColor;
+
+            // osgEarth::LineSymbol* outline = style.getOrCreate<osgEarth::LineSymbol>();
+            // outline->stroke().mutable_value().color() = osgEarth::Color::Yellow;
+            // outline->stroke().mutable_value().width() = osgEarth::Distance(1.5, osgEarth::Units::PIXELS);
+
+            
+            osgEarth::LineSymbol* ls = style.getOrCreateSymbol<osgEarth::LineSymbol>();
+            ls->stroke().mutable_value().color() = featureColor;
+            ls->stroke().mutable_value().width() = osgEarth::Distance(2.0f, osgEarth::Units::PIXELS);
+            ls->tessellationSize() = osgEarth::Distance(100, osgEarth::Units::METERS);
+
+            osgEarth::AltitudeSymbol* alt = style.getOrCreate<osgEarth::AltitudeSymbol>();
+            alt->clamping() = osgEarth::AltitudeSymbol::CLAMP_TO_TERRAIN;
+            alt->technique() = osgEarth::AltitudeSymbol::TECHNIQUE_DRAPE;
+            alt->binding() = osgEarth::AltitudeSymbol::BINDING_CENTROID;
+            alt->verticalOffset() = osgEarth::Distance(0.5, osgEarth::Units::METERS);
+
+            osgEarth::RenderSymbol* render = style.getOrCreate<osgEarth::RenderSymbol>();
+            render->lighting() = false;
+            render->depthOffset()->enabled() = true;
+            render->depthOffset().mutable_value().automatic() = true;
             break;
         }
         case osgEarth::Geometry::TYPE_TRIMESH:
@@ -208,20 +280,30 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
     osg::ref_ptr<osgEarth::StyleSheet> styleSheet = new osgEarth::StyleSheet();
     styleSheet->addStyle(style);
 
-    osg::ref_ptr<osgEarth::FeatureModelLayer> featureModelLayer = new osgEarth::FeatureModelLayer();
-    featureModelLayer->setName(displayName.toStdString());
-    featureModelLayer->setFeatureSource(features);
-    featureModelLayer->setStyleSheet(styleSheet);
+    // FeatureImageLayer is the rasterized-vector option from osgearth_features.
+    // Do not let it infer its profile from a geographic source's SRS alone: a
+    // geographic projected-unbounded SRS cannot provide a Profile without bounds.
+    // Explicitly inherit the map profile so all image tiles use the same SRS.
+    osg::ref_ptr<osgEarth::FeatureImageLayer> featureImageLayer = new osgEarth::FeatureImageLayer();
+    featureImageLayer->setName(displayName.toStdString());
+    featureImageLayer->setFeatureSource(features);
+    featureImageLayer->setStyleSheet(styleSheet);
+    featureImageLayer->options().backgroundColor() = osgEarth::Color::Transparent;
 
-    osgEarth::FeatureDisplayLayout layout;
-    layout.tileSize() = 4500;
-    // featureModelLayer->setLayout(layout);
+    const osgEarth::Profile* mapProfile = mapNode->getMap()->getProfile();
+    if (!mapProfile)
+        mapProfile = osgEarth::Profile::create(osgEarth::Profile::GLOBAL_GEODETIC);
+    if (mapProfile)
+        featureImageLayer->options().profile() = mapProfile->toProfileOptions();
 
-    mapNode->getMap()->addLayer(featureModelLayer);
+    if (mapProfile && mapProfile->getSRS())
+        qDebug() << "FeatureImage profile SRS:" << QString::fromStdString(mapProfile->getSRS()->getName());
 
-    if (featureModelLayer->getStatus().isError())
+    mapNode->getMap()->addLayer(featureImageLayer);
+
+    if (featureImageLayer->getStatus().isError())
     {
-        OE_WARN << featureModelLayer->getName() << " : " << featureModelLayer->getStatus().toString() << std::endl;
+        OE_WARN << featureImageLayer->getName() << " : " << featureImageLayer->getStatus().toString() << std::endl;
     }
 
 }
@@ -279,78 +361,81 @@ void MapLoadModule::LoadTMSLayer(osgEarth::MapNode* mapNode, QString url, QStrin
     mapNode->getMap()->addLayer(tmsLayer.get());
 }
 
-void MapLoadModule::Load3Dbuildings(osgEarth::MapNode* mapNode, QString FilePath, QString heightAttr, QString LayerName, QString TexResPath ){
+void MapLoadModule::Load3Dbuildings(osgEarth::MapNode* mapNode, QString FilePath, QString heightAttr, QString LayerName, QString TexResPath)
+{
+    if (!mapNode || FilePath.trimmed().isEmpty())
+        return;
 
-    osg::ref_ptr<osgEarth::OGRFeatureSource> feature = new osgEarth::OGRFeatureSource();
-    feature->setURL(FilePath.toStdString());
+    osgEarth::OGRFeatureSource* data = new osgEarth::OGRFeatureSource();
+    data->setName(LayerName.toStdString());
+    data->setURL(FilePath.toStdString());
 
-    if(feature){
-        osgEarth::Style buildingStyle;
-        buildingStyle.setName("building Style");
+    osgEarth::Style buildingStyle;
+    buildingStyle.setName("default");
 
-        // Extrude the shapes into 3D buildings.
-        // osg::ref_ptr<osgEarth::ExtrusionSymbol> extrusion = buildingStyle.getOrCreate<osgEarth::ExtrusionSymbol>();
-        // // extrusion->setHeightExpression(NumericExpression(heightAttr));
-        // // extrusion->heightExpression() = osgEarth::NumericExpression(heightAttr.toStdString().c_str());
-        // extrusion->flatten() = false;
-        // extrusion->wallStyleName() = "building-wall";
-        // extrusion->roofStyleName() = "building-roof";
+    osgEarth::ExtrusionSymbol* extrusion = buildingStyle.getOrCreate<osgEarth::ExtrusionSymbol>();
 
-        osg::ref_ptr<osgEarth::PolygonSymbol> poly = buildingStyle.getOrCreate<osgEarth::PolygonSymbol>();
-        poly->fill()->color() = osgEarth::Color::White;
+    QString fieldName = heightAttr.trimmed();
+    if (fieldName.startsWith('[') && fieldName.endsWith(']'))
+        fieldName = fieldName.mid(1, fieldName.size() - 2).trimmed();
 
-        // Clamp the buildings to the terrain.
-        osg::ref_ptr<osgEarth::AltitudeSymbol> alt = buildingStyle.getOrCreate<osgEarth::AltitudeSymbol>();
-        alt->clamping() = alt->CLAMP_TO_TERRAIN;
-        alt->binding() = alt->BINDING_VERTEX;
+    bool isNumeric = false;
+    const double height = fieldName.toDouble(&isNumeric);
+    if (isNumeric)
+        extrusion->height() = osgEarth::Distance(height, osgEarth::Units::METERS);
+    else if (!fieldName.isEmpty())
+        extrusion->height() = osgEarth::Expression<osgEarth::Distance>(
+            QString("[%1]").arg(fieldName).toStdString());
+    else
+        extrusion->height() = osgEarth::Distance(10.0, osgEarth::Units::METERS);
 
-        auto* render = buildingStyle.getOrCreate<osgEarth::RenderSymbol>();
-        render->depthOffset()->range() = osgEarth::Distance(100.0, osgEarth::Units::PIXELS);
+    extrusion->flatten() = true;
+    extrusion->wallStyleName() = "building-wall";
+    extrusion->roofStyleName() = "building-roof";
 
-        osgEarth::Style wallStyle;
-        wallStyle.setName("building-wall");
-        osgEarth::SkinSymbol* wallSkin = wallStyle.getOrCreate<osgEarth::SkinSymbol>();
-        wallSkin->library() = "us_resources";
-        wallSkin->addTag("building");
-        wallSkin->randomSeed() = 1;
+    osgEarth::PolygonSymbol* poly = buildingStyle.getOrCreate<osgEarth::PolygonSymbol>();
+    poly->fill()->color() = osgEarth::Color::White;
 
-        // a style for the rooftop textures:
-        osgEarth::Style roofStyle;
-        roofStyle.setName("building-roof");
-        osgEarth::SkinSymbol* roofSkin = roofStyle.getOrCreate<osgEarth::SkinSymbol>();
-        roofSkin->library() = "us_resources";
-        roofSkin->addTag("rooftop");
-        roofSkin->randomSeed() = 1;
-        roofSkin->isTiled() = true;
+    osgEarth::AltitudeSymbol* altitude = buildingStyle.getOrCreate<osgEarth::AltitudeSymbol>();
+    altitude->clamping() = osgEarth::AltitudeSymbol::CLAMP_TO_TERRAIN;
+    altitude->binding() = osgEarth::AltitudeSymbol::BINDING_VERTEX;
 
-        // assemble a stylesheet and add our styles to it:
-        osg::ref_ptr<osgEarth::StyleSheet> styleSheet = new osgEarth::StyleSheet();
-        styleSheet->addStyle(buildingStyle);
-        styleSheet->addStyle(wallStyle);
-        styleSheet->addStyle(roofStyle);
+    osgEarth::Style wallStyle;
+    wallStyle.setName("building-wall");
+    osgEarth::SkinSymbol* wallSkin = wallStyle.getOrCreate<osgEarth::SkinSymbol>();
+    wallSkin->library() = "us_resources";
+    wallSkin->addTag("building");
+    wallSkin->randomSeed() = 1;
 
-        // load a resource library that contains the building textures.
-        osg::ref_ptr<osgEarth::ResourceLibrary> reslib = new osgEarth::ResourceLibrary("resources", TexResPath.toStdString());
-        styleSheet->addResourceLibrary(reslib);
+    osgEarth::Style roofStyle;
+    roofStyle.setName("building-roof");
+    osgEarth::SkinSymbol* roofSkin = roofStyle.getOrCreate<osgEarth::SkinSymbol>();
+    roofSkin->library() = "us_resources";
+    roofSkin->addTag("rooftop");
+    roofSkin->randomSeed() = 1;
+    roofSkin->isTiled() = true;
 
-        // set up a paging layout for incremental loading. The tile size factor and
-        // the visibility range combine to determine the tile size, such that
-        // tile radius = max range / tile size factor.
-        osgEarth::FeatureDisplayLayout layout;
-        layout.tileSize() = 5500;
+    osgEarth::StyleSheet* styleSheet = new osgEarth::StyleSheet();
+    styleSheet->addStyle(buildingStyle);
+    styleSheet->addStyle(wallStyle);
+    styleSheet->addStyle(roofStyle);
 
-        osg::ref_ptr<osgEarth::FeatureModelLayer> buildingsLayer = new osgEarth::FeatureModelLayer();
-
-        buildingsLayer->setName("Buildings");
-        buildingsLayer->setFeatureSource(feature);
-        buildingsLayer->setStyleSheet(styleSheet);
-        // buildingsLayer->setLayout(layout);
-        // buildingsLayer->setMaxVisibleRange(10000.0);
-
-        feature->setName(LayerName.toStdString());
-        buildingsLayer->setName(LayerName.toStdString());
-
-
-        mapNode->getMap()->addLayer(buildingsLayer);
+    if (!TexResPath.trimmed().isEmpty() && QFileInfo::exists(TexResPath))
+    {
+        osgEarth::ResourceLibrary* resourceLibrary =
+            new osgEarth::ResourceLibrary("us_resources", TexResPath.toStdString());
+        styleSheet->addResourceLibrary(resourceLibrary);
     }
+
+    osgEarth::FeatureDisplayLayout layout;
+    layout.tileSize() = 500;
+
+    osgEarth::FeatureModelLayer* layer = new osgEarth::FeatureModelLayer();
+    layer->setName(LayerName.toStdString());
+    layer->setFeatureSource(data);
+    layer->setStyleSheet(styleSheet);
+    layer->setLayout(layout);
+    layer->setMaxVisibleRange(20000.0);
+
+    mapNode->getMap()->addLayer(layer);
 }

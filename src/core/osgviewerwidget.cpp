@@ -8,6 +8,7 @@
 #include <osgEarth/Map>
 #include <osgEarth/Profile>
 #include <osgEarth/XYZ>
+#include <osgEarth/LogarithmicDepthBuffer>
 #include <osgUtil/Optimizer>
 
 void OSGViewerWidget::setRoot(osg::Group *root)
@@ -94,11 +95,14 @@ bool OSGViewerWidget::setupOsgEarth()
         return false;
     }
     _viewer->setThreadingModel(osgViewer::ViewerBase::SingleThreaded);
-    OE_WARN << "Forcing --SingleThreaded mode because we are sharing an OSG Graphics Context (GC), "
-        "and OSG does not support multi-threading of a shared GC" << std::endl;
     _viewer->setRealizeOperation(new osgEarth::GL3RealizeOperation());
+    // _viewer->getCamera()->setComputeNearFarMode(osg::CullSettings::COMPUTE_NEAR_FAR_USING_BOUNDING_VOLUMES);
+    // _viewer->getCamera()->setNearFarRatio(0.00001);
 
     _viewer->setCameraManipulator(_manipulator.get());
+
+    osgEarth::Util::LogarithmicDepthBuffer logarithmicDepth;
+    logarithmicDepth.install(_viewer->getCamera());
 
     int width  = this->width();
     int height = this->height();

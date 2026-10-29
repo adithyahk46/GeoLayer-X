@@ -6,6 +6,9 @@ add_executable(${TARGET_APP_NAME}
     main.cpp
 
     Tools/EnvironmentGUI.cpp Tools/EnvironmentGUI.h
+
+    qgis/GLXNewVectorLayerDialog.cpp qgis/GLXNewVectorLayerDialog.h
+
     DockWidgetPanels.cpp DockWidgetPanels.h
     MapLoadModuleDialog.cpp MapLoadModuleDialog.h
     mainwindow.h mainwindow.cpp

@@ -65,6 +65,7 @@ int main(int argc, char* argv[])
     format.setDepthBufferSize(24);
     //format.setAlphaBufferSize(8);
     format.setStencilBufferSize(8);
+    // format.setSamples(4);
     format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
     format.setColorSpace(QSurfaceFormat::DefaultColorSpace); // avoid sRGB auto
 

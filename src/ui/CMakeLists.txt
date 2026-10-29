@@ -1,6 +1,7 @@
 file(GLOB UI_FILES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.ui"
     "${CMAKE_CURRENT_SOURCE_DIR}/OE_Tools/*.ui"
+    "${CMAKE_CURRENT_SOURCE_DIR}/qgis/GLXNewVectorLayerDialog.ui"
 )
 
 list(REMOVE_ITEM UI_FILES "${CMAKE_CURRENT_SOURCE_DIR}/NewVectorLayerDialogBase.ui")
