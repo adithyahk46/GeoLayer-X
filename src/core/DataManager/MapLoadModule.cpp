@@ -4,6 +4,7 @@
 #include <QFileInfo>
 #include <QXmlStreamReader>
 
+#include <algorithm>
 #include <osgDB/ReadFile>
 
 #include <osgEarth/GDAL>
@@ -13,8 +14,54 @@
 #include <osgEarth/StyleSheet>
 #include <osgEarth/FeatureImageLayer>
 
+#if OSGEARTH_HAVE_CESIUM_NODEKIT
+#include <osgEarthCesium/CesiumIon>
+#include <osgEarthCesium/CesiumLayer>
+#include <osgEarthCesium/Settings>
+#include <osgEarth/CesiumIon>
+#endif
+
 #include "osgviewerwidget.h"
 #include "App.h"
+
+
+// inline CSS, for use with the --script option
+const char* styles_css =
+R"(
+    p {
+        altitude-clamping: terrain-drape;
+        render-backface-culling: false;
+    }
+    p1: p{ fill: #ff3f3f9f; }
+    p2: p{ fill: #3fff3f9f; }
+    p3: p{ fill: #3f3fff9f; }
+    p4: p{ fill: #ff3fff9f; }
+    p5: p{ fill: #ffff3f9f; }
+)";
+
+// JavaScript style selector, for use with the --script option
+const char* script_source =
+R"(
+    function getStyleClass()
+    {
+        // Exclude any countries beginning with the letter A: 
+        if ( feature.properties.name.charAt(0) === 'A' )
+            return null;
+                        
+        // If it starts with the letter C, return an inline style:
+        if ( feature.properties.name.charAt(0) == 'C' )
+            return '{ _fill: #ffc838; stroke: #8f8838; extrusion-height: 250000; }';
+                        
+        // Otherwise, return a named style based on some calculations:
+        var pop = parseFloat(feature.properties.pop);
+        if      ( pop <= 14045470 )  return "p1";
+        else if ( pop <= 43410900 )  return "p2";
+        else if ( pop <= 97228750 )  return "p3";
+        else if ( pop <= 258833000 ) return "p4";
+        else                         return "p5";
+    }
+)";
+
 
 namespace
 {
@@ -57,52 +104,34 @@ MapLoadModule::MapLoadModule()
 
 bool MapLoadModule::LoadEarthFile(const QString& FilePath)
 {
-    //clear the data from the existing mapNode and load the new .earth file
-
     osg::ref_ptr<osg::Node> node = osgDB::readRefNodeFile(FilePath.toStdString());
-    if (node.valid())
-    {
-        osg::ref_ptr<osgEarth::MapNode> new_mapNode = osgEarth::MapNode::findMapNode(node);
-        if (new_mapNode)
-        {
-            osgEarth::MapNode* currentMapNode = App::getThreedWindow()->getMapNode();
-            if (!currentMapNode || !currentMapNode->getMap() || !new_mapNode->getMap())
-            {
-                OE_WARN << "Failed to load .earth file: invalid source or destination map" << std::endl;
-                return false;
-            }
+    if (!node.valid()) {
+        OE_WARN << "Failed to load .earth file: " << FilePath.toStdString() << std::endl;
+        return false;
+    }
 
-            // Replace the current map's layer stack with the layers from the loaded earth map.
-            osgEarth::LayerVector newLayers;
-            new_mapNode->getMap()->getLayers(newLayers);
+    osg::ref_ptr<osgEarth::MapNode> newMapNode = osgEarth::MapNode::findMapNode(node);
+    OSGViewerWidget* viewer = App::getThreedWindow();
+    osgEarth::MapNode* currentMapNode = viewer ? viewer->getMapNode() : nullptr;
+    if (!newMapNode || !newMapNode->getMap()
+        || !currentMapNode || !currentMapNode->getMap()) {
+        OE_WARN << "Failed to load .earth file: invalid source or destination map" << std::endl;
+        return false;
+    }
 
-            //open each layer in the new map to ensure they are ready for rendering
-            for (osgEarth::Layer* layer : newLayers)
-            {
-                if (layer)
-                {
-                    layer->open();
-                    currentMapNode->getMap()->addLayer(layer);
+    osgEarth::LayerVector newLayers;
+    newMapNode->getMap()->getLayers(newLayers);
 
-                }
-            }
+    osgEarth::Map* currentMap = currentMapNode->getMap();
+    currentMap->clear();
 
-            // currentMap->beginUpdate();
-            // currentMap->clear();
-            // currentMap->endUpdate();
-
-            // App::getThreedWindow()->getRoot()->removeChild(App::getThreedWindow()->getMapNode());
-            // App::getThreedWindow()->setMapNode(new_mapNode.get());
-            // new_mapNode->open();
-            // App::getThreedWindow()->getRoot()->addChild(new_mapNode);
-            // App::getThreedWindow()->getRoot()->dirtyBound();
-            // App::getThreedWindow()->getViewer()->realize();
+    for (osgEarth::Layer* layer : newLayers) {
+        if (layer) {
+            layer->open();
+            currentMap->addLayer(layer);
         }
     }
-    else{
-        // Handle error: failed to load the .earth file
-        OE_WARN<<"Failed to load .earth file: " <<  FilePath.toStdString().c_str() ;
-    }
+
     return true;
 }
 
@@ -151,17 +180,8 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
         return;
     }
 
-    if (const osgEarth::FeatureProfile* profile = features->getFeatureProfile())
-    {
-        const osgEarth::GeoExtent& extent = features->getExtent();
-        const osgEarth::SpatialReference* srs = extent.getSRS();
-        qDebug() << "Vector profile SRS:" << (srs ? QString::fromStdString(srs->getName()) : QStringLiteral("unknown"))
-                 << "geographic:" << (srs ? srs->isGeographic() : false)
-                 << "extent:" << extent.xMin() << extent.yMin() << extent.xMax() << extent.yMax();
-    }
-
     const osgEarth::Color featureColor = getNextFeatureColor();
-    qDebug() << "New feature color:" << QString::fromStdString(featureColor.toHTML());
+    // qDebug() << "New feature color:" << QString::fromStdString(featureColor.toHTML());
 
     osgEarth::Style style;
     QString geomTypeStr = "UNKNOWN";
@@ -199,15 +219,13 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
             osgEarth::LineSymbol* ls = style.getOrCreateSymbol<osgEarth::LineSymbol>();
             ls->stroke().mutable_value().color() = featureColor;
             ls->stroke().mutable_value().width() = osgEarth::Distance(2.0f, osgEarth::Units::PIXELS);
-            ls->tessellationSize() = osgEarth::Distance(100, osgEarth::Units::METERS);
+            ls->tessellationSize() = osgEarth::Distance(100, osgEarth::Units::KILOMETERS);
 
             osgEarth::AltitudeSymbol* alt = style.getOrCreate<osgEarth::AltitudeSymbol>();
             alt->clamping() = osgEarth::AltitudeSymbol::CLAMP_TO_TERRAIN;
-            alt->technique() = osgEarth::AltitudeSymbol::TECHNIQUE_DRAPE;
+            alt->technique() = osgEarth::AltitudeSymbol::TECHNIQUE_GPU;
 
             osgEarth::RenderSymbol* render = style.getOrCreate<osgEarth::RenderSymbol>();
-            render->lighting() = false;
-            render->depthOffset()->enabled() = true;
             render->depthOffset().mutable_value().automatic() = true;
             break;
         }
@@ -218,21 +236,19 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
             osgEarth::PolygonSymbol* poly = style.getOrCreate<osgEarth::PolygonSymbol>();
             poly->fill().mutable_value().color() = featureColor;
 
-            // osgEarth::LineSymbol* outline = style.getOrCreate<osgEarth::LineSymbol>();
-            // outline->stroke().mutable_value().color() = osgEarth::Color::Yellow;
-            // outline->stroke().mutable_value().width() = osgEarth::Distance(1.5, osgEarth::Units::PIXELS);
+            osgEarth::LineSymbol* ls = style.getOrCreateSymbol<osgEarth::LineSymbol>();
+            ls->stroke().mutable_value().color() = osgEarth::Color::Black;
+            ls->stroke().mutable_value().width() = osgEarth::Distance(0.5f, osgEarth::Units::PIXELS);
+            ls->tessellationSize() = osgEarth::Distance(100, osgEarth::Units::KILOMETERS);
 
             osgEarth::AltitudeSymbol* alt = style.getOrCreate<osgEarth::AltitudeSymbol>();
             alt->clamping() = osgEarth::AltitudeSymbol::CLAMP_TO_TERRAIN;
-            alt->technique() = osgEarth::AltitudeSymbol::TECHNIQUE_DRAPE;
-            alt->binding() = osgEarth::AltitudeSymbol::BINDING_CENTROID;
-            alt->verticalOffset() = osgEarth::Distance(0.5, osgEarth::Units::METERS);
+            alt->technique() = osgEarth::AltitudeSymbol::TECHNIQUE_GPU;
 
             osgEarth::RenderSymbol* render = style.getOrCreate<osgEarth::RenderSymbol>();
-            render->lighting() = false;
-            render->depthOffset()->enabled() = true;
             render->depthOffset().mutable_value().automatic() = true;
             break;
+
         }
         case osgEarth::Geometry::TYPE_MULTI:
         {
@@ -240,26 +256,18 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
 
             osgEarth::PolygonSymbol* poly = style.getOrCreate<osgEarth::PolygonSymbol>();
             poly->fill().mutable_value().color() = featureColor;
-
-            // osgEarth::LineSymbol* outline = style.getOrCreate<osgEarth::LineSymbol>();
-            // outline->stroke().mutable_value().color() = osgEarth::Color::Yellow;
-            // outline->stroke().mutable_value().width() = osgEarth::Distance(1.5, osgEarth::Units::PIXELS);
-
             
             osgEarth::LineSymbol* ls = style.getOrCreateSymbol<osgEarth::LineSymbol>();
-            ls->stroke().mutable_value().color() = featureColor;
-            ls->stroke().mutable_value().width() = osgEarth::Distance(2.0f, osgEarth::Units::PIXELS);
+            ls->stroke().mutable_value().color() = osgEarth::Color::Black;
+            ls->stroke().mutable_value().width() = osgEarth::Distance(0.5f, osgEarth::Units::PIXELS);
             ls->tessellationSize() = osgEarth::Distance(100, osgEarth::Units::METERS);
 
             osgEarth::AltitudeSymbol* alt = style.getOrCreate<osgEarth::AltitudeSymbol>();
             alt->clamping() = osgEarth::AltitudeSymbol::CLAMP_TO_TERRAIN;
-            alt->technique() = osgEarth::AltitudeSymbol::TECHNIQUE_DRAPE;
-            alt->binding() = osgEarth::AltitudeSymbol::BINDING_CENTROID;
+            alt->technique() = osgEarth::AltitudeSymbol::TECHNIQUE_GPU;
             alt->verticalOffset() = osgEarth::Distance(0.5, osgEarth::Units::METERS);
 
             osgEarth::RenderSymbol* render = style.getOrCreate<osgEarth::RenderSymbol>();
-            render->lighting() = false;
-            render->depthOffset()->enabled() = true;
             render->depthOffset().mutable_value().automatic() = true;
             break;
         }
@@ -275,20 +283,13 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
         }
     }
 
-    qDebug() << "Geometry Type of ShapeFile =" << geomTypeStr;
-
     osg::ref_ptr<osgEarth::StyleSheet> styleSheet = new osgEarth::StyleSheet();
     styleSheet->addStyle(style);
 
-    // FeatureImageLayer is the rasterized-vector option from osgearth_features.
-    // Do not let it infer its profile from a geographic source's SRS alone: a
-    // geographic projected-unbounded SRS cannot provide a Profile without bounds.
-    // Explicitly inherit the map profile so all image tiles use the same SRS.
     osg::ref_ptr<osgEarth::FeatureImageLayer> featureImageLayer = new osgEarth::FeatureImageLayer();
     featureImageLayer->setName(displayName.toStdString());
     featureImageLayer->setFeatureSource(features);
     featureImageLayer->setStyleSheet(styleSheet);
-    featureImageLayer->options().backgroundColor() = osgEarth::Color::Transparent;
 
     const osgEarth::Profile* mapProfile = mapNode->getMap()->getProfile();
     if (!mapProfile)
@@ -299,7 +300,7 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
     if (mapProfile && mapProfile->getSRS())
         qDebug() << "FeatureImage profile SRS:" << QString::fromStdString(mapProfile->getSRS()->getName());
 
-    mapNode->getMap()->addLayer(featureImageLayer);
+    mapNode->getMap()->addLayer(featureImageLayer.get());
 
     if (featureImageLayer->getStatus().isError())
     {
@@ -439,3 +440,57 @@ void MapLoadModule::Load3Dbuildings(osgEarth::MapNode* mapNode, QString FilePath
 
     mapNode->getMap()->addLayer(layer);
 }
+
+#if OSGEARTH_HAVE_CESIUM_NODEKIT
+void MapLoadModule::LoadCesiumLayer(osgEarth::MapNode* mapNode,
+                                     const QString& accessToken,
+                                     CesiumLayerType type,
+                                     unsigned int assetId,
+                                     const QString& LayerName)
+{
+    if (!mapNode || !mapNode->getMap())
+    {
+        OE_WARN << "LoadCesiumLayer failed: invalid map node" << std::endl;
+        return;
+    }
+
+    switch (type)
+    {
+        case CesiumLayerType::Ion3DTiles:
+        {
+            osg::ref_ptr<osgEarth::Cesium::CesiumNative3DTilesLayer> layer =
+                new osgEarth::Cesium::CesiumNative3DTilesLayer();
+            layer->setAssetId(assetId);
+            layer->setName(LayerName.toStdString());
+            // layer->setToken(token);
+            mapNode->getMap()->addLayer(layer.get());
+
+            qDebug()<<layer->getToken();
+            break;
+        }
+        case CesiumLayerType::IonImagery:
+        {
+            osg::ref_ptr<osgEarth::CesiumIonImageLayer> layer =
+                new osgEarth::CesiumIonImageLayer();
+            layer->setAssetId(osgEarth::Stringify() << assetId);
+            layer->setName(LayerName.toStdString());
+            mapNode->getMap()->addLayer(layer.get());
+            break;
+        }
+        case CesiumLayerType::IonTerrain:
+        {
+            osg::ref_ptr<osgEarth::CesiumIonTerrainMeshLayer> layer =
+                new osgEarth::CesiumIonTerrainMeshLayer();
+            layer->setAssetId(osgEarth::Stringify() << assetId);
+            layer->setName(LayerName.toStdString());
+            // layer->setToken(token);
+            mapNode->getMap()->addLayer(layer.get());
+            break;
+        }
+        default:
+            OE_WARN << "Unsupported Cesium layer type." << std::endl;
+            return;
+    }
+
+}
+#endif

@@ -16,6 +16,7 @@ public:
                                  QWidget* parent = nullptr);
 
     QColor color() const;
+    void setColor(const QColor& color);
 
 signals:
     void colorChanged(const QColor& color);

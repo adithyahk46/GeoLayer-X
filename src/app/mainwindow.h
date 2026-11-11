@@ -12,14 +12,18 @@
 #include "osgviewerwidget.h"
 
 #include "MapLoadModuleDialog.h"
-#include "GLXProjectsDialog.h"
 #include "LayerManagerWidget.h"
 #include "StatusbarHandlerWidget.h"
 
 class QActionGroup;
 class QAction;
+class QCloseEvent;
+class QString;
 class PluginsDockWidget;
+class ProjectWelcomeScreen;
+class ProjectManager;
 class QSplitter;
+class QUrl;
 
 namespace Ui {
 class MainWindow;
@@ -34,6 +38,7 @@ public:
     ~MainWindow();
 
     void initAll();
+    // This function will show the welcome screen to the user
     void showWelcomeScreen();
 
     void setApplicationTheme(bool dark);
@@ -42,7 +47,6 @@ public:
 
     QMenu* dockPanelsMenu() const;
 
-
     void restoreAllSettings();
 private slots:
     void osgViewerSetup();
@@ -50,7 +54,8 @@ private slots:
     void createShapeFile();
 
 private:
-    void keyPressEvent(QKeyEvent* event) override;
+    void closeEvent(QCloseEvent* event) override;
+    void handleProjectTransition(const QString& action, const QString& filePath);
 
     Ui::MainWindow *ui;
     std::ofstream *_log;
@@ -66,6 +71,9 @@ private:
     PluginManager* _pluginManager = nullptr;
     LayerManagerWidget* layerManager = nullptr;
     PluginsDockWidget* pluginsDockWidget = nullptr;
+    ProjectManager* m_projectManager = nullptr;
+    ProjectWelcomeScreen* m_ProjectWelcomeScreen = nullptr;
+    bool m_allowApplicationClose = false;
     QActionGroup* m_drawingActionGroup = nullptr;
     QList<QAction*> _pluginActions;
 

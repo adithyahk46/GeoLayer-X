@@ -1,720 +1,837 @@
 import QtQuick
-import QtQuick.Layouts
+import QtQuick.Window
 import QtQuick.Controls
-import QtQuick.Effects
-import QtQuick.Controls.Material
+import QtQuick.Dialogs
 
-import org.qgis.app
+pragma ComponentBehavior: Bound
 
-import "components"
+Window {
+    id: window
 
-Item {
-  id: welcomeScreen
+    property var projectController: null
+    property bool closingForProject: false
+    property bool fileDialogTransitionConfirmed: false
+    property var newProjectDialog: null
+    property bool darkTheme: projectController
+                                 ? projectController.currentTheme === "dark" : false
+    property color pageColor: darkTheme ? "#000000" : "#f5f5f5"
+    property color surfaceColor: darkTheme ? "#101010" : "#ffffff"
+    property color borderColor: darkTheme ? "#252525" : "#d0d0d0"
+    property color primaryTextColor: darkTheme ? "#e5e5e5" : "#202020"
+    property color secondaryTextColor: darkTheme ? "#b9b9b9" : "#555555"
+    property color dividerColor: darkTheme ? "#191919" : "#d8d8d8"
+    property color hoverColor: darkTheme ? "#171717" : "#eeeeee"
+    property color accentColor: darkTheme ? "#00d66b" : "#08783e"
 
-  property bool narrowLayout: height < 350 || width < 480
+    flags: Qt.Dialog | Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
+    modality: Qt.ApplicationModal
+    width: 960
+    height: 640
+    minimumWidth: 760
+    minimumHeight: 520
+    visible: false
+    title: "GeoLayer-X"
+    color: pageColor
 
-  width: 1100
-  height: 720
+    onClosing: function(close) {
+        if (!closingForProject) {
+            close.accepted = false
+            projectController.requestApplicationExit()
+        }
+    }
 
-  Material.accent: "#93b023"
-  Material.foreground: "#ffffff"
+    Connections {
+        target: window.projectController
+        function onProjectActivated() {
+            window.closingForProject = true
+            window.close()
+        }
+        function onProjectError(title, message) {
+            errorDialog.title = title
+            errorDialog.text = message
+            errorDialog.open()
+        }
+    }
 
-  ColumnLayout {
-    anchors.fill: parent
-    anchors.margins: 20
+    function beginProjectCreation(templateId, basemapUrl) {
+        if (!newProjectDialog) {
+            const component = Qt.createComponent(
+                        Qt.resolvedUrl("newProject.qml"), Component.PreferSynchronous)
+            if (component.status !== Component.Ready) {
+                errorDialog.title = "New project"
+                errorDialog.text = component.errorString()
+                errorDialog.open()
+                return
+            }
+            newProjectDialog = component.createObject(null, {
+                projectController: window.projectController
+            })
+            if (!newProjectDialog) {
+                errorDialog.title = "New project"
+                errorDialog.text = "Could not create the new-project dialog."
+                errorDialog.open()
+                return
+            }
+            newProjectDialog.transientParent = window
+        }
+        newProjectDialog.openForTemplate(templateId, basemapUrl)
+    }
+
+    function openCustomBasemap(name, url) {
+        recentBasemapDialog.close()
+        beginProjectCreation("custom:" + name, url)
+    }
+
+    function dismissProjectCenter() {
+        closingForProject = true
+        close()
+        projectController.welcomeScreenDismissed()
+    }
+
+    FileDialog {
+        id: openProjectFileDialog
+        title: "Open GeoLayer-X Project"
+        fileMode: FileDialog.OpenFile
+        nameFilters: ["osgEarth Projects (*.earth)", "All files (*)"]
+        currentFolder: window.projectController.defaultProjectLocationUrl
+        onAccepted: {
+            const filePath = window.projectController.localFilePath(selectedFile)
+            if (window.fileDialogTransitionConfirmed)
+                window.projectController.openProjectFileSelected(filePath)
+            else
+                window.projectController.openProject(filePath)
+            window.fileDialogTransitionConfirmed = false
+        }
+        onRejected: {
+            if (window.fileDialogTransitionConfirmed)
+                window.dismissProjectCenter()
+            window.fileDialogTransitionConfirmed = false
+        }
+    }
+
+    FileDialog {
+        id: saveAsProjectFileDialog
+        title: "Save GeoLayer-X Project As"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["osgEarth Projects (*.earth)"]
+        currentFolder: window.projectController.defaultProjectLocationUrl
+        onAccepted: window.projectController.submitSaveAsFile(
+                        window.projectController.localFilePath(selectedFile))
+        onRejected: window.dismissProjectCenter()
+    }
+
+    FileDialog {
+        id: openEarthFileDialog
+        title: "Open Earth File"
+        fileMode: FileDialog.OpenFile
+        nameFilters: ["Earth Files (*.earth)", "All files (*)"]
+        currentFolder: window.projectController.defaultProjectLocationUrl
+        onAccepted: window.projectController.selectEarthFile(
+                        window.projectController.localFilePath(selectedFile))
+        onRejected: window.dismissProjectCenter()
+    }
+
+    Connections {
+        target: window.projectController
+        function onOpenProjectFileDialogRequested(transitionAlreadyConfirmed) {
+            window.fileDialogTransitionConfirmed = transitionAlreadyConfirmed
+            openProjectFileDialog.open()
+        }
+        function onOpenEarthFileDialogRequested() {
+            openEarthFileDialog.open()
+        }
+        function onSaveAsFileDialogRequested(initialFile) {
+            saveAsProjectFileDialog.currentFile = initialFile
+            saveAsProjectFileDialog.open()
+        }
+    }
+
+    Dialog {
+        id: errorDialog
+        property string text: ""
+        title: "GeoLayer-X"
+        modal: true
+        width: 440
+        parent: Overlay.overlay
+        standardButtons: Dialog.Ok
+        contentItem: Label {
+            width: 400
+            text: errorDialog.text
+            wrapMode: Text.WordWrap
+        }
+    }
+
+    Dialog {
+        id: recentBasemapDialog
+        title: "Basemap templates"
+        modal: true
+        standardButtons: Dialog.Cancel
+        width: 440
+        parent: Overlay.overlay
+
+        contentItem: Column {
+            width: 392
+            spacing: 8
+            Label { text: "Recently used XYZ templates" }
+            Repeater {
+                model: window.projectController.recentBasemaps
+                delegate: Button {
+                    required property var modelData
+                    width: 392
+                    text: modelData.name
+                    onClicked: window.openCustomBasemap(modelData.name, modelData.url)
+                }
+            }
+            Button {
+                text: "Add XYZ tile source..."
+                onClicked: {
+                    recentBasemapDialog.close()
+                    customBasemapDialog.open()
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: customBasemapDialog
+        title: "Add XYZ tile source"
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        width: 460
+        parent: Overlay.overlay
+        onAccepted: {
+            const name = customBasemapName.text.trim()
+            const url = customBasemapUrl.text.trim()
+            if (name.length === 0 || !url.toLowerCase().startsWith("http")
+                    || !url.includes("{z}") || !url.includes("{x}") || !url.includes("{y}")) {
+                errorDialog.title = "XYZ tile source"
+                errorDialog.text = "Enter a template name and an HTTP URL containing {z}, {x}, and {y}."
+                errorDialog.open()
+                customBasemapDialog.open()
+                return
+            }
+            window.beginProjectCreation("custom:" + name, url)
+        }
+        contentItem: Column {
+            width: 412
+            spacing: 10
+            Label { text: "Template name" }
+            TextField {
+                id: customBasemapName
+                width: 412
+                placeholderText: "For example, My imagery"
+            }
+            Label { text: "XYZ tile URL" }
+            TextField {
+                id: customBasemapUrl
+                width: 412
+                placeholderText: "https://server/{z}/{x}/{y}.png"
+            }
+        }
+    }
+
+    Dialog {
+        id: settingsDialog
+        title: "GeoLayer-X settings"
+        modal: true
+        standardButtons: Dialog.Save | Dialog.Cancel
+        width: 440
+        parent: Overlay.overlay
+        onOpened: themeSelector.currentIndex =
+                      window.projectController.currentTheme === "dark" ? 1 : 0
+        onAccepted: window.projectController.saveTheme(
+                        themeSelector.currentIndex === 1 ? "dark" : "light")
+        contentItem: Column {
+            width: 392
+            spacing: 10
+            Label { text: "Application theme" }
+            ComboBox {
+                id: themeSelector
+                width: 392
+                model: ["Light", "Dark"]
+            }
+            Label {
+                text: "Use the Project menu to open or save GeoLayer-X projects."
+                wrapMode: Text.WordWrap
+            }
+        }
+    }
+
+    component IconText: Text {
+        property string iconName: "map"
+        property color iconColor: window.darkTheme ? "#cccccc" : "#666666"
+        text: {
+            switch (iconName) {
+            case "recent": return "◷"
+            case "browse": return "▱"
+            case "favorites": return "☆"
+            case "manage": return "⌫"
+            case "empty_project": return "⊞"
+            case "globe": return "◎"
+            case "terrain": return "⌁"
+            case "map": return "▤"
+            default: return "•"
+            }
+        }
+        font.pixelSize: 18
+        color: iconColor
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+    }
 
     Rectangle {
-      id: mainCard
-
-      property bool tinyHeight: height < 175
-      property bool shortHeight: height < 350
-
-      Layout.fillWidth: true
-      Layout.fillHeight: true
-      radius: 10
-      color: "#002033"
-      clip: true
-
-      GridLayout {
-        anchors {
-          top: parent.top
-          left: parent.left
-          right: parent.right
-          bottom: footer.top
-          topMargin: mainCard.shortHeight ? 16 : 20
-          leftMargin: 28
-          rightMargin: 28
-          bottomMargin: 8
-        }
-        columns: welcomeScreen.narrowLayout ? 1 : 2
-        columnSpacing: 20
-        rowSpacing: welcomeScreen.narrowLayout ? 0 : 10
+        anchors.fill: parent
+        anchors.margins: 10
+        color: window.surfaceColor
+        border.color: window.borderColor
+        border.width: 1
+        radius: 14
 
         Column {
-          Layout.maximumWidth: welcomeScreen.narrowLayout ? parent.width : parent.width * 0.52
-          Layout.fillWidth: true
-          Layout.preferredHeight: mainCard.shortHeight ? 0 : -1
-          Layout.alignment: Qt.AlignTop
-          spacing: 10
-          clip: true
+            anchors.fill: parent
+            anchors.margins: 15
+            spacing: 0
 
-          Image {
-            source: "images/qgis.svg"
-            height: welcomeScreen.narrowLayout ? 35 : 50
-            width: 160
-            fillMode: Image.PreserveAspectFit
-            horizontalAlignment: Image.AlignLeft
-            smooth: true
-            mipmap: true
-          }
-
-          Text {
-            width: parent.width
-            text: qsTr("Spatial without Compromise")
-            font.pointSize: Application.font.pointSize
-            font.bold: true
-            wrapMode: Text.WordWrap
-
-            color: "#e0e9ed"
-          }
-          
-          Rectangle {
-            width: parent.width
-            height: 1
-            color: "#566775"
-          }
-        }
-
-
-        ColumnLayout {
-          Layout.fillWidth: true
-          Layout.fillHeight: true
-          Layout.rowSpan: 2
-          spacing: 8
-
-          Item {
-            Layout.fillWidth: true
-            Layout.preferredHeight: tabBar.implicitHeight
-
-            Rectangle {
-              width: parent.width
-              height: 1
-              color: "#566775"
-              anchors.bottom: parent.bottom
-            }
-
-            TabBar {
-              id: tabBar
-              width: parent.width
-              background: Item {
-                anchors.fill: parent
-              }
-              clip: true
-
-              TabButton {
-                text: qsTr("Recent")
-                font.pointSize: Application.font.pointSize * 1.1
-                font.bold: true
-                visible: recentProjectsListView.count > 0
-                width: recentProjectsListView.count > 0 ? implicitWidth : 0
-                background: null
-              }
-              TabButton {
-                text: qsTr("Templates")
-                width: implicitWidth
-                font.pointSize: Application.font.pointSize * 1.1
-                font.bold: true
-                background: null
-              }
-            }
-          }
-
-          Item {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-
-            ListView {
-              id: recentProjectsListView
-              anchors.fill: parent
-              spacing: 8
-              clip: true
-              visible: tabBar.currentIndex === 0
-              maximumFlickVelocity: 2000
-
-              model: recentProjectsModel
-
-              delegate: ProjectCard {
-                width: recentProjectsListView.width - 12
-                title: Title || ""
-                // Add invisible spaces after slash and backslash characters to help wrapping paths
-                subtitle: (ProjectNativePath || ProjectPath || "").replace(/([\\\/])/g,"$1\u200b")
-                crs: Crs
-                imageSource: PreviewImagePath || ""
-                isEnabled: Exists
-                isPinned: Pinned
-                isSelected: recentProjectsListView.currentIndex === index
-                radius: 6
-
-                onClicked: (mouse) => {
-                             if (mouse.button == Qt.LeftButton && isEnabled) {
-                               welcomeScreenController.openProject(ProjectPath);
-                               welcomeScreenController.hideScene();
-                             } else if (mouse.button == Qt.RightButton) {
-                               recentProjectsMenu.projectIndex = index;
-                               recentProjectsMenu.projectPinned = Pinned;
-                               recentProjectsMenu.projectExists = Exists;
-                               recentProjectsMenu.projectHasNativePath = ProjectNativePath != "";
-                               
-                               const point = mapToItem(recentProjectsListView, mouse.x, mouse.y);
-                               recentProjectsMenu.popup(point.x, point.y);
-                             }
-                           }
-              }
-
-              ScrollBar.vertical: CustomScrollBar {
-                policy: ScrollBar.AsNeeded
-              }
-              
-              onCountChanged: {
-                if (count == 0 && tabBar.currentIndex == 0) {
-                  tabBar.currentIndex = 1;
-                }
-              }
-
-              Menu {
-                id: templateProjectsMenu
-                
-                property int projectIndex: 0
-                
-                background: Rectangle {
-                  implicitWidth: 200
-                  implicitHeight: templateProjectsMenu.Material.menuItemHeight
-                  radius: templateProjectsMenu.Material.roundedScale
-                  color: templateProjectsMenu.Material.dialogColor
-                  border.color: templateProjectsMenu.Material.listHighlightColor
-                  border.width: 1
-                }
-                
-                MenuItem {
-                  text: qsTr("Delete Template…")
-                  onClicked: {
-                    welcomeScreenController.removeTemplateProject(templateProjectsMenu.projectIndex)
-                  }
-                  background: Rectangle {
-                    implicitWidth: 200
-                    implicitHeight: parent.Material.menuItemHeight
-                    color: parent.highlighted ? parent.Material.listHighlightColor : "transparent"
-                  }
-                }
-              }
-
-              Menu {
-                id: recentProjectsMenu
-
-                property int projectIndex: 0
-                property bool projectPinned: false
-                property bool projectExists: false
-                property bool projectHasNativePath: false
-
-                background: Rectangle {
-                  implicitWidth: 200
-                  implicitHeight: templateProjectsMenu.Material.menuItemHeight
-                  radius: templateProjectsMenu.Material.roundedScale
-                  color: templateProjectsMenu.Material.dialogColor
-                  border.color: templateProjectsMenu.Material.listHighlightColor
-                  border.width: 1
-                }
-                
-                MenuItem {
-                  text: recentProjectsMenu.projectPinned? qsTr("Unpin from List") : qsTr("Pin to List")
-                  onClicked: {
-                    if (recentProjectsMenu.projectPinned) {
-                      recentProjectsModel.unpinProject(recentProjectsMenu.projectIndex);
-                    } else {
-                      recentProjectsModel.pinProject(recentProjectsMenu.projectIndex);
-                    }
-                  }
-                  background: Rectangle {
-                    implicitWidth: 200
-                    implicitHeight: parent.Material.menuItemHeight
-                    color: parent.highlighted ? parent.Material.listHighlightColor : "transparent"
-                  }
-                }
-                MenuItem {
-                  text: qsTr("Refresh")
-                  enabled: !recentProjectsMenu.projectExists
-                  visible: enabled
-                  height: enabled ? implicitHeight : 0
-                  onClicked: {
-                    recentProjectsModel.recheckProject(recentProjectsMenu.projectIndex);
-                  }
-                  background: Rectangle {
-                    implicitWidth: 200
-                    implicitHeight: parent.Material.menuItemHeight
-                    color: parent.highlighted ? parent.Material.listHighlightColor : "transparent"
-                  }
-                }
-                MenuItem {
-                  text: qsTr("Open Directory…")
-                  enabled: recentProjectsMenu.projectExists && recentProjectsMenu.projectHasNativePath
-                  visible: enabled
-                  height: enabled ? implicitHeight : 0
-                  onClicked: {
-                    recentProjectsModel.openProject(recentProjectsMenu.projectIndex);
-                  }
-                  background: Rectangle {
-                    implicitWidth: 200
-                    implicitHeight: parent.Material.menuItemHeight
-                    color: parent.highlighted ? parent.Material.listHighlightColor : "transparent"
-                  }
-                }
-                MenuItem {
-                  text: qsTr("Remove from List")
-                  onClicked: {
-                    recentProjectsModel.removeProject(recentProjectsMenu.projectIndex);
-                  }
-                  background: Rectangle {
-                    implicitWidth: 200
-                    implicitHeight: parent.Material.menuItemHeight
-                    color: parent.highlighted ? parent.Material.listHighlightColor : "transparent"
-                  }
-                }
-                MenuSeparator {}
-                MenuItem {
-                  text: qsTr("Clear List")
-                  onClicked: {
-                    welcomeScreenController.clearRecentProjects();
-                  }
-                  background: Rectangle {
-                    implicitWidth: 200
-                    implicitHeight: parent.Material.menuItemHeight
-                    color: parent.highlighted ? parent.Material.listHighlightColor : "transparent"
-                  }
-                }
-              }
-            }
-
-            ListView {
-              id: templatesListView
-              anchors.fill: parent
-              spacing: 8
-              clip: true
-              visible: tabBar.currentIndex === 1
-
-              model: templateProjectsModel
-
-              delegate: ProjectCard {
-                width: templatesListView.width - 12
-                backgroundColor: CanvasColor || "#ffffff"
-                title: Title || ""
-                subtitle: Crs || ""
-                imageSource: {
-                  switch (Type) {
-                  case TemplateProjectsModel.TemplateType.Blank:
-                    return "";
-                  case TemplateProjectsModel.TemplateType.Basemap:
-                    return "../images/basemap.jpg";
-                  default:
-                    return PreviewImagePath || "";
-                  }
-                }
-                isSelected: templatesListView.currentIndex === index
-                radius: 6
-
-                onClicked: (mouse) => {
-                  if (mouse.button == Qt.LeftButton) {
-                    switch (Type) {
-                    case TemplateProjectsModel.TemplateType.Blank:
-                      welcomeScreenController.createBlankProject(); //#spellok
-                      welcomeScreenController.hideScene();
-                      return;
-                    case TemplateProjectsModel.TemplateType.Basemap:
-                      welcomeScreenController.createProjectFromBasemap();
-                      welcomeScreenController.hideScene();
-                      return;
-                    default:
-                      welcomeScreenController.createProjectFromTemplate(TemplateNativePath || ""); //#spellok
-                      welcomeScreenController.hideScene();
-                      return;
-                    }
-                  } else if (mouse.button == Qt.RightButton) {
-                    if (Type == TemplateProjectsModel.TemplateType.File && Writable) {
-                      templateProjectsMenu.projectIndex = index;
-                      
-                      const point = mapToItem(templatesListView, mouse.x, mouse.y);
-                      templateProjectsMenu.popup(point.x, point.y);
-                    }
-                  }
-                }
-              }
-
-              ScrollBar.vertical: CustomScrollBar {
-                policy: ScrollBar.AsNeeded
-              }
-            }
-          }
-        }
-
-        ColumnLayout {
-          id: welcomeNewsLayout
-          Layout.maximumWidth: parent.width * 0.52
-          Layout.fillWidth: true
-          Layout.fillHeight: true
-          spacing: 12
-          visible: !welcomeScreen.narrowLayout
-
-          RowLayout {
-            Layout.fillWidth: true
-            spacing: 6
-
-            Text {
-              Layout.fillWidth: true
-              text: newsSwitch.checked && newsListView.count != 0 ? qsTr("Latest news") : qsTr("Welcome to QGIS!")
-              font.pointSize: Application.font.pointSize * 1.3
-              font.bold: true
-              color: "#ffffff"
-              elide: Text.ElideRight
-            }
-
-            BusyIndicator {
-              Layout.preferredWidth: 28
-              Layout.preferredHeight: 28
-              running: newsFeedParser.isFetching
-            }
-
-            Rectangle {
-              id: newsSwitchBackground
-              Layout.rightMargin: 12
-              width: 70
-              height: 28
-              radius: 14
-
-              gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop {
-                  position: 0.0
-                  color: newsSwitch.checked ? "#589632" : "#333333"
-                }
-                GradientStop {
-                  position: 1.0
-                  color: newsSwitch.checked ? "#93b023" : "#ffffff"
-                }
-              }
-
-              Text {
-                x: newsSwitch.checked ? 10 : 30
-                anchors.verticalCenter: parent.verticalCenter
-                text: qsTr("News")
-                font.pointSize: Application.font.pointSize * 0.8
-                font.bold: true
-                color: newsSwitch.checked ? "#ffffff" : "#666666"
-              }
-
-              Rectangle {
-                id: switchHandle
-                width: 22
-                height: 22
-                radius: 11
-                color: "#ffffff"
-                anchors.verticalCenter: parent.verticalCenter
-                x: newsSwitch.checked ? parent.width - width - 3 : 3
-
-                Behavior on x {
-                  NumberAnimation {
-                    duration: 150
-                  }
-                }
-              }
-
-              MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                  newsFeedParser.enabled = !newsFeedParser.enabled
-                  if (newsFeedParser.enabled) {
-                    newsFeedParser.fetch();
-                  }
-                }
-              }
-
-              Switch {
-                id: newsSwitch
-                visible: false
-                checked: newsFeedParser.enabled
-              }
-            }
-          }
-
-          ScrollView {
-            id: welcomeView
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            visible: !newsSwitch.checked || newsListView.count == 0
-            contentWidth: welcomeLayout.width
-            contentHeight: welcomeLayout.height
-            rightPadding: 12
-            clip: true
-
-            ScrollBar.vertical: CustomScrollBar {
-              policy: ScrollBar.AsNeeded
-              anchors.top: parent.top
-              anchors.bottom: parent.bottom
-              anchors.right: parent.right
-            }
-            
-            ColumnLayout {
-              id: welcomeLayout
-              width: welcomeNewsLayout.width - welcomeView.rightPadding
-              spacing: 12
-
-              Rectangle {
-                Layout.preferredWidth: parent.width
-                Layout.preferredHeight: welcomeDescription.contentHeight + 32
-                radius: 6
-                color: "#ffffff"
+            Row {
+                id: header
+                width: parent.width
+                height: 58
 
                 Text {
-                  id: welcomeDescription
-                  anchors.fill: parent
-                  anchors.margins: 16
-                  text: qsTr("The free and open-source geographic information system that empowers users worldwide to create, edit, visualize, analyze, and share geospatial data. Whether you're a beginner or a seasoned GIS expert, QGIS gives you the tools to turn spatial data into impactful maps and insights. Join our vibrant global community and start exploring the world through the power of open-source geospatial technology.")
-                  font.pointSize: Application.font.pointSize * 0.8
-                  color: "black"
-                  wrapMode: Text.WordWrap
-                  lineHeight: 1.3
-                }
-              }
-
-              Rectangle {
-                Layout.preferredWidth: parent.width
-                Layout.preferredHeight: stayUpdateLayout.childrenRect.height + 32
-                radius: 6
-                color: "#ffffff"
-                visible: !newsSwitch.checked
-
-                ColumnLayout {
-                  id: stayUpdateLayout
-                  anchors.fill: parent
-                  anchors.margins: 16
-                  spacing: 10
-
-                  Text {
-                    text: qsTr("Stay up to date!")
-                    font.pointSize: Application.font.pointSize
+                    id: headerTitle
+                    text: "GeoLayer-X"
+                    color: window.primaryTextColor
+                    font.pixelSize: 20
                     font.bold: true
-                    color: "black"
-                  }
+                    anchors.verticalCenter: parent.verticalCenter
+                }
 
-                  Text {
-                    Layout.fillWidth: true
-                    text: qsTr("Would you like to enable the QGIS news feed to stay updated on new features, releases, and community highlights?")
-                    font.pointSize: Application.font.pointSize * 0.8
-                    color: "black"
-                    wrapMode: Text.WordWrap
-                  }
+                Item {
+                    width: Math.max(0, header.width - headerTitle.implicitWidth - centerButton.width)
+                    height: 1
+                }
 
-                  Rectangle {
-                    width: enableNewsText.implicitWidth + 24
-                    height: 24
-                    radius: 12
-                    color: "transparent"
-                    border.width: 1
-                    border.color: "#93b023"
+                Rectangle {
+                    id: centerButton
+                    width: 118
+                    height: 30
+                    radius: 15
+                    color: centerMouse.containsMouse
+                           ? (window.darkTheme ? "#06321e" : "#d9f0e2")
+                           : (window.darkTheme ? "#031b11" : "#e8f5ed")
+                    anchors.verticalCenter: parent.verticalCenter
 
                     Text {
-                      id: enableNewsText
-                      anchors.centerIn: parent
-                      text: qsTr("Enable news feed")
-                      font.pointSize: Application.font.pointSize * 0.8
-                      color: "black"
+                        anchors.centerIn: parent
+                        text: "Project Center"
+                        color: window.accentColor
+                        font.pixelSize: 14
                     }
 
                     MouseArea {
-                      anchors.fill: parent
-                      cursorShape: Qt.PointingHandCursor
-                      hoverEnabled: true
-                      onClicked: {
-                        newsFeedParser.enabled = true;
-                        newsFeedParser.fetch();
-                      }
+                        id: centerMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: window.projectController.openProjectCenter()
                     }
-                  }
                 }
-              }
-            }
-          }
-
-          ListView {
-            id: newsListView
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            spacing: 12
-            clip: true
-            visible: newsSwitch.checked
-
-            model: newsFeedModel
-
-            delegate: NewsCard {
-              radius: 6
-              width: newsListView.width - 12
-              title: Title
-              description: Content
-              imageSource: ImageUrl
-              showCloseButton: true
-              showLink: Link != ""
-
-              onReadMoreClicked: {
-                Qt.openUrlExternally(Link);
-              }
-              
-              onCloseClicked: {
-                newsFeedParser.dismissEntry(Key);
-              }
             }
 
-            ScrollBar.vertical: CustomScrollBar {
-              policy: ScrollBar.AsNeeded
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: window.dividerColor
             }
-          }
-        }
-      }
 
-      Rectangle {
-        width: parent.width
-        height: 1
-        color: "#566775"
-        anchors {
-          bottom: footer.top
-          left: parent.left
-          right: parent.right
-          leftMargin: 28
-          rightMargin: 28
-        }
-      }
+            Row {
+                id: body
+                width: parent.width
+                height: parent.height - header.height - footer.height - 2
+                spacing: 24
 
-      FooterBar {
-        id: footer
-        anchors {
-          left: parent.left
-          leftMargin: 28
-          right: parent.right
-          rightMargin: 28
-          bottom: parent.bottom
-          bottomMargin: 0
-        }
-        height: mainCard.tinyHeight ? 0 : implicitHeight
+                Column {
+                    id: navigation
+                    width: 245
+                    y: 28
+                    spacing: 14
 
-        onSupportClicked: {
-          Qt.openUrlExternally("https://www.qgis.org/funding/donate/")
-        }
+                    Text {
+                        text: "Navigation"
+                        color: window.primaryTextColor
+                        font.pixelSize: 19
+                        font.bold: true
+                        bottomPadding: 7
+                    }
 
-        onWebsiteClicked: {
-          Qt.openUrlExternally("https://www.qgis.org/")
-        }
-      }
-      
-      RoundButton {
-        id: closeButton
-        anchors{
-          top: parent.top
-          right: parent.right
-          margins: 5
-        }
-      
-        background: Rectangle {
-          implicitWidth: closeButton.Material.buttonHeight
-          implicitHeight: closeButton.Material.buttonHeight
+                    component NavigationItem: Rectangle {
+                        id: navItem
+                        property string label: ""
+                        property string iconName: ""
+                        property bool selected: false
+                        signal activated()
+                        width: navigation.width - 8
+                        height: 42
+                        radius: 6
+                        color: navMouse.containsMouse ? window.hoverColor : "transparent"
 
-          radius: closeButton.radius
-          color: closeButton.Material.buttonColor(closeButton.Material.theme, closeButton.Material.background,
-              closeButton.Material.accent, closeButton.enabled, closeButton.flat, closeButton.highlighted, false)
+                        Row {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            spacing: 12
 
-          Rectangle {
-            width: parent.width
-            height: parent.height
-            radius: closeButton.radius
-            visible: enabled && (closeButton.hovered || closeButton.visualFocus)
-            color: "#33ffffff"
-          }
+                            IconText {
+                                width: 20
+                                height: parent.height
+                                iconName: navItem.iconName
+                                iconColor: navItem.selected
+                                           ? window.primaryTextColor : window.secondaryTextColor
+                            }
 
-          Rectangle {
-            width: parent.width
-            height: parent.height
-            radius: closeButton.radius
-            visible: closeButton.down
-            color: "#33ffffff"
-          }
+                            Text {
+                                text: navItem.label
+                                color: window.primaryTextColor
+                                font.pixelSize: 16
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+
+                        MouseArea {
+                            id: navMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: parent.activated()
+                        }
+                    }
+
+                    NavigationItem {
+                        label: "Recent"
+                        iconName: "recent"
+                        selected: window.projectController.activeSection === "Recent"
+                        onActivated: window.projectController.selectSection("Recent")
+                    }
+                    NavigationItem {
+                        label: "Browse"
+                        iconName: "browse"
+                        onActivated: openProjectFileDialog.open()
+                    }
+                    NavigationItem {
+                        label: "Favorites"
+                        iconName: "favorites"
+                        selected: window.projectController.activeSection === "Favorites"
+                        onActivated: window.projectController.selectSection("Favorites")
+                    }
+                    NavigationItem {
+                        label: "Manage"
+                        iconName: "manage"
+                        selected: window.projectController.activeSection === "Manage"
+                        onActivated: window.projectController.selectSection("Manage")
+                    }
+                }
+
+                Rectangle {
+                    width: 1
+                    y: 28
+                    height: parent.height - 54
+                    color: window.dividerColor
+                }
+
+                Column {
+                    id: projectArea
+                    width: body.width - navigation.width - 49
+                    y: 28
+                    height: parent.height - 28
+                    spacing: 20
+
+                    Column {
+                        id: startSection
+                        width: parent.width
+                        spacing: 8
+
+                        Text {
+                            text: "Start a project"
+                            color: window.primaryTextColor
+                            font.pixelSize: 19
+                            font.bold: true
+                        }
+
+                        component ProjectAction: Rectangle {
+                            id: projectAction
+                            property string actionTitle: ""
+                            property string description: ""
+                            property string iconName: ""
+                            signal activated()
+                            width: projectArea.width
+                            height: 54
+                            radius: 7
+                            color: actionMouse.containsMouse
+                                   ? window.hoverColor : "transparent"
+
+                            Row {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                spacing: 12
+
+                                IconText {
+                                    width: 24
+                                    height: 32
+                                    iconName: projectAction.iconName
+                                    iconColor: window.primaryTextColor
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+
+                                Column {
+                                    spacing: 3
+                                    anchors.verticalCenter: parent.verticalCenter
+
+                                    Text {
+                                        text: projectAction.actionTitle
+                                        color: window.primaryTextColor
+                                        font.pixelSize: 18
+                                        font.bold: true
+                                    }
+                                    Text {
+                                        text: projectAction.description
+                                        color: window.secondaryTextColor
+                                        font.pixelSize: 14
+                                    }
+                                }
+                            }
+
+                            MouseArea {
+                                id: actionMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: parent.activated()
+                            }
+                        }
+
+                        ProjectAction {
+                            actionTitle: "Empty Project"
+                            description: "Start with a blank GIS workspace."
+                            iconName: "empty_project"
+                            onActivated: window.beginProjectCreation("empty", "")
+                        }
+
+                        Text {
+                            text: "Basemap Template"
+                            color: window.primaryTextColor
+                            font.pixelSize: 17
+                            font.bold: true
+                            topPadding: 4
+                        }
+
+                        Row {
+                            id: basemapRow
+                            width: parent.width
+                            height: 112
+                            spacing: 7
+
+                            component BasemapCard: Rectangle {
+                                id: tileCard
+                                property string templateId: ""
+                                property string label: ""
+                                property string imageSource: ""
+                                property bool addNew: false
+                                width: (basemapRow.width - basemapRow.spacing * 4) / 5
+                                height: basemapRow.height
+                                radius: 6
+                                color: tileMouse.containsMouse
+                                       ? window.hoverColor : window.surfaceColor
+                                border.color: tileMouse.containsMouse
+                                              ? window.accentColor : window.borderColor
+
+                                Column {
+                                    anchors.fill: parent
+                                    anchors.margins: 5
+                                    spacing: 4
+
+                                    Rectangle {
+                                        width: parent.width
+                                        height: 75
+                                        radius: 4
+                                        color: window.darkTheme ? "#202020" : "#e5e5e5"
+                                        clip: true
+
+                                        Image {
+                                            anchors.fill: parent
+                                            source: tileCard.imageSource
+                                            fillMode: Image.PreserveAspectCrop
+                                            visible: !tileCard.addNew
+                                            asynchronous: true
+                                        }
+                                    }
+
+                                    Text {
+                                        width: parent.width
+                                        text: tileCard.label
+                                        color: window.primaryTextColor
+                                        font.pixelSize: 12
+                                        horizontalAlignment: Text.AlignHCenter
+                                        elide: Text.ElideRight
+                                    }
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "+"
+                                    color: window.primaryTextColor
+                                    font.pixelSize: 40
+                                    visible: tileCard.addNew
+                                }
+
+                                MouseArea {
+                                    id: tileMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        if (tileCard.addNew)
+                                            recentBasemapDialog.open()
+                                        else
+                                            window.beginProjectCreation(tileCard.templateId, "")
+                                    }
+                                }
+                            }
+
+                            BasemapCard {
+                                templateId: "openstreetmap"
+                                label: "OpenStreetMap"
+                                imageSource: "qrc:/images/tiles/openstreetmap.png"
+                            }
+                            BasemapCard {
+                                templateId: "satellite"
+                                label: "Satellite"
+                                imageSource: "qrc:/images/tiles/googlesatellite.png"
+                            }
+                            BasemapCard {
+                                templateId: "hybrid"
+                                label: "Hybrid"
+                                imageSource: "qrc:/images/tiles/googlehybrid.png"
+                            }
+                            BasemapCard {
+                                templateId: "esri"
+                                label: "Esri Imagery"
+                                imageSource: "qrc:/images/tiles/EsriWorldImagery.png"
+                            }
+                            BasemapCard {
+                                label: "Add template"
+                                addNew: true
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        color: window.dividerColor
+                    }
+
+                    Column {
+                        width: parent.width
+                        height: projectArea.height - startSection.height
+                                - projectArea.spacing * 2 - 1
+                        spacing: 8
+
+                        Text {
+                            text: window.projectController.activeSection === "Favorites"
+                                  ? "Favorite projects"
+                                  : window.projectController.activeSection === "Manage"
+                                    ? "Manage projects"
+                                    : "Recent projects"
+                            color: window.primaryTextColor
+                            font.pixelSize: 19
+                            font.bold: true
+                        }
+
+                        Item {
+                            id: projectListArea
+                            width: parent.width
+                            height: parent.height - 28
+
+                            ListView {
+                            id: recentProjects
+                            anchors.fill: parent
+                            model: window.projectController.visibleProjects
+                            clip: true
+                            spacing: 2
+                            boundsBehavior: Flickable.StopAtBounds
+
+                            delegate: Rectangle {
+                                id: projectRow
+                                required property var modelData
+                                width: recentProjects.width
+                                height: 62
+                                radius: 6
+                                color: rowMouse.containsMouse ? window.hoverColor : "transparent"
+                                opacity: modelData.exists ? 1 : 0.55
+                                ToolTip.visible: rowMouse.containsMouse
+                                ToolTip.text: modelData.filePath
+                                ToolTip.delay: 500
+
+                                Row {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 8
+                                    anchors.rightMargin: 8
+                                    spacing: 10
+
+                                    IconText {
+                                        width: 22
+                                        height: parent.height
+                                        iconName: projectRow.modelData.iconType
+                                        iconColor: window.secondaryTextColor
+                                    }
+
+                                    Column {
+                                        width: projectRow.width - 100
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: 2
+
+                                        Text {
+                                            width: parent.width
+                                            text: projectRow.modelData.title
+                                            color: window.primaryTextColor
+                                            font.pixelSize: 18
+                                            font.bold: true
+                                            elide: Text.ElideRight
+                                        }
+                                        Text {
+                                            width: parent.width
+                                            text: projectRow.modelData.exists
+                                                  ? projectRow.modelData.subtitle
+                                                  : projectRow.modelData.subtitle + " · File not found"
+                                            color: window.secondaryTextColor
+                                            font.pixelSize: 12
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+
+                                    ToolButton {
+                                        id: projectMenuButton
+                                        width: 32
+                                        height: 36
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: "⋮"
+                                        font.pixelSize: 20
+                                        palette.buttonText: window.primaryTextColor
+                                        onClicked: projectMenu.open()
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: rowMouse
+                                    anchors.fill: parent
+                                    anchors.rightMargin: 44
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        if (projectRow.modelData.exists)
+                                            window.projectController.openProject(projectRow.modelData.filePath)
+                                    }
+                                }
+
+                                Menu {
+                                    id: projectMenu
+                                    parent: projectMenuButton
+                                    x: projectMenuButton.width - width
+                                    y: projectMenuButton.height
+                                    background: Rectangle {
+                                        implicitWidth: 190
+                                        color: window.surfaceColor
+                                        border.color: window.borderColor
+                                        radius: 5
+                                    }
+                                    delegate: MenuItem {
+                                        id: menuItem
+                                        contentItem: Text {
+                                            text: menuItem.text
+                                            color: window.primaryTextColor
+                                            font: menuItem.font
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        background: Rectangle {
+                                            color: menuItem.highlighted
+                                                   ? window.hoverColor : "transparent"
+                                        }
+                                    }
+                                    MenuItem {
+                                        text: projectRow.modelData.favorite
+                                              ? "Remove from Favorites"
+                                              : "Add to Favorites"
+                                        onTriggered: window.projectController.toggleFavorite(
+                                                         projectRow.modelData.filePath)
+                                    }
+                                    MenuItem {
+                                        text: "Show in File Explorer"
+                                        enabled: projectRow.modelData.exists
+                                        onTriggered: window.projectController.showProjectLocation(
+                                                         projectRow.modelData.filePath)
+                                    }
+                                    MenuItem {
+                                        text: "Remove from Recent"
+                                        onTriggered: window.projectController.removeRecentProject(
+                                                         projectRow.modelData.filePath)
+                                    }
+                                }
+                            }
+                            }
+
+                            Label {
+                                anchors.centerIn: projectListArea
+                                visible: recentProjects.count === 0
+                                width: projectListArea.width - 24
+                                horizontalAlignment: Text.AlignHCenter
+                                wrapMode: Text.WordWrap
+                                color: window.secondaryTextColor
+                                text: window.projectController.activeSection === "Favorites"
+                                      ? "No favorite projects yet. Use a project's menu to add it to Favorites."
+                                      : "No recent projects yet. Create a project or browse for a .earth file."
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: window.dividerColor
+            }
+
+            Row {
+                id: footer
+                width: parent.width
+                height: 56
+
+                Text {
+                    id: footerText
+                    text: "GeoLayer-X GIS Platform"
+                    color: window.secondaryTextColor
+                    font.pixelSize: 14
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Item {
+                    width: Math.max(0, footer.width - footerText.implicitWidth - footerSettings.implicitWidth)
+                    height: 1
+                }
+
+                Text {
+                    id: footerSettings
+                    text: "Settings · Help"
+                    color: window.secondaryTextColor
+                    font.pixelSize: 14
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: settingsDialog.open()
+                    }
+                }
+            }
         }
-
-        flat: true
-        icon.source: "images/close.svg"
-        icon.color: "white"
-        icon.width: 20
-        icon.height: 20
-        onClicked: {
-          welcomeScreenController.hideScene();
-        }
-      }
     }
-
-    UpdateNotificationBar {
-      id: pluginsUpdateBar
-      Layout.fillWidth: true
-      Layout.preferredHeight: 50
-      radius: 16
-      visible: false
-      color: mainCard.color
-
-      onInstallClicked: {
-        visible = false;
-        welcomeScreenController.showPluginManager();
-      }
-    }
-
-    UpdateNotificationBar {
-      id: qgisUpdateBar
-      Layout.fillWidth: true
-      Layout.preferredHeight: 50
-      radius: 16
-      visible: false
-      color: mainCard.color
-
-      onInstallClicked: {
-        Qt.openUrlExternally("https://download.qgis.org/")
-      }
-    }
-  }
-  
-  DropArea {
-    anchors.fill: parent
-
-    onDropped: drop => {
-      let formatsData = {};
-      for(const format of drop.formats) {
-        formatsData[format] = drop.getDataAsArrayBuffer(format);
-      }
-      welcomeScreenController.forwardDrop(drop.text, drop.urls, formatsData);
-    }
-  }
-  
-  Connections {
-    target: welcomeScreenController
-    
-    function onNewVersionAvailable(versionString) {
-      qgisUpdateBar.message = qsTr("QGIS %1 is out!").arg(versionString);
-      qgisUpdateBar.visible = true;
-    }
-    
-    function onPluginUpdatesAvailable(plugins) {
-      pluginsUpdateBar.message = qsTr("The following plugin(s) have available updates: %1", "", plugins.length).arg(plugins.join(", "));
-      pluginsUpdateBar.visible = true;
-    }
-  }
-
-  Component.onCompleted: {
-    tabBar.currentIndex = recentProjectsListView.count > 0 ? 0 : 1
-    if (newsFeedParser.enabled) {
-      newsFeedParser.fetch();
-    }
-  }
 }

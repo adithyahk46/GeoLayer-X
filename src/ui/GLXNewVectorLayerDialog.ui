@@ -51,7 +51,7 @@
          <string>Remove Field</string>
         </property>
         <property name="icon">
-         <iconset>
+         <iconset resource="../../../resources/images/images.qrc">
           <normaloff>:/images/themes/default/mActionDeleteAttribute.svg</normaloff>:/images/themes/default/mActionDeleteAttribute.svg</iconset>
         </property>
         <property name="toolButtonStyle">
@@ -115,7 +115,7 @@
            <string>Move up</string>
           </property>
           <property name="icon">
-           <iconset>
+           <iconset resource="../../../resources/images/images.qrc">
             <normaloff>:/images/themes/default/mActionArrowUp.svg</normaloff>:/images/themes/default/mActionArrowUp.svg</iconset>
           </property>
          </widget>
@@ -132,7 +132,7 @@
            <string>Move down</string>
           </property>
           <property name="icon">
-           <iconset>
+           <iconset resource="../../../resources/images/images.qrc">
             <normaloff>:/images/themes/default/mActionArrowDown.svg</normaloff>:/images/themes/default/mActionArrowDown.svg</iconset>
           </property>
          </widget>
@@ -231,7 +231,7 @@
          <string>Add to Fields List</string>
         </property>
         <property name="icon">
-         <iconset>
+         <iconset resource="../../../resources/images/images.qrc">
           <normaloff>:/images/themes/default/mActionNewAttribute.svg</normaloff>:/images/themes/default/mActionNewAttribute.svg</iconset>
         </property>
         <property name="toolButtonStyle">
@@ -406,7 +406,9 @@
   <tabstop>mButtonDown</tabstop>
   <tabstop>mRemoveAttributeButton</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="../../../resources/images/images.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>buttonBox</sender>

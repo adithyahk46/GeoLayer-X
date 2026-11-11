@@ -22,6 +22,16 @@ QColor ColorPickerCheckBox::color() const
     return m_color;
 }
 
+void ColorPickerCheckBox::setColor(const QColor& color)
+{
+    if (!color.isValid() || m_color == color)
+        return;
+
+    m_color = color;
+    updateAppearance();
+    emit colorChanged(m_color);
+}
+
 void ColorPickerCheckBox::onClicked()
 {
     QColor newColor = QColorDialog::getColor(

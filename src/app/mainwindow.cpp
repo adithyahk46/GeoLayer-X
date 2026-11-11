@@ -12,11 +12,12 @@ using namespace std;
 
 
 #include <QActionGroup>
-#include <QFileInfo>
+#include <QCloseEvent>
 #include <QFileDialog>
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QSplitter>
+#include <QSignalBlocker>
 #include <QToolButton>
 
 #include <optional>
@@ -24,52 +25,11 @@ using namespace std;
 
 #include "App.h"
 #include "SettingsManager/SettingsManager.h"
-#include "DataManager/MapLoadModule.h"
 #include "DrawingTool/PolygonDrawTool.h"
 #include "PluginsDockWidget.h"
 #include "qgis/GLXNewVectorLayerDialog.h"
-
-
-
-void qtLogToFile(QtMsgType type, const QMessageLogContext &context, const QString &msg)
-{
-    const std::string logTypes[] = { "Debug", "Warning", "Critical", "Fatal", "Info" };
-
-    std::cout << "[Qt]    [" << logTypes[type] << "]    "
-              << msg.toLocal8Bit().constData();
-
-#ifndef NDEBUG
-    std::cout << "    (" << context.file << ": " << context.line
-              << ", " << context.function << ")";
-#endif
-
-    std::cout << std::endl;
-}
-
-class LogFileHandler : public osg::NotifyHandler
-{
-public:
-    LogFileHandler(std::ofstream* log) : _log(log) {}
-
-    void notify(osg::NotifySeverity severity, const char* msg) override
-    {
-        const char* tags[] = {
-            "ALWAYS", "FATAL", "WARN", "NOTICE",
-            "INFO", "DEBUG_INFO", "DEBUG_FP"
-        };
-
-        std::cout << "[OSG]   [" << tags[severity] << "]    " << msg;
-
-        if (_log)
-        {
-            (*_log) << "[OSG]   [" << tags[severity] << "]    " << msg;
-            _log->flush();
-        }
-    }
-
-private:
-    std::ofstream* _log = nullptr;
-};
+#include "ProjectManager/ProjectManager.h"
+#include "project/ProjectWelcomeScreen.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -123,10 +83,10 @@ void MainWindow::saveAllSettings()
 void MainWindow::restoreAllSettings()
 {
     auto& settings = SettingsManager::instance();
-
-   const QString theme = settings.value("theme", "light").toString();
-   // ui->actionTheme->setChecked(theme == "dark");
-   setApplicationTheme(theme == "dark");
+    const bool dark = settings.value("theme", "light").toString() == "dark";
+    const QSignalBlocker blocker(ui->actionTheame);
+    ui->actionTheame->setChecked(dark);
+    setApplicationTheme(dark);
 
 }
 
@@ -147,11 +107,21 @@ void MainWindow::initAll()
 
 void MainWindow::showWelcomeScreen()
 {
-    GLXProjectsDialog dialog(this);
-
-    dialog.exec();
+    if (m_ProjectWelcomeScreen)
+        m_ProjectWelcomeScreen->showWelcomeScreen();
 }
 
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+    if (m_allowApplicationClose) {
+        event->accept();
+        QCoreApplication::quit();
+    } else {
+        event->ignore();
+        if (m_projectManager)
+            m_projectManager->requestApplicationExit();
+    }
+}
 
 QMenu *MainWindow::dockPanelsMenu() const { return ui->menuDockPanels;}
 
@@ -168,42 +138,6 @@ void MainWindow::createShapeFile()
 
 void MainWindow::initLogs()
 {
-    std::string glx_prefix_path =
-        std::getenv("GLX_PREFIX_PATH") ?
-        std::getenv("GLX_PREFIX_PATH") :
-        QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("..").toStdString();
-
-    std::string glx_log_path =
-        std::getenv("GLX_LOG_PATH") ?
-        std::getenv("GLX_LOG_PATH") :
-        glx_prefix_path + "/logs";
-
-    if (!osgDB::fileExists(glx_log_path))
-        osgDB::makeDirectory(glx_log_path);
-
-    std::string logPath = glx_log_path + "/GLXLogs.txt";
-
-    _log = new std::ofstream(logPath, std::ios::out | std::ios::app);
-
-    if (!_log || !_log->is_open())
-        return;
-
-    // IMPORTANT: Don't redirect cout/cerr.
-    // They remain connected to the console.
-
-    qInstallMessageHandler(qtLogToFile);
-
-    osgEarth::setNotifyLevel(osg::INFO);
-    osgEarth::setNotifyHandler(new LogFileHandler(_log));
-
-    osg::setNotifyLevel(osg::NOTICE);
-    osg::setNotifyHandler(new LogFileHandler(_log));
-
-    std::cout << "Program started: "
-              << QDateTime::currentDateTime()
-                     .toString("yyyy-MM-dd hh:mm:ss")
-                     .toStdString()
-              << std::endl;
 }
 
 void MainWindow::initCore()
@@ -216,77 +150,61 @@ void MainWindow::initCore()
     osgwidget3D = new OSGViewerWidget(this);
     App::setThreedWindow(osgwidget3D);
 
-#if GLX_BUILD_2D_MAP
-    //2D widget setUp
-    osgwidget2D = new OSGViewerWidget(this);
-    App::set2DWindow(osgwidget2D);
-    osgwidget2D->getMapNode()->getMap()->setProfile(osgEarth::Profile::create(osgEarth::Profile::PLATE_CARREE));
-    osgwidget2D->getManipulator()->getSettings()->bindMouse(
-    osgEarth::Util::EarthManipulator::ACTION_NULL,osgGA::GUIEventAdapter::MIDDLE_MOUSE_BUTTON,0);
-#endif
-
-#if GLX_BUILD_2D_MAP
-    mapViewSplitter = new QSplitter(Qt::Horizontal, this);
-    mapViewSplitter->addWidget(osgwidget2D);
-    mapViewSplitter->addWidget(osgwidget3D);
-    mapViewSplitter->setStretchFactor(0, 1);
-    mapViewSplitter->setStretchFactor(1, 1);
-#endif
 
     _layerManagerCallback = LayerManagerWidget::createMapCallback(layerManager);
     osgwidget3D->getMapNode()->getMap()->addMapCallback(_layerManagerCallback);
-#if GLX_BUILD_2D_MAP
-    setCentralWidget(mapViewSplitter);
-#else
+
     setCentralWidget(osgwidget3D);
-#endif
 
     QObject::connect(osgwidget3D, &OSGViewerWidget::setupCompleted,this, &MainWindow::osgViewerSetup);
-
-    MapLoadModule::LoadTMSLayer(osgwidget3D->getMapNode(), "https://readymap.org/readymap/tiles/1.0.0/7/");
-#if GLX_BUILD_2D_MAP
-    MapLoadModule::LoadTMSLayer(osgwidget2D->getMapNode(), "https://readymap.org/readymap/tiles/1.0.0/7/");
-#endif
-
 
     mStatusBarWidget = new StatusbarHandlerWidget();
     statusBar()->addPermanentWidget(mStatusBarWidget);
     statusBar()->setMinimumHeight(20);
     statusBar()->layout()->setContentsMargins(0, 0, 0, 0);
     QObject::connect(osgwidget3D->getManipulator(), &GLXEarthManipulator::mouseMoveEvent, mStatusBarWidget, &StatusbarHandlerWidget::updateGeoCoordinates);
-#if GLX_BUILD_2D_MAP
-    QObject::connect(osgwidget2D->getManipulator(), &GLXEarthManipulator::mouseMoveEvent, mStatusBarWidget, &StatusbarHandlerWidget::updateGeoCoordinates);
-#endif
 
-
-
+    m_projectManager = new ProjectManager(osgwidget3D->getMapNode(), this);
+    m_ProjectWelcomeScreen = new ProjectWelcomeScreen(m_projectManager, this);
+    connect(m_projectManager, &ProjectManager::projectOpened, this, [this] {
+        setWindowTitle(tr("GeoLayer-X - %1").arg(m_projectManager->currentProjectName()));
+    });
+    connect(m_projectManager, &ProjectManager::projectClosed, this, [this] {
+        setWindowTitle(QStringLiteral("GeoLayer-X"));
+    });
+    connect(m_projectManager, &ProjectManager::projectTransitionRequested,
+            this, &MainWindow::handleProjectTransition);
+    connect(m_projectManager, &ProjectManager::saveAsRequested, this, [this] {
+        const QString path = QFileDialog::getSaveFileName(
+            this, tr("Save GeoLayer-X Project As"),
+            m_projectManager->currentProjectPath(),
+            tr("osgEarth Project Files (*.earth)"));
+        if (!path.isEmpty())
+            m_projectManager->saveProjectAs(path);
+    });
+    connect(m_projectManager, &ProjectManager::openEarthFileRequested, this, [this] {
+        const QString path = QFileDialog::getOpenFileName(
+            this, tr("Open Earth File"), QString(),
+            tr("Earth Files (*.earth);;All files (*)"));
+        if (!path.isEmpty())
+            m_projectManager->openEarthFile(path);
+    });
 
 }
 
 void MainWindow::initSignalsAndSlots()
 {
+    connect(ui->actionExit, &QAction::triggered, this, &QWidget::close);
+
     //menubar "VIEW"
     {
-#if GLX_BUILD_2D_MAP
-      QObject::connect(ui->actionShow_2D, &QAction::triggered, this, [this](bool checked){
-         osgwidget2D->setVisible(!osgwidget2D->isVisible());
-         ui->actionShow_2D->setChecked(osgwidget2D->isVisible());
-      });
-#else
-      ui->actionShow_2D->setVisible(false);
-#endif
       QObject::connect(ui->actionShow_3D, &QAction::triggered, this, [this](bool checked){
             osgwidget3D->setVisible(!osgwidget3D->isVisible());
             ui->actionShow_3D->setChecked(osgwidget3D->isVisible());
       });
     }
     //connect signals and slots here
-    QObject::connect(ui->actionOpenEarthFile, &QAction::triggered, this, [this]() {
-        QString filePath = QFileDialog::getOpenFileName(this, "Open Earth File", "", "Earth Files (*.earth)");
-        if (!filePath.isEmpty()) {
-            MapLoadModule::LoadEarthFile(filePath);
-        }
-    });
+
 
     QObject::connect(ui->actionTheame, &QAction::toggled, this, [=](bool dark){
         setApplicationTheme(dark);
@@ -315,54 +233,9 @@ void MainWindow::initSignalsAndSlots()
      * manipulatorButton text shows which manipulators receive the changes
      */
     {
-#if GLX_BUILD_2D_MAP
-        QMenu *manipulatorMenu = new QMenu("", this);
-
-        QAction *manip2d = manipulatorMenu->addAction("2D");
-        QAction *manip3d = manipulatorMenu->addAction("3D");
-
-        manip2d->setCheckable(true);
-        manip3d->setCheckable(true);
-        manip3d->setChecked(true);
-
-        QToolButton *manipulatorButton = new QToolButton(this);
-        const auto updateManipulatorButtonText = [manipulatorButton, manip2d, manip3d]() {
-            if (manip2d->isChecked() && manip3d->isChecked())
-              //  :/images/themes/default/sync_views.svg
-                manipulatorButton->setIcon(QIcon(":/images/themes/default/sync_views.svg"));
-            else if (manip2d->isChecked())
-                manipulatorButton->setText("2D");
-            else if (manip3d->isChecked())
-                manipulatorButton->setText("3D");
-            else
-                manipulatorButton->setText("None");
-        };
-        updateManipulatorButtonText();
-        manipulatorButton->setMenu(manipulatorMenu);
-        manipulatorButton->setPopupMode(QToolButton::InstantPopup);
-
-        ui->toolbarMapIntraction->addWidget(manipulatorButton);
-#endif
-
-#if GLX_BUILD_2D_MAP
-        QObject::connect(manip2d, &QAction::toggled, this, [updateManipulatorButtonText](bool) {
-            updateManipulatorButtonText();
-        });
-        QObject::connect(manip3d, &QAction::toggled, this, [updateManipulatorButtonText](bool) {
-            updateManipulatorButtonText();
-        });
-
-        const auto applyToCheckedManipulators = [this, manip2d, manip3d](auto operation) {
-            if (manip2d->isChecked())
-                operation(osgwidget2D->getManipulator());
-            if (manip3d->isChecked())
-                operation(osgwidget3D->getManipulator());
-        };
-#else
         const auto applyToCheckedManipulators = [this](auto operation) {
             operation(osgwidget3D->getManipulator());
         };
-#endif
 
         QObject::connect(ui->mActionZoomIn, &QAction::triggered, this, [applyToCheckedManipulators]() {
             applyToCheckedManipulators([](GLXEarthManipulator *manipulator) {
@@ -390,7 +263,18 @@ void MainWindow::initSignalsAndSlots()
         });
     }
 
-
+    connect(ui->actionNew_project, &QAction::triggered,
+            m_projectManager, &ProjectManager::requestNewProject);
+    connect(ui->actionOpen_Project, &QAction::triggered,
+            m_projectManager, &ProjectManager::requestOpenProject);
+    connect(ui->actionSave_Project, &QAction::triggered,
+            m_projectManager, &ProjectManager::saveProject);
+    connect(ui->actionSave_as, &QAction::triggered,
+            m_projectManager, &ProjectManager::requestSaveAs);
+    connect(ui->actionClose_Project, &QAction::triggered,
+            m_projectManager, &ProjectManager::requestCloseProject);
+    connect(ui->actionOpenEarthFile, &QAction::triggered,
+            m_projectManager, &ProjectManager::requestOpenEarthFile);
 
     m_drawingActionGroup = new QActionGroup(this);
     m_drawingActionGroup->setExclusive(true);
@@ -431,6 +315,48 @@ void MainWindow::initSignalsAndSlots()
 
 }
 
+void MainWindow::handleProjectTransition(const QString& action,
+                                         const QString& filePath)
+{
+    QString projectFilePath = filePath;
+    if (action == QStringLiteral("openFile")) {
+        projectFilePath = QFileDialog::getOpenFileName(
+            this, tr("Open GeoLayer-X Project"), QString(),
+            tr("osgEarth Project Files (*.earth);;All files (*)"));
+        if (projectFilePath.isEmpty())
+            return;
+    }
+
+    if (m_projectManager->hasOpenProject()) {
+        const QMessageBox::StandardButton choice = QMessageBox::question(
+            this, tr("Current project"),
+            tr("Save changes to %1 before continuing?")
+                .arg(m_projectManager->currentProjectName()),
+            QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
+            QMessageBox::Save);
+        if (choice != QMessageBox::Save && choice != QMessageBox::Discard)
+            return;
+        if (choice == QMessageBox::Save && !m_projectManager->saveProject())
+            return;
+        m_projectManager->closeProject();
+    }
+
+    if (action == QStringLiteral("openFile")
+        || action == QStringLiteral("openRecent")) {
+        if (m_projectManager->openProject(projectFilePath))
+            m_ProjectWelcomeScreen->completeProjectOpen();
+        else
+            showWelcomeScreen();
+    } else if (action == QStringLiteral("exit")) {
+        m_allowApplicationClose = true;
+        close();
+    } else if (action == QStringLiteral("new")
+               || action == QStringLiteral("close")) {
+        showWelcomeScreen();
+    }
+}
+
+
 void MainWindow::initPlugins()
 {
     pluginsDockWidget = new PluginsDockWidget(this);
@@ -450,11 +376,6 @@ void MainWindow::initPlugins()
     connect(ui->actionManage_Plugins, &QAction::triggered, this, [this] {
         _pluginManager->showManagerDialog(this);
     });
-}
-
-void MainWindow::keyPressEvent(QKeyEvent* event)
-{
-
 }
 
 void MainWindow::setApplicationTheme(bool dark)
@@ -509,18 +430,13 @@ void MainWindow::setApplicationTheme(bool dark)
     QApplication::setPalette(palette);
     if(dark){
         SettingsManager::instance().setValue("theme","dark");
-#if GLX_BUILD_2D_MAP
-        osgwidget2D->setViewerColor(osg::Vec4(0.2f, 0.2f, 0.2f, 1.0f));
-#endif
+        SettingsManager::instance().sync();
         osgwidget3D->setViewerColor(osg::Vec4(0.2f, 0.2f, 0.2f, 1.0f));
     }
     else{
         SettingsManager::instance().setValue("theme","light");
-#if GLX_BUILD_2D_MAP
-        osgwidget2D->setViewerColor(osg::Vec4(0.9f, 0.9f, 0.9f, 1.0f));
-#endif
+        SettingsManager::instance().sync();
         osgwidget3D->setViewerColor(osg::Vec4(0.9f, 0.9f, 0.9f, 1.0f));
     }
-
 
 }

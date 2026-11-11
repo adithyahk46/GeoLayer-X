@@ -1,7 +1,7 @@
 #ifndef LAYERMANAGERWIDGET_H
 #define LAYERMANAGERWIDGET_H
 
-#include <QTreeWidget>
+#include <QListWidget>
 
 #include "DockWidgetPanels.h"
 
@@ -20,6 +20,7 @@ public:
 
     void onLayerRemoved(osgEarth::Layer* layer, unsigned index);
 
+    void onLayerMoved(osgEarth::Layer* layer, unsigned oldIndex, unsigned newIndex);
 
     void addLayer(osgEarth::Layer* layer);
 
@@ -29,9 +30,11 @@ protected:
 
 private:
     LayerManagerWidget(QWidget* parent = nullptr);
+    void onLayerOrderChanged();
+    void syncLayers();
     static LayerManagerWidget* _layerManager;
 
-    QTreeWidget* treeWidget = nullptr;
+    QListWidget* layerListWidget = nullptr;
 };
 
 #endif // LAYERMANAGERWIDGET_H

@@ -5,6 +5,10 @@ add_library(${CORE_TARGET_NAME} SHARED
     osgviewerwidget.cpp
 
     DataManager/MapLoadModule.cpp DataManager/MapLoadModule.h
+    DataManager/SymbologyEditorDialog.cpp DataManager/SymbologyEditorDialog.h DataManager/SymbologyEditorDialog.ui
+    ProjectManager/ProjectManager.cpp ProjectManager/ProjectManager.h
+    ProjectManager/ProjectInfo.h
+    ProjectManager/RecentProjectsRepository.cpp ProjectManager/RecentProjectsRepository.h
     SettingsManager/SettingsManager.cpp SettingsManager/SettingsManager.h
     DataManager/legends.cpp DataManager/legends.h
     MapController/GLXEarthManipulator.cpp MapController/GLXEarthManipulator.h
@@ -15,9 +19,8 @@ add_library(${CORE_TARGET_NAME} SHARED
     DrawingTool/DrawTool.cpp DrawingTool/DrawTool.h DrawingTool/PolygonDrawTool.cpp DrawingTool/PolygonDrawTool.h
     App.cpp App.h
 
-
-
 )
+
 target_include_directories(${CORE_TARGET_NAME}
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -34,6 +37,9 @@ target_link_libraries(${CORE_TARGET_NAME} PUBLIC
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::OpenGL
     Qt${QT_VERSION_MAJOR}::OpenGLWidgets
+    Qt${QT_VERSION_MAJOR}::Sql
+    UiFiles
+    customWidgets
 )
 
 #link OSGQt osgQOpenGL library
@@ -54,7 +60,13 @@ target_link_libraries(${CORE_TARGET_NAME} PUBLIC
 
 
 # Link osgEarth (required)
-target_link_libraries(${CORE_TARGET_NAME} PUBLIC osgEarth::osgEarth)
+target_link_libraries(${CORE_TARGET_NAME} PUBLIC
+    osgEarth::osgEarth
+)
+if(OSGEARTH_HAVE_CESIUM_NODEKIT)
+    target_link_libraries(${CORE_TARGET_NAME} PUBLIC osgEarth::osgEarthCesium)
+endif()
+
 
 # Include paths
 target_include_directories(${CORE_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

@@ -8,6 +8,11 @@
 
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QAbstractItemView>
+#include <QHBoxLayout>
+#include <QListWidget>
+#include <QListView>
+#include <QStackedWidget>
 #include <QtConcurrent/QtConcurrentRun>
 
 auto future = QtConcurrent::run([]()
@@ -23,12 +28,53 @@ MapLoadModuleDialog::MapLoadModuleDialog( QWidget* parent )
     ,ui(new Ui::MapLoadModuleDialog)
 {
     ui->setupUi(this);
+    setupHorizontalTabs();
     setWindowTitle("Open Layers");
     setWindowIcon(QIcon(":/new/prefix1/icons/Layers/layers.png"));
 
   _initConnections();
 
   adjustSize();
+}
+
+void MapLoadModuleDialog::setupHorizontalTabs()
+{
+    QTabWidget* tabWidget = ui->tabWidget;
+    const int initialIndex = tabWidget->currentIndex();
+    QWidget* tabContainer = new QWidget(tabWidget->parentWidget());
+    auto* layout = new QHBoxLayout(tabContainer);
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    _tabSelector = new QListWidget(tabContainer);
+    _tabSelector->setSelectionMode(QAbstractItemView::SingleSelection);
+    _tabSelector->setMovement(QListView::Static);
+    _tabSelector->setResizeMode(QListView::Adjust);
+    _tabSelector->setIconSize(QSize(24, 24));
+    _tabSelector->setFixedWidth(150);
+
+    _tabContent = new QStackedWidget(tabContainer);
+    layout->addWidget(_tabSelector);
+    layout->addWidget(_tabContent, 1);
+
+    while (tabWidget->count() > 0)
+    {
+        QWidget* page = tabWidget->widget(0);
+        const QString title = tabWidget->tabText(0);
+        const QIcon icon = tabWidget->tabIcon(0);
+        tabWidget->removeTab(0);
+        _tabSelector->addItem(new QListWidgetItem(icon, title));
+        _tabContent->addWidget(page);
+    }
+
+    if (QLayout* parentLayout = tabWidget->parentWidget()->layout())
+        parentLayout->replaceWidget(tabWidget, tabContainer);
+
+    delete tabWidget;
+    ui->tabWidget = nullptr;
+
+    connect(_tabSelector, &QListWidget::currentRowChanged,
+        _tabContent, &QStackedWidget::setCurrentIndex);
+    _tabSelector->setCurrentRow(initialIndex);
 }
 
 void MapLoadModuleDialog::_initConnections()
@@ -255,7 +301,7 @@ QString MapLoadModuleDialog::OpenFiles(FileType Type )
 
 void MapLoadModuleDialog::on_pb_openMap_clicked()
 {
-    if(ui->tabWidget->currentIndex() == 0)
+    if(_tabSelector->currentRow() == 0)
     {
         if (ui->le_rasterUrl->text().isEmpty() )
             return;
@@ -264,7 +310,7 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
 
     }
 
-    else if(ui->tabWidget->currentIndex() == 1)
+    else if(_tabSelector->currentRow() == 1)
     {
         if (ui->le_vectorUrl->text().isEmpty())
             return;
@@ -280,7 +326,7 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
            });
     }
 
-    else if(ui->tabWidget->currentIndex() == 2){
+    else if(_tabSelector->currentRow() == 2){
 
         if (ui->le_eleUrl->text().isEmpty() || !App::getThreedWindow()->getMapNode())
             return;
@@ -288,7 +334,7 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
         MapLoadModule::LoadElevation(App::getThreedWindow()->getMapNode(),ui->le_eleUrl->text() , ui->le_eleLayerName->text());
     }
 
-    else if(ui->tabWidget->currentIndex() == 3){
+    else if(_tabSelector->currentRow() == 3){
         if(ui->le_sceanUrl->text().isEmpty())
             return;
 
@@ -306,7 +352,7 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
                                        ui->le_sceneXml->text().trimmed());
     }
 
-    else if(ui->tabWidget->currentIndex() == 4)
+    else if(_tabSelector->currentRow() == 4)
         {
             qDebug() << "entered XYZ tab";
 
@@ -359,10 +405,50 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
             ui->warning_label->clear();
             MapLoadModule::LoadXYZTiles(App::getThreedWindow()->getMapNode(),LayerUrl, ui->le_xyzLayername->text());
         }
-
-    else if(ui->tabWidget->currentIndex() == 5)
+#if OSGEARTH_HAVE_CESIUM_NODEKIT
+    else if(_tabSelector->currentRow() == 5)
     {
+        OSGViewerWidget* viewer = App::getThreedWindow();
+        if (!viewer || !viewer->getMapNode())
+        {
+            ui->cesiumWarningLabel->setText(tr("The 3D map is not available."));
+            return;
+        }
 
+        const QString accessToken = ui->cesiumAccessTokenLineEdit->text().trimmed();
+        bool assetIdValid = false;
+        const uint assetId = ui->cesiumAssetIdLineEdit->text().trimmed().toUInt(&assetIdValid);
+        const QString layerName = ui->cesiumLayerNameLineEdit->text().trimmed();
+        const int layerTypeIndex = ui->cesiumLayerTypeComboBox->currentIndex();
+
+        if (accessToken.isEmpty())
+        {
+            ui->cesiumWarningLabel->setText(tr("Enter a Cesium Ion access token."));
+            return;
+        }
+        if (!assetIdValid || assetId == 0)
+        {
+            ui->cesiumWarningLabel->setText(tr("Enter a valid Cesium Ion asset ID."));
+            return;
+        }
+        if (layerName.isEmpty())
+        {
+            ui->cesiumWarningLabel->setText(tr("Enter a layer name."));
+            return;
+        }
+        if (layerTypeIndex < 0 || layerTypeIndex > 2)
+        {
+            ui->cesiumWarningLabel->setText(tr("Select a Cesium layer type."));
+            return;
+        }
+
+        ui->cesiumWarningLabel->clear();
+        MapLoadModule::LoadCesiumLayer(
+            viewer->getMapNode(),
+            accessToken,
+            static_cast<MapLoadModule::CesiumLayerType>(layerTypeIndex),
+            assetId,
+            layerName);
     }
+#endif
 }
-

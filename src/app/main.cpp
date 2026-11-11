@@ -10,6 +10,7 @@
 #include <QStyleFactory>
 #include <QSurfaceFormat>
 #include <QTimer>
+#include <QQuickStyle>
 
 #include <osgEarth/MapNode>
 
@@ -42,6 +43,7 @@ using namespace osgEarth::Util;
 
 int main(int argc, char* argv[])
 {
+    QQuickStyle::setStyle("Fusion");
 
     //set osgNotification level to WARN
     osg::setNotifyLevel(osg::WARN);

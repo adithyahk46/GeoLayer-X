@@ -18,9 +18,29 @@ PluginsDockWidget::PluginsDockWidget(QWidget* parent)
 
 }
 
+void PluginsDockWidget::addBuiltInPlugin(const QString& pluginId, const QString& name, const QString& description)
+{
+    _builtInPluginNames.insert(pluginId, name);
+    _builtInPluginDescriptions.insert(pluginId, description);
+    refreshPluginsList();
+}
+
 void PluginsDockWidget::refreshPluginsList()
 {
     _pluginList->clear();
+
+    for (auto it = _builtInPluginNames.constBegin(); it != _builtInPluginNames.constEnd(); ++it)
+    {
+        QListWidgetItem* item = new QListWidgetItem(it.value(), _pluginList);
+        item->setData(Qt::UserRole, it.key());
+        item->setData(Qt::UserRole + 1, true);
+        item->setToolTip(_builtInPluginDescriptions.value(it.key(), QStringLiteral("Double-click to open plugin dialog.")));
+    }
+
+    if (!_pluginManager)
+    {
+        return;
+    }
 
     const QList<PluginManager::PluginInfo> plugins = _pluginManager->plugins();
     for (const PluginManager::PluginInfo& plugin : plugins)
@@ -91,6 +111,12 @@ void PluginsDockWidget::setUpDockWidget()
         const QString pluginId = item->data(Qt::UserRole).toString();
         if (pluginId.isEmpty())
         {
+            return;
+        }
+
+        if (item->data(Qt::UserRole + 1).toBool())
+        {
+            emit builtInPluginActivated(pluginId);
             return;
         }
 

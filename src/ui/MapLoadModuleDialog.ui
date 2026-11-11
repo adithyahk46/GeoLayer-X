@@ -28,7 +28,7 @@
      <widget class="QWidget" name="raster_tab">
       <attribute name="icon">
          <iconset resource="../../resources/images/images.qrc">
-        <normaloff>:/new/prefix1/resources/icons/Layers/rasterLayer.png</normaloff>:/new/prefix1/resources/icons/Layers/rasterLayer.png</iconset>
+        <normaloff>:/images/themes/default/mIconRasterLayer.svg</normaloff>:/images/themes/default/mIconRasterLayer.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Raster</string>
@@ -107,8 +107,8 @@
      </widget>
      <widget class="QWidget" name="vector_tab">
       <attribute name="icon">
-       <iconset>
-        <normaloff>:/new/prefix1/icons/Layers/vectorLayer.png</normaloff>:/new/prefix1/icons/Layers/vectorLayer.png</iconset>
+       <iconset resource="../../resources/images/images.qrc">
+        <normaloff>:/images/themes/default/mIconLayer.png</normaloff>:/images/themes/default/mIconLayer.png</iconset>
       </attribute>
       <attribute name="title">
        <string>Vector</string>
@@ -180,8 +180,8 @@
      </widget>
      <widget class="QWidget" name="elevation_tab">
       <attribute name="icon">
-       <iconset>
-        <normaloff>icons/Layers/elevationLayerColor.png</normaloff>icons/Layers/elevationLayerColor.png</iconset>
+       <iconset resource="../../resources/images/images.qrc">
+        <normaloff>:/images/themes/default/mActionAddRasterLayer.svg</normaloff>:/images/themes/default/mActionAddRasterLayer.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Elevation</string>
@@ -253,8 +253,8 @@
      </widget>
      <widget class="QWidget" name="sceanTab">
       <attribute name="icon">
-       <iconset>
-        <normaloff>:/new/prefix1/icons/Layers/3D Scene Layer.png</normaloff>:/new/prefix1/icons/Layers/3D Scene Layer.png</iconset>
+       <iconset resource="../../resources/images/images.qrc">
+        <normaloff>:/images/themes/default/mIconTiledSceneLayer.svg</normaloff>:/images/themes/default/mIconTiledSceneLayer.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>3D Scene</string>
@@ -391,8 +391,8 @@
      </widget>
      <widget class="QWidget" name="tab">
       <attribute name="icon">
-       <iconset>
-        <normaloff>:/new/prefix1/icons/Layers/XYZ.png</normaloff>:/new/prefix1/icons/Layers/XYZ.png</iconset>
+       <iconset resource="../../resources/images/images.qrc">
+        <normaloff>:/images/themes/default/mActionAddXyzLayer.svg</normaloff>:/images/themes/default/mActionAddXyzLayer.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>XYZ</string>
@@ -554,6 +554,110 @@
           <string/>
          </property>
         </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="cesiumTab">
+      <attribute name="title">
+       <string>Cesium Ion</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="cesiumTabLayout">
+       <item>
+        <widget class="QLabel" name="cesiumTypeLabel">
+         <property name="text">
+          <string>Layer Type:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="cesiumLayerTypeComboBox">
+         <item>
+          <property name="text">
+           <string>Ion Imagery</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Ion 3D Tiles</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Ion Terrain</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="cesiumTokenLabel">
+         <property name="text">
+          <string>Cesium Ion Access Token:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="cesiumAccessTokenLineEdit">
+         <property name="echoMode">
+          <enum>QLineEdit::EchoMode::Password</enum>
+         </property>
+         <property name="placeholderText">
+          <string>Enter your Cesium Ion access token</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="cesiumAssetIdLabel">
+         <property name="text">
+          <string>Asset ID:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="cesiumAssetIdLineEdit">
+         <property name="placeholderText">
+          <string>Enter the Cesium Ion asset ID</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="cesiumLayerNameLabel">
+         <property name="text">
+          <string>Layer Name:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="cesiumLayerNameLineEdit">
+         <property name="text">
+          <string>Cesium Layer</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="cesiumWarningLabel">
+         <property name="styleSheet">
+          <string notr="true">color: #c0392b;</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="cesiumVerticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </widget>

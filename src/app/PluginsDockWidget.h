@@ -3,6 +3,7 @@
 
 #include "DockWidgetPanels.h"
 #include <PluginManager/PluginManager.h>
+#include <QMap>
 
 class QListWidget;
 class QLineEdit;
@@ -19,6 +20,10 @@ public:
 
     void setUpPluginManager(PluginManager* pluginManager){_pluginManager = pluginManager;}
     void refreshPluginsList();
+    void addBuiltInPlugin(const QString& pluginId, const QString& name, const QString& description = QString());
+
+signals:
+    void builtInPluginActivated(const QString& pluginId);
 
 protected:
     void setWindowTitle(const QString& title) override { QDockWidget::setWindowTitle(title); }
@@ -29,6 +34,8 @@ private:
     QLineEdit* _searchEdit = nullptr;
     QListWidget* _pluginList = nullptr;
     QPushButton* _refreshPlugins = nullptr;
+    QMap<QString, QString> _builtInPluginNames;
+    QMap<QString, QString> _builtInPluginDescriptions;
 
     void setUpDockWidget();
 };

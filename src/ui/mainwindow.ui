@@ -47,6 +47,7 @@
     <addaction name="actionOpen_Project"/>
     <addaction name="actionSave_Project"/>
     <addaction name="actionSave_as"/>
+    <addaction name="actionClose_Project"/>
     <addaction name="actionOpenEarthFile"/>
     <addaction name="actionExit"/>
    </widget>
@@ -131,8 +132,11 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionNew_project"/>
    <addaction name="actionOpen_Project"/>
+   <addaction name="actionOpenEarthFile"/>
    <addaction name="actionSave_Project"/>
+   <addaction name="actionSave_as"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolbarMapIntraction">
@@ -160,13 +164,21 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="mActionToggleEditing"/>
    <addaction name="actionDrawPolygon"/>
    <addaction name="actionDrawPolyLine"/>
    <addaction name="actionDrawCircle"/>
    <addaction name="actionDrawRectangle"/>
    <addaction name="actionAddPoints"/>
+   <addaction name="mActionEditCut"/>
+   <addaction name="mActionEditCopy"/>
+   <addaction name="mActionEditPaste"/>
   </widget>
   <action name="actionOpenEarthFile">
+   <property name="icon">
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionOpenEarthFile.png</normaloff>:/icons/mActionOpenEarthFile.png</iconset>
+   </property>
    <property name="text">
     <string>&amp;Open earth file..</string>
    </property>
@@ -193,21 +205,25 @@
   <action name="actionSky">
    <property name="icon">
     <iconset>
-     <normaloff>../../../../Downloads/polygon (1).svg</normaloff>../../../../Downloads/polygon (1).svg</iconset>
+     <normaloff>:/images/themes/default/mActionAddRing.svg</normaloff>:/images/themes/default/mActionAddRing.svg</iconset>
    </property>
    <property name="text">
     <string>Sky</string>
    </property>
   </action>
   <action name="actionNew_project">
+   <property name="icon">
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionFileNew.svg</normaloff>:/icons/mActionFileNew.svg</iconset>
+   </property>
    <property name="text">
     <string>New project</string>
    </property>
   </action>
   <action name="actionOpen_Project">
    <property name="icon">
-    <iconset>
-     <normaloff>:/images/themes/default/mActionFileOpen.svg</normaloff>:/images/themes/default/mActionFileOpen.svg</iconset>
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionFileOpen.svg</normaloff>:/icons/mActionFileOpen.svg</iconset>
    </property>
    <property name="text">
     <string>Open Project</string>
@@ -215,14 +231,18 @@
   </action>
   <action name="actionSave_Project">
    <property name="icon">
-    <iconset>
-     <normaloff>:/images/themes/default/mActionFileSave.svg</normaloff>:/images/themes/default/mActionFileSave.svg</iconset>
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionFileSave.svg</normaloff>:/icons/mActionFileSave.svg</iconset>
    </property>
    <property name="text">
     <string>Save Project</string>
    </property>
   </action>
   <action name="actionSave_as">
+   <property name="icon">
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionFileSaveAs.svg</normaloff>:/icons/mActionFileSaveAs.svg</iconset>
+   </property>
    <property name="text">
     <string>Save as</string>
    </property>
@@ -242,8 +262,8 @@
   </action>
   <action name="mActionZoomIn">
    <property name="icon">
-    <iconset>
-     <normaloff>:/images/themes/default/mActionZoomIn.svg</normaloff>:/images/themes/default/mActionZoomIn.svg</iconset>
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionZoomIn.svg</normaloff>:/icons/mActionZoomIn.svg</iconset>
    </property>
    <property name="text">
     <string>ZoomIn</string>
@@ -252,13 +272,13 @@
     <string>Zoom In</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="mActionZoomOut">
    <property name="icon">
-    <iconset>
-     <normaloff>:/images/themes/default/mActionZoomOut.svg</normaloff>:/images/themes/default/mActionZoomOut.svg</iconset>
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionZoomOut.svg</normaloff>:/icons/mActionZoomOut.svg</iconset>
    </property>
    <property name="text">
     <string>ZOut</string>
@@ -267,19 +287,19 @@
     <string>Zoom out</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="mActionZoomToArea">
    <property name="icon">
-    <iconset>
-     <normaloff>:/images/themes/default/mActionZoomToArea.svg</normaloff>:/images/themes/default/mActionZoomToArea.svg</iconset>
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionZoomToArea.svg</normaloff>:/icons/mActionZoomToArea.svg</iconset>
    </property>
    <property name="text">
     <string>ZToArea</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionLoad_layers">
@@ -289,20 +309,23 @@
   </action>
   <action name="mActionZoomToFullExtent">
    <property name="icon">
-    <iconset>
-     <normaloff>:/images/themes/default/mActionZoomFullExtent.svg</normaloff>:/images/themes/default/mActionZoomFullExtent.svg</iconset>
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionZoomFullExtent.svg</normaloff>:/icons/mActionZoomFullExtent.svg</iconset>
    </property>
    <property name="text">
-    <string>ZoomToFullExtent</string>
+    <string>ZoomToHome</string>
+   </property>
+   <property name="toolTip">
+    <string>ZoomToHome</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionDrawPolygon">
    <property name="icon">
-    <iconset>
-     <normaloff>:/images/themes/default/mActionAddPolygon.svg</normaloff>:/images/themes/default/mActionAddPolygon.svg</iconset>
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionAddPolygon.svg</normaloff>:/icons/mActionAddPolygon.svg</iconset>
    </property>
    <property name="text">
     <string>DrawPolygon</string>
@@ -311,13 +334,13 @@
     <string>Draw Polygon</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionDrawPolyLine">
    <property name="icon">
-    <iconset>
-     <normaloff>:/images/themes/default/mActionAddPolyline.svg</normaloff>:/images/themes/default/mActionAddPolyline.svg</iconset>
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionAddPolyline.svg</normaloff>:/icons/mActionAddPolyline.svg</iconset>
    </property>
    <property name="text">
     <string>DrawPolyLine</string>
@@ -326,13 +349,13 @@
     <string>Draw Poly Line</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionDrawCircle">
    <property name="icon">
-    <iconset>
-     <normaloff>:/images/themes/default/mActionAddCircle.png</normaloff>:/images/themes/default/mActionAddCircle.png</iconset>
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionAddRing.svg</normaloff>:/icons/mActionAddRing.svg</iconset>
    </property>
    <property name="text">
     <string>DrawCircle</string>
@@ -341,13 +364,13 @@
     <string>Draw Circle</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionDrawRectangle">
    <property name="icon">
-    <iconset>
-     <normaloff>:/images/themes/default/mActionAddRectangle.png</normaloff>:/images/themes/default/mActionAddRectangle.png</iconset>
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionAddRectangle.png</normaloff>:/icons/mActionAddRectangle.png</iconset>
    </property>
    <property name="text">
     <string>DrawRectangle</string>
@@ -356,19 +379,19 @@
     <string>Draw Rectangle</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionAddPoints">
    <property name="icon">
-    <iconset>
-     <normaloff>:/images/themes/default/mActionAddPoints.png</normaloff>:/images/themes/default/mActionAddPoints.png</iconset>
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionAddPoints.png</normaloff>:/icons/mActionAddPoints.png</iconset>
    </property>
    <property name="text">
     <string>DrawPoints</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionNew_Shapefile_Layer">
@@ -403,7 +426,71 @@
     <string>Ctrl+3</string>
    </property>
   </action>
+  <action name="actionClose_Project">
+   <property name="text">
+    <string>Close Project</string>
+   </property>
+  </action>
+  <action name="mActionToggleEditing">
+   <property name="icon">
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionToggleEditing.svg</normaloff>:/icons/mActionToggleEditing.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle Editing</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="mActionEditCut">
+   <property name="icon">
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionEditCut.svg</normaloff>:/icons/mActionEditCut.svg</iconset>
+   </property>
+   <property name="text">
+    <string>CutFeature</string>
+   </property>
+   <property name="toolTip">
+    <string>Cut Feature</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="mActionEditCopy">
+   <property name="icon">
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionEditCopy.svg</normaloff>:/icons/mActionEditCopy.svg</iconset>
+   </property>
+   <property name="text">
+    <string>CopyFeature</string>
+   </property>
+   <property name="toolTip">
+    <string>Copy Feature</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="mActionEditPaste">
+   <property name="icon">
+    <iconset resource="../../resources/resources.qrc">
+     <normaloff>:/icons/mActionEditPaste.svg</normaloff>:/icons/mActionEditPaste.svg</iconset>
+   </property>
+   <property name="text">
+    <string>PasteFeature</string>
+   </property>
+   <property name="toolTip">
+    <string>Paste Feature</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../resources/resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

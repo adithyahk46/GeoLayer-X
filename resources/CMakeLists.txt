@@ -1,4 +1,8 @@
-target_sources(geoLayer_app PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/themes/themes.qrc
-    ${CMAKE_CURRENT_SOURCE_DIR}/images/images.qrc
+
+add_library(resources STATIC
+    resources.qrc
+)
+
+target_link_libraries(resources PUBLIC
+    Qt${QT_VERSION_MAJOR}::Widgets
 )

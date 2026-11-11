@@ -2,82 +2,52 @@
 #include <cstdint>
 
 #include <QMenu>
-#include <QMessageBox>
 #include <QDebug>
 
 #include <osgEarth/Notify>
 #include <osgEarth/GeoMath>
+#include <osgEarth/FeatureImageLayer>
+#include <osgEarth/VisibleLayer>
 
 using namespace osgEarth;
 
+#include "SymbologyEditorDialog.h"
+
 Legends::Legends(osgEarth::Layer* mapLayer, MapNode* mapNode, EarthManipulator* manip, QWidget* parent)
-    : QCheckBox(parent), _manip(manip), _mapNode(mapNode), m_mapLayer(nullptr)
+    : QCheckBox(parent), _manip(manip), _mapNode(mapNode), m_mapLayer(mapLayer)
 {
 
-    setChecked(true);
+    auto* visibleLayer = dynamic_cast<osgEarth::VisibleLayer*>(mapLayer);
+    setChecked(visibleLayer ? visibleLayer->getVisible() : true);
+    if (visibleLayer)
+    {
+        connect(this, &QCheckBox::toggled, this, [this, visibleLayer]() {
+            visibleLayer->setVisible(isChecked());
+        });
+    }
 
     if (mapLayer)
     {
         setText(QString::fromStdString(mapLayer->getName()));
         qDebug() << QString::fromStdString(mapLayer->getTypeName());
-
-        // Cast to specific layer type and assign to m_mapLayer
-        if (auto imageLayer = dynamic_cast<osgEarth::ImageLayer*>(mapLayer)) {
-            connect(this, &QCheckBox::toggled, this, [this,imageLayer]() {
-                if (imageLayer) imageLayer->setVisible(isChecked());
-            });
-            m_mapLayer = imageLayer;
-        }
-        else if (auto elevationLayer = dynamic_cast<osgEarth::ElevationLayer*>(mapLayer)) {
-            connect(this, &QCheckBox::toggled, this, [this,elevationLayer]() {
-                if (elevationLayer) elevationLayer->setVisible(isChecked());
-            });
-            m_mapLayer = elevationLayer;
-        }
-        else if (auto modelLayer = dynamic_cast<osgEarth::FeatureModelLayer*>(mapLayer)) {
-            connect(this, &QCheckBox::toggled, this, [this,modelLayer]() {
-                if (modelLayer) modelLayer->setVisible(isChecked());
-            });
-            m_mapLayer = modelLayer;
-        }
-        else if (auto xyzLayer = dynamic_cast<osgEarth::XYZImageLayer*>(mapLayer)) {
-            connect(this, &QCheckBox::toggled, this, [this,xyzLayer]() {
-                if (xyzLayer) xyzLayer->setVisible(isChecked());
-            });
-            m_mapLayer = xyzLayer;
-        }
-        else if (auto AnnotationLayer = dynamic_cast<osgEarth::AnnotationLayer*>(mapLayer)) {
-            connect(this, &QCheckBox::toggled, this, [this,AnnotationLayer]() {
-                if (AnnotationLayer) AnnotationLayer->setVisible(isChecked());
-            });
-            m_mapLayer = AnnotationLayer;
-        }
-        else if (auto dmodelLayer = dynamic_cast<osgEarth::ModelLayer*>(mapLayer)) {
-            connect(this, &QCheckBox::toggled, this, [this,dmodelLayer]() {
-                if (dmodelLayer) dmodelLayer->setVisible(isChecked());
-            });
-            m_mapLayer = dmodelLayer;
-        }
-        else {
-            std::cout << "Unknown layer type: " << mapLayer->getName() << std::endl;
-        }
     }
     else
     {
         setText("Unnamed Layer");
     }
 
-    // connect(this, &QCheckBox::toggled, this, [this]() {
-    //     if (m_mapLayer) m_mapLayer->setVisible(isChecked());
-    // });
-
     // Context menu
     menu.addAction("Zoom to Layer", [=]() {
+        if (!m_mapLayer || !_mapNode || !_manip)
+            return;
 
-        if(QString::fromStdString(m_mapLayer->getTypeName()) == "class osgEarth::ModelLayer" )
+        if (auto* modelLayer = dynamic_cast<osgEarth::ModelLayer*>(m_mapLayer))
         {
+            if (!modelLayer->getNode())
+                return;
+
             osg::ComputeBoundsVisitor cbv;
-              m_mapLayer->getNode()->accept(cbv);
+            modelLayer->getNode()->accept(cbv);
             osg::BoundingBox bbox = cbv.getBoundingBox();
             if (!bbox.valid()) {
                 qDebug() << "Invalid bounding box!";
@@ -89,7 +59,7 @@ Legends::Legends(osgEarth::Layer* mapLayer, MapNode* mapNode, EarthManipulator* 
 
             // Transform to world coordinates
             osg::Matrix localToWorld;
-            osg::NodePathList paths = m_mapLayer->getNode()->getParentalNodePaths();
+            osg::NodePathList paths = modelLayer->getNode()->getParentalNodePaths();
             if (!paths.empty())
                 localToWorld = osg::computeLocalToWorld(paths.front());
 
@@ -138,7 +108,6 @@ Legends::Legends(osgEarth::Layer* mapLayer, MapNode* mapNode, EarthManipulator* 
         }
         else{
             const SpatialReference* wgs84 = SpatialReference::get("wgs84");
-            if (!m_mapLayer) return;
             GeoExtent extent = m_mapLayer->getExtent().transform(wgs84);
             if (!extent.isValid())
             {
@@ -157,13 +126,14 @@ Legends::Legends(osgEarth::Layer* mapLayer, MapNode* mapNode, EarthManipulator* 
 
     });
 
-    menu.addAction("Remove Layer", [=]() {
-        if (m_mapLayer)
-        {
-            _mapNode->getMap()->removeLayer(m_mapLayer);
-            QMessageBox::information(this, "Success", "Layer removed successfully!");
-            this->deleteLater();
-        }
+    menu.addAction("Remove Layer", [this]() {
+        if (!m_mapLayer || !_mapNode || !_mapNode->getMap())
+            return;
+
+        osg::ref_ptr<osgEarth::Layer> layerToRemove = m_mapLayer;
+        osgEarth::Map* map = _mapNode->getMap();
+        menu.close();
+        map->removeLayer(layerToRemove.get());
     });
 
     menu.addAction("Move to Top", [=]() {
@@ -180,14 +150,33 @@ Legends::Legends(osgEarth::Layer* mapLayer, MapNode* mapNode, EarthManipulator* 
         }
     });
 
-    if(QString::fromStdString(m_mapLayer->getTypeName()) == "class osgEarth::ModelLayer" )
+    auto* featureModelLayer = dynamic_cast<osgEarth::FeatureModelLayer*>(mapLayer);
+    auto* featureImageLayer = dynamic_cast<osgEarth::FeatureImageLayer*>(mapLayer);
+    if (featureModelLayer || featureImageLayer)
     {
-        menu.addAction("Edit Properties",[=](){
-            osgEarth::ModelLayer* modelLayer = dynamic_cast<osgEarth::ModelLayer*>(m_mapLayer);
-
-                        modelLayerPropertyDialog(modelLayer, _mapNode->getMapSRS());
+        menu.addAction("Edit Symbology", [this, featureModelLayer, featureImageLayer]() {
+            if (featureModelLayer)
+            {
+                SymbologyEditorDialog dialog(featureModelLayer, this);
+                dialog.exec();
+            }
+            else if (featureImageLayer)
+            {
+                SymbologyEditorDialog dialog(featureImageLayer, this, _mapNode);
+                dialog.exec();
+            }
         });
     }
+
+    if (auto* modelLayer = dynamic_cast<osgEarth::ModelLayer*>(m_mapLayer))
+    {
+        menu.addAction("Edit Properties", [this, modelLayer]() {
+            if (_mapNode)
+                modelLayerPropertyDialog(modelLayer, _mapNode->getMapSRS());
+        });
+    }
+
+
 }
 
 Legends::~Legends()

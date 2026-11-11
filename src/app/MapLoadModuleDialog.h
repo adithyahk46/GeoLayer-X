@@ -6,6 +6,9 @@
 
 #include <osgEarth/MapNode>
 
+class QListWidget;
+class QStackedWidget;
+
 class MapLoadModuleDialog : public QDialog
 {
     Q_OBJECT
@@ -30,10 +33,13 @@ private:
 
 private:
     Ui::MapLoadModuleDialog* ui;
+    QListWidget* _tabSelector = nullptr;
+    QStackedWidget* _tabContent = nullptr;
 
     QString OpenFiles(FileType Type);
     void _initConnections();
     void getAttributes(QString FilePath);
+    void setupHorizontalTabs();
 
 
 };
