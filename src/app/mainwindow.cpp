@@ -24,12 +24,14 @@ using namespace std;
 #include <utility>
 
 #include "App.h"
+#include "plugins/Extrusion3D/Extrusion3D.h"
 #include "SettingsManager/SettingsManager.h"
 #include "DrawingTool/PolygonDrawTool.h"
 #include "PluginsDockWidget.h"
 #include "qgis/GLXNewVectorLayerDialog.h"
 #include "ProjectManager/ProjectManager.h"
 #include "project/ProjectWelcomeScreen.h"
+
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -276,6 +278,60 @@ void MainWindow::initSignalsAndSlots()
     connect(ui->actionOpenEarthFile, &QAction::triggered,
             m_projectManager, &ProjectManager::requestOpenEarthFile);
 
+
+    //setup Tools menubar actions
+    connect(ui->actionSky, &QAction::triggered, this, [this] {
+        if(envGui == nullptr)
+        {
+            envGui = new EnvironmentGUI(this);
+                addDockWidget(Qt::RightDockWidgetArea, envGui);
+                envGui->setFloating(true);
+                envGui->hide();
+        }
+              
+        if (envGui->isVisible()) {
+            envGui->hide();
+            return;
+        }
+
+        envGui->show();
+        envGui->raise();
+        envGui->activateWindow();
+    });
+
+    connect(ui->actionViewpoints, &QAction::triggered, this, [this] {
+        if (!viewpointsGui)
+        {
+            viewpointsGui = new ViewpointsGUI(this);
+            addDockWidget(Qt::RightDockWidgetArea, viewpointsGui);
+            viewpointsGui->setFloating(true);
+            viewpointsGui->hide();
+        }
+
+        if (viewpointsGui->isVisible()) {
+            viewpointsGui->hide();
+            return;
+        }
+
+        viewpointsGui->show();
+        viewpointsGui->raise();
+        viewpointsGui->activateWindow();
+    });
+
+    connect(ui->actionExtrusion3D, &QAction::triggered, this, [this] {
+        if (!osgwidget3D || !osgwidget3D->getMapNode())
+        {
+            QMessageBox::warning(this, tr("3D Extrusion"),
+                                 tr("Open a map before using 3D extrusion."));
+            return;
+        }
+        if (!extrusion3D)
+            extrusion3D = new Extrusion3D(osgwidget3D->getMapNode(), this);
+        extrusion3D->show();
+        extrusion3D->raise();
+        extrusion3D->activateWindow();
+    });
+
     m_drawingActionGroup = new QActionGroup(this);
     m_drawingActionGroup->setExclusive(true);
 
@@ -383,7 +439,7 @@ void MainWindow::setApplicationTheme(bool dark)
     QPalette palette;
 
     if(dark){
-        palette.setColor(QPalette::Window,          QColor("#1e1e1e"));
+        palette.setColor(QPalette::Window,          QColor("#2e2e34"));
        palette.setColor(QPalette::WindowText,      QColor("#ffffff"));
 
        palette.setColor(QPalette::Base,            QColor("#2d2d2d"));

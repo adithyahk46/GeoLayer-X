@@ -13,16 +13,20 @@
  *                                                                         *
  ***************************************************************************/
 #include <fstream>
+#include <filesystem>
 #include <io.h>
 #include <iostream>
 #include <list>
 #include <memory>
 #include <sstream>
 #include <windows.h>
+#include <string>
+#include <vector>
+#include <cstdio>
 
 void showError( std::string message, std::string title )
 {
-  std::string newmessage = "Oops, looks like an error loading QGIS \n\n Details: \n\n" + message;
+  std::string newmessage = "Oops, looks like an error loading GeoLayer-X \n\n Details: \n\n" + message;
   MessageBox( NULL, newmessage.c_str(), title.c_str(), MB_ICONERROR | MB_OK );
   std::cerr << message << std::endl;
 }
@@ -46,80 +50,102 @@ std::string moduleExeBaseName( void )
 
 int CALLBACK WinMain( HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int /*nCmdShow*/ )
 {
-  std::string exename( moduleExeBaseName() );
-  std::string basename( exename.substr( 0, exename.size() - 4 ) );
-
-  if ( getenv( "OSGEO4W_ROOT" ) && __argc == 2 && strcmp( __argv[1], "--postinstall" ) == 0 )
+  bool debugMode = false;
+  std::vector<char *> applicationArgs;
+  for ( int i = 0; i < __argc; ++i )
   {
-    std::string envfile( basename + ".env" );
+    if ( std::string( __argv[i] ) == "--debug" )
+      debugMode = true;
+    else
+      applicationArgs.push_back( __argv[i] );
+  }
+  applicationArgs.push_back( nullptr );
 
-    // write or update environment file
-    if ( _access( envfile.c_str(), 0 ) < 0 || _access( envfile.c_str(), 2 ) == 0 )
+  if ( debugMode )
+  {
+    if ( !AttachConsole( ATTACH_PARENT_PROCESS ) && GetLastError() != ERROR_ACCESS_DENIED )
     {
-      std::list<std::string> vars;
-
-      try
-      {
-        std::ifstream varfile;
-        varfile.open( basename + ".vars" );
-
-        std::string var;
-        while ( std::getline( varfile, var ) )
-        {
-          vars.push_back( var );
-        }
-
-        varfile.close();
-      }
-      catch ( std::ifstream::failure &e )
-      {
-        std::string message = "Could not read environment variable list " + basename + ".vars" + " [" + e.what() + "]";
-        showError( message, "Error loading QGIS" );
-        return EXIT_FAILURE;
-      }
-
-      try
-      {
-        std::ofstream file;
-        file.open( envfile, std::ifstream::out );
-
-        for ( std::list<std::string>::const_iterator it = vars.begin(); it != vars.end(); ++it )
-        {
-          if ( getenv( it->c_str() ) )
-            file << *it << "=" << getenv( it->c_str() ) << std::endl;
-        }
-      }
-      catch ( std::ifstream::failure &e )
-      {
-        std::string message = "Could not write environment file " + basename + ".env" + " [" + e.what() + "]";
-        showError( message, "Error loading QGIS" );
-        return EXIT_FAILURE;
-      }
+      showError( "Could not attach to the parent console for --debug.", "Error loading GeoLayer-X" );
+      return EXIT_FAILURE;
     }
 
-    return EXIT_SUCCESS;
+    if ( !std::freopen( "CONOUT$", "w", stdout ) || !std::freopen( "CONOUT$", "w", stderr ) )
+    {
+      showError( "Could not redirect debug output to the parent console.", "Error loading GeoLayer-X" );
+      return EXIT_FAILURE;
+    }
+
+    if ( _putenv( "QT_FORCE_STDERR_LOGGING=1" ) < 0 )
+    {
+      showError( "Could not enable Qt debug output in the parent console.", "Error loading GeoLayer-X" );
+      return EXIT_FAILURE;
+    }
   }
+
+  std::string exename( moduleExeBaseName() );
+  std::string basename( exename.substr( 0, exename.size() - 4 ) );
+  std::filesystem::path executablePath( exename );
+  std::filesystem::path envFile = executablePath.parent_path() / "glx.env";
+  std::string glxRoot = executablePath.parent_path().parent_path().lexically_normal().string();
 
   try
   {
+    std::string rootVariable = "GLX_ROOT=" + glxRoot;
+    if ( _putenv( rootVariable.c_str() ) < 0 )
+    {
+      showError( "Could not set environment variable GLX_ROOT", "Error loading GeoLayer-X" );
+      return EXIT_FAILURE;
+    }
+
     std::ifstream file;
-    file.open( basename + ".env" );
+    file.open( envFile );
+    if ( !file.is_open() )
+    {
+      std::string message = "Could not read environment file " + envFile.string();
+      showError( message, "Error loading GeoLayer-X" );
+      return EXIT_FAILURE;
+    }
 
     std::string var;
     while ( std::getline( file, var ) )
     {
-      if ( _putenv( var.c_str() ) < 0 )
+      size_t separator = var.find( '=' );
+      if ( separator != std::string::npos && var.substr( 0, separator ) == "GLX_ROOT" )
+        continue;
+
+      std::string value = separator == std::string::npos ? var : var.substr( separator + 1 );
+      DWORD expandedSize = ExpandEnvironmentStringsA( value.c_str(), nullptr, 0 );
+      if ( expandedSize == 0 )
       {
-        std::string message = "Could not set environment variable:" + var;
-        showError( message, "Error loading QGIS" );
+        std::string message = "Could not expand environment variable: " + var;
+        showError( message, "Error loading GeoLayer-X" );
+        return EXIT_FAILURE;
+      }
+
+      std::vector<char> expandedValue( expandedSize );
+      DWORD expandedLength = ExpandEnvironmentStringsA( value.c_str(), expandedValue.data(), expandedSize );
+      if ( expandedLength == 0 || expandedLength > expandedSize )
+      {
+        std::string message = "Could not expand environment variable: " + var;
+        showError( message, "Error loading GeoLayer-X" );
+        return EXIT_FAILURE;
+      }
+
+      std::string expandedVar = separator == std::string::npos
+        ? std::string( expandedValue.data() )
+        : var.substr( 0, separator + 1 ) + expandedValue.data();
+      if ( _putenv( expandedVar.c_str() ) < 0 )
+      {
+        std::string message = "Could not set environment variable:" + expandedVar;
+        showError( message, "Error loading GeoLayer-X" );
         return EXIT_FAILURE;
       }
     }
   }
   catch ( std::ifstream::failure &e )
   {
-    std::string message = "Could not read environment file " + basename + ".env" + " [" + e.what() + "]";
-    showError( message, "Error loading QGIS" );
+    std::string message = "Could not read environment file " + envFile.string() + " [" + e.what() + "]";
+    showError( message, "Error loading GeoLayer-X" );
     return EXIT_FAILURE;
   }
 
@@ -162,10 +188,10 @@ int CALLBACK WinMain( HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPST
 
 
 #ifdef _MSC_VER
-  HINSTANCE hGetProcIDDLL = LoadLibrary( "geoLayer_app.dll" );
+  HINSTANCE hGetProcIDDLL = LoadLibrary( "glx_app.dll" );
 #else
   // MinGW
-  HINSTANCE hGetProcIDDLL = LoadLibrary( "libqgis_app.dll" );
+  HINSTANCE hGetProcIDDLL = LoadLibrary( "libglx_app.dll" );
 #endif
 
   if ( !hGetProcIDDLL )
@@ -175,8 +201,8 @@ int CALLBACK WinMain( HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPST
 
     FormatMessage( FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, error, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), ( LPTSTR ) &errorText, 0, NULL );
 
-    std::string message = "Could not load qgis_app.dll \n Windows Error: " + std::string( errorText ) + "\n Help: \n\n Check " + basename + ".env for correct environment paths";
-    showError( message, "Error loading QGIS" );
+    std::string message = "Could not load glx_app.dll \n Windows Error: " + std::string( errorText ) + "\n Help: \n\n Check " + basename + ".env for correct environment paths";
+    showError( message, "Error loading GeoLayer-X" );
 
     LocalFree( errorText );
     errorText = NULL;
@@ -186,16 +212,16 @@ int CALLBACK WinMain( HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPST
 #ifndef _MSC_VER // MinGW
 #pragma GCC diagnostic ignored "-Wcast-function-type"
 #endif
-  int ( *realmain )( int, char *[] ) = ( int ( * )( int, char *[] ) ) GetProcAddress( hGetProcIDDLL, "main" );
+  int ( *realmain )( int, char *[] ) = ( int ( * )( int, char *[] ) ) GetProcAddress( hGetProcIDDLL, "glx_main" );
 #ifndef _MSC_VER // MinGW
 #pragma GCC diagnostic pop
 #endif
 
   if ( !realmain )
   {
-    showError( "Could not locate main function in qgis_app.dll", "Error loading QGIS" );
+    showError( "Could not locate glx_main function in glx_app.dll", "Error loading GeoLayer-X" );
     return EXIT_FAILURE;
   }
 
-  return realmain( __argc, __argv );
+  return realmain( static_cast<int>( applicationArgs.size() - 1 ), applicationArgs.data() );
 }

@@ -9,6 +9,7 @@
 #include <QXmlStreamWriter>
 
 #include <osgDB/WriteFile>
+#include <osgDB/Registry>
 #include <osgEarth/MapNode>
 #include <osgEarth/Layer>
 #include <osgDB/ReadFile>
@@ -136,7 +137,9 @@ bool ProjectManager::openProject(const QString& projectFilePath)
     QString basemapUrl;
     QString description;
     if (!readProjectFile(projectFilePath, name, templateId, basemapUrl, description)) {
-        emit errorOccurred(tr("The selected file is not a valid osgEarth project."));
+        emit errorOccurred(tr("Could not read project metadata from:\n%1\n\n"
+                              "Select a valid osgEarth .earth file.")
+                               .arg(QDir::toNativeSeparators(projectFilePath)));
         return false;
     }
 
@@ -192,6 +195,8 @@ void ProjectManager::closeProject()
 {
     if (m_mapNode && m_mapNode->getMap())
         m_mapNode->getMap()->clear();
+    if (m_mapNode)
+        m_mapNode->externalConfig() = osgEarth::Config();
     m_currentProjectName.clear();
     m_currentTemplateId = QStringLiteral("empty");
     m_currentBasemapUrl.clear();
@@ -252,10 +257,23 @@ bool ProjectManager::loadMap(const QString& filePath)
         return false;
     }
 
-    osg::ref_ptr<osg::Node> node = osgDB::readRefNodeFile(filePath.toStdString());
+    const std::string nativePath = QFile::encodeName(filePath).toStdString();
+    osgDB::ReaderWriter::ReadResult readResult =
+        osgDB::Registry::instance()->readNode(nativePath, nullptr);
+    osg::ref_ptr<osg::Node> node = readResult.getNode();
     osgEarth::MapNode* source = node ? osgEarth::MapNode::findMapNode(node) : nullptr;
     if (!source || !source->getMap()) {
-        emit errorOccurred(tr("Could not load the project map."));
+        QString detail = QString::fromStdString(readResult.message());
+        if (detail.isEmpty()) {
+            if (readResult.notFound())
+                detail = tr("The file could not be found or read.");
+            else if (readResult.notHandled())
+                detail = tr("No osgDB reader recognized this file format.");
+            else
+                detail = tr("The file did not contain a valid osgEarth map.");
+        }
+        emit errorOccurred(tr("Could not load the earth file:\n%1\n\n%2")
+                               .arg(QDir::toNativeSeparators(filePath), detail));
         return false;
     }
 
@@ -269,6 +287,15 @@ bool ProjectManager::loadMap(const QString& filePath)
             map->addLayer(layer);
         }
     }
+
+    osgEarth::Config externalConfig = source->externalConfig();
+    const osgEarth::Config sourceConfig = source->getConfig();
+    for (const osgEarth::Config& child : sourceConfig.children()) {
+        if (child.key() == "viewpoints")
+            externalConfig.set(child);
+    }
+    m_mapNode->externalConfig() = externalConfig;
+
     return true;
 }
 
@@ -391,7 +418,7 @@ bool ProjectManager::readProjectFile(const QString& filePath,
     templateId = QStringLiteral("empty");
     basemapUrl.clear();
 
-    while (reader.readNextStartElement()) {
+    while (reader.readNextStartElement() && !reader.hasError()) {
         if (reader.name() == QStringLiteral("options")) {
             while (reader.readNextStartElement()) {
                 if (reader.name() == QStringLiteral("name"))
@@ -425,7 +452,10 @@ bool ProjectManager::readProjectFile(const QString& filePath,
         }
     }
 
-    return !reader.hasError();
+    // osgEarth's earth reader accepts constructs that a strict XML metadata
+    // parser may reject, such as xi:include elements with undeclared prefixes.
+    // The osgDB read in loadMap is the authoritative validation step.
+    return true;
 }
 
 void ProjectManager::updateRecentProjects()

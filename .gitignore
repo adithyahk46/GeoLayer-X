@@ -38,6 +38,7 @@ build*/
 install/
 /build/
 build/
+deployment/
 
 .vs/
 

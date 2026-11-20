@@ -14,7 +14,7 @@ add_library(${VIEWSHED_PLUGIN_TARGET} MODULE
 
 target_link_libraries(${VIEWSHED_PLUGIN_TARGET}
     PRIVATE
-        geoLayer_core
+        glx_core
         customWidgets
         Qt${QT_VERSION_MAJOR}::Widgets
 )
@@ -22,19 +22,19 @@ target_link_libraries(${VIEWSHED_PLUGIN_TARGET}
 set_target_properties(${VIEWSHED_PLUGIN_TARGET} PROPERTIES
     AUTOMOC ON
     AUTOUIC ON
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/output/$<CONFIG>/bin/plugins"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/output/$<CONFIG>/bin/plugins"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_OUTPUT_DIR}/bin/plugins"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_OUTPUT_DIR}/bin/plugins"
 )
 
 foreach(CONFIG Debug Release RelWithDebInfo MinSizeRel)
     string(TOUPPER "${CONFIG}" CONFIG_UPPER)
     set_target_properties(${VIEWSHED_PLUGIN_TARGET} PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_BINARY_DIR}/output/${CONFIG}/bin/plugins"
-        RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_BINARY_DIR}/output/${CONFIG}/bin/plugins"
+        LIBRARY_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_OUTPUT_DIR}/bin/plugins"
+        RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_OUTPUT_DIR}/bin/plugins"
     )
 endforeach()
 
 install(TARGETS ${VIEWSHED_PLUGIN_TARGET}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/plugins
-    LIBRARY DESTINATION ${CMAKE_INSTALL_BINDIR}/plugins
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/bin/plugins
+    LIBRARY DESTINATION ${CMAKE_INSTALL_BINDIR}/bin/plugins
 )

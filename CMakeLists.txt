@@ -16,24 +16,19 @@ set(CMAKE_AUTOUIC ON)
 #cmake module path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-set(CMAKE_OUTPUT_DIR "${CMAKE_BINARY_DIR}/output")
+set(CMAKE_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/deployment")
 
 foreach(CONFIG Debug Release RelWithDebInfo MinSizeRel)
     string(TOUPPER ${CONFIG} CONFIG_UPPER)
 
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_OUTPUT_DIR}/${CONFIG}/bin")
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_OUTPUT_DIR}/${CONFIG}/bin")
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_OUTPUT_DIR}/${CONFIG}/lib")
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_OUTPUT_DIR}/bin")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_OUTPUT_DIR}/bin")
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_OUTPUT_DIR}/lib")
 endforeach()
 
-list(APPEND CMAKE_PREFIX_PATH "C:/vcpkg/installed/x64-windows;C:/Users/pnmt1054/Adithya_working_directory/osgearth_dev/osgearth/install")
-
-
-
-option(OSGEARTH_HAVE_CESIUM_NODEKIT "Build the tests" OFF)
-
-add_compile_definitions(
-    OSGEARTH_HAVE_CESIUM_NODEKIT=$<BOOL:${OSGEARTH_HAVE_CESIUM_NODEKIT}>
+list(APPEND CMAKE_PREFIX_PATH
+    "C:/vcpkg/installed/x64-windows"
+    "C:/Users/pnmt1054/Adithya_working_directory/osgearth_dev/OSGEARTH_DEPS/install/Release"
 )
 
 #GDAL Configuration
@@ -54,4 +49,6 @@ include(GenerateExportHeader)
 # Add subdirectories
 add_subdirectory(src)
 add_subdirectory(resources)
+
+
 

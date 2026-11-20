@@ -13,8 +13,9 @@
 #include <osgEarth/XYZ>
 #include <osgEarth/StyleSheet>
 #include <osgEarth/FeatureImageLayer>
+#include <osgEarth/WMS>
 
-#if OSGEARTH_HAVE_CESIUM_NODEKIT
+#ifdef OSGEARTH_HAVE_CESIUM_NODEKIT
 #include <osgEarthCesium/CesiumIon>
 #include <osgEarthCesium/CesiumLayer>
 #include <osgEarthCesium/Settings>
@@ -351,15 +352,62 @@ void MapLoadModule::LoadXYZTiles(osgEarth::MapNode* mapNode, QString url , QStri
      mapNode->getMap()->addLayer(remoteTiles.get());
 }
 
-void MapLoadModule::LoadTMSLayer(osgEarth::MapNode* mapNode, QString url, QString LayerName){
+void MapLoadModule::LoadTMSLayer(osgEarth::MapNode* mapNode,
+                                 QString url,
+                                 QString LayerName,
+                                 bool treatAsElevation)
+{
+    if (!mapNode || !mapNode->getMap()) {
+        OE_WARN << "LoadTMSLayer failed: invalid map node" << std::endl;
+        return;
+    }
 
-    osg::ref_ptr<osgEarth::TMSImageLayer> tmsLayer = new osgEarth::TMSImageLayer();
-    tmsLayer->setURL(url.toStdString());
-    tmsLayer->setName(LayerName.toStdString().c_str());
-    // tmsLayer->setProfile(osgEarth::Profile::create(osgEarth::Profile::SPHERICAL_MERCATOR));
-    // tmsLayer->setOpacity(1.0f);
+    url = url.trimmed();
+    LayerName = LayerName.trimmed();
+    if (url.isEmpty()) {
+        OE_WARN << "LoadTMSLayer failed: URL is empty" << std::endl;
+        return;
+    }
 
-    mapNode->getMap()->addLayer(tmsLayer.get());
+    if (treatAsElevation) {
+        osg::ref_ptr<osgEarth::TMSElevationLayer> tmsLayer = new osgEarth::TMSElevationLayer();
+        tmsLayer->setURL(url.toStdString());
+        if (!LayerName.isEmpty())
+            tmsLayer->setName(LayerName.toStdString());
+        mapNode->getMap()->addLayer(tmsLayer.get());
+    }
+    else {
+        osg::ref_ptr<osgEarth::TMSImageLayer> tmsLayer = new osgEarth::TMSImageLayer();
+        tmsLayer->setURL(url.toStdString());
+        if (!LayerName.isEmpty())
+            tmsLayer->setName(LayerName.toStdString());
+        mapNode->getMap()->addLayer(tmsLayer.get());
+    }
+}
+
+void MapLoadModule::LoadWMSLayer(osgEarth::MapNode* mapNode,
+                                 QString url,
+                                 QString wmsLayerName,
+                                 QString LayerName)
+{
+    if (!mapNode || !mapNode->getMap()) {
+        OE_WARN << "LoadWMSLayer failed: invalid map node" << std::endl;
+        return;
+    }
+
+    url = url.trimmed();
+    wmsLayerName = wmsLayerName.trimmed();
+    LayerName = LayerName.trimmed();
+    if (url.isEmpty() || wmsLayerName.isEmpty()) {
+        OE_WARN << "LoadWMSLayer failed: URL and WMS layer name are required" << std::endl;
+        return;
+    }
+
+    osg::ref_ptr<osgEarth::WMSImageLayer> wmsLayer = new osgEarth::WMSImageLayer();
+    wmsLayer->setURL(url.toStdString());
+    wmsLayer->setLayers(wmsLayerName.toStdString());
+    wmsLayer->setName((LayerName.isEmpty() ? wmsLayerName : LayerName).toStdString());
+    mapNode->getMap()->addLayer(wmsLayer.get());
 }
 
 void MapLoadModule::Load3Dbuildings(osgEarth::MapNode* mapNode, QString FilePath, QString heightAttr, QString LayerName, QString TexResPath)
@@ -367,7 +415,7 @@ void MapLoadModule::Load3Dbuildings(osgEarth::MapNode* mapNode, QString FilePath
     if (!mapNode || FilePath.trimmed().isEmpty())
         return;
 
-    osgEarth::OGRFeatureSource* data = new osgEarth::OGRFeatureSource();
+    osg::ref_ptr<osgEarth::OGRFeatureSource> data = new osgEarth::OGRFeatureSource();
     data->setName(LayerName.toStdString());
     data->setURL(FilePath.toStdString());
 
@@ -416,7 +464,7 @@ void MapLoadModule::Load3Dbuildings(osgEarth::MapNode* mapNode, QString FilePath
     roofSkin->randomSeed() = 1;
     roofSkin->isTiled() = true;
 
-    osgEarth::StyleSheet* styleSheet = new osgEarth::StyleSheet();
+    osg::ref_ptr<osgEarth::StyleSheet> styleSheet = new osgEarth::StyleSheet();
     styleSheet->addStyle(buildingStyle);
     styleSheet->addStyle(wallStyle);
     styleSheet->addStyle(roofStyle);
@@ -431,7 +479,7 @@ void MapLoadModule::Load3Dbuildings(osgEarth::MapNode* mapNode, QString FilePath
     osgEarth::FeatureDisplayLayout layout;
     layout.tileSize() = 500;
 
-    osgEarth::FeatureModelLayer* layer = new osgEarth::FeatureModelLayer();
+    osg::ref_ptr<osgEarth::FeatureModelLayer> layer = new osgEarth::FeatureModelLayer();
     layer->setName(LayerName.toStdString());
     layer->setFeatureSource(data);
     layer->setStyleSheet(styleSheet);
@@ -441,7 +489,7 @@ void MapLoadModule::Load3Dbuildings(osgEarth::MapNode* mapNode, QString FilePath
     mapNode->getMap()->addLayer(layer);
 }
 
-#if OSGEARTH_HAVE_CESIUM_NODEKIT
+#ifdef OSGEARTH_HAVE_CESIUM_NODEKIT
 void MapLoadModule::LoadCesiumLayer(osgEarth::MapNode* mapNode,
                                      const QString& accessToken,
                                      CesiumLayerType type,

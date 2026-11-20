@@ -45,9 +45,7 @@ private:
     void createPointSymbol(osgEarth::Style& style) const;
     void createLineSymbol(osgEarth::Style& style) const;
     void createPolygonSymbol(osgEarth::Style& style) const;
-    void createExtrusionSymbol(osgEarth::Style& style) const;
     void createAltitudeSymbol(osgEarth::Style& style) const;
-    void createRenderSymbol(osgEarth::Style& style) const;
 
     Ui::SymbologyEditorDialog* ui = nullptr;
     osg::ref_ptr<osgEarth::Layer> _featureLayer;

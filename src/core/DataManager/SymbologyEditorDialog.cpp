@@ -2,12 +2,9 @@
 #include "ui_SymbologyEditorDialog.h"
 #include "App.h"
 
-#include <QDoubleSpinBox>
 #include <QMessageBox>
-#include <QRadioButton>
 
 #include <osgEarth/AltitudeSymbol>
-#include <osgEarth/ExtrusionSymbol>
 #include <osgEarth/FeatureImageLayer>
 #include <osgEarth/FeatureModelLayer>
 #include <osgEarth/FeatureSource>
@@ -15,14 +12,15 @@
 #include <osgEarth/MapNode>
 #include <osgEarth/PointSymbol>
 #include <osgEarth/PolygonSymbol>
-#include <osgEarth/RenderSymbol>
 #include <osgEarth/Style>
 #include <osgEarth/StyleSheet>
 #include <osgEarth/TerrainEngineNode>
-#include <osgEarth/URI>
 #include <osgEarth/Units>
 
 #include <vector>
+
+
+
 
 namespace
 {
@@ -112,12 +110,6 @@ void SymbologyEditorDialog::setUpUi()
     if (_featureLayer.valid())
         ui->layerComboBox->addItem(QString::fromStdString(_featureLayer->getName()));
     ui->layerComboBox->setEnabled(false);
-    if (_featureSource)
-    {
-        for (const auto& attribute : _featureSource->getSchema())
-            ui->extrusionHeightAttributeComboBox->addItem(
-                QString::fromStdString(attribute.first));
-    }
 
     ui->pointSymbolGroupBox->setVisible(false);
     ui->pointSymbolGroupBox->setEnabled(false);
@@ -125,8 +117,6 @@ void SymbologyEditorDialog::setUpUi()
     ui->lineSymbolGroupBox->setEnabled(false);
     ui->polygonSymbolGroupBox->setVisible(false);
     ui->polygonSymbolGroupBox->setEnabled(false);
-    ui->extrusionSymbolGroupBox->setVisible(false);
-    ui->extrusionSymbolGroupBox->setEnabled(false);
 
     connect(ui->enablePointSymbolCheckBox, &QCheckBox::toggled, this,
         [this](bool enabled) {
@@ -142,16 +132,6 @@ void SymbologyEditorDialog::setUpUi()
         [this](bool enabled) {
             ui->polygonSymbolGroupBox->setEnabled(enabled);
             ui->polygonSymbolGroupBox->setVisible(enabled);
-        });
-    connect(ui->enableExtrusionSymbolCheckBox, &QCheckBox::toggled, this,
-        [this](bool enabled) {
-            ui->extrusionSymbolGroupBox->setEnabled(enabled);
-            ui->extrusionSymbolGroupBox->setVisible(enabled);
-        });
-    connect(ui->extrusionFieldHeightRadioButton, &QRadioButton::toggled, this,
-        [this](bool fieldHeight) {
-            ui->extrusionHeightAttributeComboBox->setEnabled(fieldHeight);
-            ui->extrusionFixedHeightSpinBox->setEnabled(!fieldHeight);
         });
     connect(ui->applyButton, &QPushButton::clicked, this, &SymbologyEditorDialog::applyStyle);
     connect(ui->cancelButton, &QPushButton::clicked, this, [this]() {
@@ -177,16 +157,12 @@ void SymbologyEditorDialog::verifyGeometryType()
     ui->enablePointSymbolCheckBox->setEnabled(isPoint || isMixed);
     ui->enableLineSymbolCheckBox->setEnabled(isLine || isPolygon || isMixed);
     ui->enablePolygonSymbolCheckBox->setEnabled(isPolygon || isMixed);
-    ui->enableExtrusionSymbolCheckBox->setEnabled(isPolygon || isMixed);
     if (!isPoint && !isMixed)
         ui->enablePointSymbolCheckBox->setChecked(false);
     if (!isLine && !isPolygon && !isMixed)
         ui->enableLineSymbolCheckBox->setChecked(false);
     if (!isPolygon && !isMixed)
-    {
         ui->enablePolygonSymbolCheckBox->setChecked(false);
-        ui->enableExtrusionSymbolCheckBox->setChecked(false);
-    }
 }
 
 osgEarth::Geometry::Type SymbologyEditorDialog::selectedGeometryType() const
@@ -250,10 +226,6 @@ void SymbologyEditorDialog::populateStyle(const osgEarth::Style& style)
         if (line->tessellationSize().isSet())
             ui->lineTessellationSizeSpinBox->setValue(
                 line->tessellationSize().get().as(osgEarth::Units::METERS));
-        if (line->tessellation().isSet())
-            ui->lineTessellationCountSpinBox->setValue(line->tessellation().get());
-        if (line->creaseAngle().isSet())
-            ui->lineCreaseAngleSpinBox->setValue(line->creaseAngle().get());
     }
 
     if (const auto* polygon = style.get<osgEarth::PolygonSymbol>())
@@ -262,36 +234,6 @@ void SymbologyEditorDialog::populateStyle(const osgEarth::Style& style)
         if (polygon->fill().isSet())
             _polygonFillColor->setColor(toQColor(polygon->fill()->color()));
         ui->polygonOutlineCheckBox->setChecked(polygon->outline().get());
-        if (polygon->material().isSet())
-            ui->polygonMaterialLineEdit->setText(
-                QString::fromStdString(polygon->material()->full()));
-    }
-
-    if (const auto* extrusion = style.get<osgEarth::ExtrusionSymbol>())
-    {
-        ui->enableExtrusionSymbolCheckBox->setChecked(true);
-        ui->extrusionFixedHeightRadioButton->setChecked(true);
-        if (extrusion->height().isSet())
-        {
-            const osgEarth::Expression<osgEarth::Distance>& height = extrusion->height().get();
-            if (height.expression().empty())
-                ui->extrusionFixedHeightSpinBox->setValue(
-                    height.literal().as(osgEarth::Units::METERS));
-        }
-        ui->extrusionFlattenCheckBox->setChecked(extrusion->flatten().get());
-        ui->extrusionDirectionComboBox->setCurrentText(
-            extrusion->direction().get() == osgEarth::ExtrusionSymbol::DIRECTION_DOWN
-                ? QStringLiteral("DIRECTION_DOWN") : QStringLiteral("DIRECTION_UP"));
-        ui->extrusionWallStyleLineEdit->setText(
-            QString::fromStdString(extrusion->wallStyleName().get()));
-        ui->extrusionWallSkinLineEdit->setText(
-            QString::fromStdString(extrusion->wallSkinName().get()));
-        ui->extrusionRoofStyleLineEdit->setText(
-            QString::fromStdString(extrusion->roofStyleName().get()));
-        ui->extrusionRoofSkinLineEdit->setText(
-            QString::fromStdString(extrusion->roofSkinName().get()));
-        ui->extrusionWallGradientSpinBox->setValue(extrusion->wallGradientPercentage().get());
-        ui->extrusionWallShadeSpinBox->setValue(extrusion->wallShadePercentage().get());
     }
 
     if (const auto* altitude = style.get<osgEarth::AltitudeSymbol>())
@@ -338,28 +280,6 @@ void SymbologyEditorDialog::populateStyle(const osgEarth::Style& style)
             ui->altitudeBindingComboBox->setCurrentText(QStringLiteral("BINDING_VERTEX"));
             break;
         }
-        const auto& verticalOffset = altitude->verticalOffset().get();
-        if (verticalOffset.expression().empty())
-            ui->altitudeVerticalOffsetSpinBox->setValue(
-                verticalOffset.literal().as(osgEarth::Units::METERS));
-        const auto& verticalScale = altitude->verticalScale().get();
-        if (verticalScale.expression().empty())
-            ui->altitudeVerticalScaleSpinBox->setValue(verticalScale.literal());
-        ui->altitudeClampingResolutionSpinBox->setValue(
-            altitude->clampingResolution().get().as(osgEarth::Units::METERS));
-    }
-
-    if (const auto* render = style.get<osgEarth::RenderSymbol>())
-    {
-        ui->renderDepthTestCheckBox->setChecked(render->depthTest().get());
-        ui->renderLightingCheckBox->setChecked(render->lighting().get());
-        ui->renderBackfaceCullingCheckBox->setChecked(render->backfaceCulling().get());
-        ui->renderTransparentCheckBox->setChecked(render->transparent().get());
-        ui->renderDecalCheckBox->setChecked(render->decal().get());
-        ui->renderDepthOffsetEnabledCheckBox->setChecked(render->depthOffset()->enabled().get());
-        ui->renderDepthOffsetAutomaticCheckBox->setChecked(render->depthOffset()->automatic().get());
-        ui->renderDepthOffsetRangeSpinBox->setValue(
-            render->depthOffset()->range().get().as(osgEarth::Units::METERS));
     }
 }
 
@@ -380,8 +300,6 @@ void SymbologyEditorDialog::createLineSymbol(osgEarth::Style& style) const
     symbol->tessellationSize() = osgEarth::Distance(
         ui->lineTessellationSizeSpinBox->value(),
         distanceUnit(ui->lineTessellationUnitsComboBox->currentText()));
-    symbol->tessellation() = static_cast<unsigned>(ui->lineTessellationCountSpinBox->value());
-    symbol->creaseAngle() = static_cast<float>(ui->lineCreaseAngleSpinBox->value());
 }
 
 void SymbologyEditorDialog::createPolygonSymbol(osgEarth::Style& style) const
@@ -389,37 +307,6 @@ void SymbologyEditorDialog::createPolygonSymbol(osgEarth::Style& style) const
     auto* polygon = style.getOrCreate<osgEarth::PolygonSymbol>();
     polygon->fill()->color() = toEarthColor(_polygonFillColor->color());
     polygon->outline() = ui->polygonOutlineCheckBox->isChecked();
-    const QString material = ui->polygonMaterialLineEdit->text().trimmed();
-    if (!material.isEmpty())
-        polygon->material() = osgEarth::URI(material.toStdString());
-}
-
-void SymbologyEditorDialog::createExtrusionSymbol(osgEarth::Style& style) const
-{
-    auto* extrusion = style.getOrCreate<osgEarth::ExtrusionSymbol>();
-    if (ui->extrusionFieldHeightRadioButton->isChecked())
-    {
-        const QString attribute = ui->extrusionHeightAttributeComboBox->currentText().trimmed();
-        extrusion->height() = osgEarth::Expression<osgEarth::Distance>(
-            QStringLiteral("[%1]").arg(attribute).toStdString());
-    }
-    else
-    {
-        extrusion->height() = osgEarth::Distance(
-            ui->extrusionFixedHeightSpinBox->value(), osgEarth::Units::METERS);
-    }
-    extrusion->direction() = ui->extrusionDirectionComboBox->currentText() == QStringLiteral("DIRECTION_DOWN")
-        ? osgEarth::ExtrusionSymbol::DIRECTION_DOWN
-        : osgEarth::ExtrusionSymbol::DIRECTION_UP;
-    extrusion->flatten() = ui->extrusionFlattenCheckBox->isChecked();
-    extrusion->wallStyleName() = ui->extrusionWallStyleLineEdit->text().toStdString();
-    extrusion->wallSkinName() = ui->extrusionWallSkinLineEdit->text().toStdString();
-    extrusion->roofStyleName() = ui->extrusionRoofStyleLineEdit->text().toStdString();
-    extrusion->roofSkinName() = ui->extrusionRoofSkinLineEdit->text().toStdString();
-    extrusion->wallGradientPercentage() =
-        static_cast<float>(ui->extrusionWallGradientSpinBox->value());
-    extrusion->wallShadePercentage() =
-        static_cast<float>(ui->extrusionWallShadeSpinBox->value());
 }
 
 void SymbologyEditorDialog::createAltitudeSymbol(osgEarth::Style& style) const
@@ -453,26 +340,6 @@ void SymbologyEditorDialog::createAltitudeSymbol(osgEarth::Style& style) const
     else
         altitude->binding() = osgEarth::AltitudeSymbol::BINDING_VERTEX;
 
-    altitude->verticalOffset() = osgEarth::Distance(
-        ui->altitudeVerticalOffsetSpinBox->value(), osgEarth::Units::METERS);
-    altitude->verticalScale() = ui->altitudeVerticalScaleSpinBox->value();
-    altitude->clampingResolution() = osgEarth::Distance(
-        ui->altitudeClampingResolutionSpinBox->value(), osgEarth::Units::METERS);
-}
-
-void SymbologyEditorDialog::createRenderSymbol(osgEarth::Style& style) const
-{
-    auto* render = style.getOrCreate<osgEarth::RenderSymbol>();
-    render->depthTest() = ui->renderDepthTestCheckBox->isChecked();
-    render->lighting() = ui->renderLightingCheckBox->isChecked();
-    render->backfaceCulling() = ui->renderBackfaceCullingCheckBox->isChecked();
-    render->transparent() = ui->renderTransparentCheckBox->isChecked();
-    render->decal() = ui->renderDecalCheckBox->isChecked();
-    render->depthOffset()->enabled() = ui->renderDepthOffsetEnabledCheckBox->isChecked();
-    render->depthOffset()->automatic() = ui->renderDepthOffsetAutomaticCheckBox->isChecked();
-    render->depthOffset()->range() = osgEarth::Distance(
-        ui->renderDepthOffsetRangeSpinBox->value(),
-        distanceUnit(ui->renderDepthOffsetUnitsComboBox->currentText()));
 }
 
 void SymbologyEditorDialog::applyStyle()
@@ -484,33 +351,40 @@ void SymbologyEditorDialog::applyStyle()
         return;
     }
 
+    const osgEarth::Style* currentStyle = nullptr;
+    if (auto* featureModelLayer = dynamic_cast<osgEarth::FeatureModelLayer*>(_featureLayer.get()))
+    {
+        if (featureModelLayer->getStyleSheet())
+            currentStyle = featureModelLayer->getStyleSheet()->getDefaultStyle();
+    }
+    else if (auto* featureImageLayer = dynamic_cast<osgEarth::FeatureImageLayer*>(_featureLayer.get()))
+    {
+        if (featureImageLayer->getStyleSheet())
+            currentStyle = featureImageLayer->getStyleSheet()->getDefaultStyle();
+    }
+
     osgEarth::Style style;
+    if (currentStyle)
+        style = *currentStyle;
 
     if (ui->enablePointSymbolCheckBox->isChecked())
         createPointSymbol(style);
+    else
+        style.remove<osgEarth::PointSymbol>();
 
     const bool polygonOutline = ui->enablePolygonSymbolCheckBox->isChecked() &&
                                 ui->polygonOutlineCheckBox->isChecked();
     if (ui->enableLineSymbolCheckBox->isChecked() || polygonOutline)
         createLineSymbol(style);
+    else
+        style.remove<osgEarth::LineSymbol>();
 
     if (ui->enablePolygonSymbolCheckBox->isChecked())
         createPolygonSymbol(style);
-
-    if (ui->enableExtrusionSymbolCheckBox->isChecked())
-    {
-        const QString attribute = ui->extrusionHeightAttributeComboBox->currentText().trimmed();
-        if (ui->extrusionFieldHeightRadioButton->isChecked() && attribute.isEmpty())
-        {
-            QMessageBox::warning(this, tr("Missing height attribute"),
-                tr("Select a feature attribute to use for extrusion height."));
-            return;
-        }
-        createExtrusionSymbol(style);
-    }
+    else
+        style.remove<osgEarth::PolygonSymbol>();
 
     createAltitudeSymbol(style);
-    createRenderSymbol(style);
 
     osg::ref_ptr<osgEarth::StyleSheet> styleSheet = new osgEarth::StyleSheet();
     styleSheet->addStyle(style);
@@ -531,16 +405,16 @@ void SymbologyEditorDialog::applyStyle()
         featureImageLayer->setStyleSheet(styleSheet.get());
         featureImageLayer->dirty();
 
-        // if (_mapNode && _mapNode->getTerrainEngine())
-        // {
-        //     const std::vector<const osgEarth::Layer*> layers{ featureImageLayer };
-        //     _mapNode->getTerrainEngine()->invalidateRegion(layers, osgEarth::GeoExtent::INVALID);
-        // }
+        if (_mapNode && _mapNode->getTerrainEngine())
+        {
+            const std::vector<const osgEarth::Layer*> layers{ featureImageLayer };
+            _mapNode->getTerrainEngine()->invalidateRegion(layers, osgEarth::GeoExtent::INVALID);
+        }
     }
 
-     // OSGViewerWidget* viewer = App::getThreedWindow();
-     //    if (!viewer || viewer->getMapNode() != _mapNode)
-     //        viewer = App::get2DWindow();
-     //    if (viewer && viewer->getMapNode() == _mapNode)
-     //        viewer->update();
+     OSGViewerWidget* viewer = App::getThreedWindow();
+        if (!viewer || viewer->getMapNode() != _mapNode)
+            viewer = App::get2DWindow();
+        if (viewer && viewer->getMapNode() == _mapNode)
+            viewer->update();
 }

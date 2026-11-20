@@ -41,7 +41,7 @@ using namespace osgEarth::Util;
 //     return 0;
 // }
 
-int main(int argc, char* argv[])
+extern "C" __declspec(dllexport) int glx_main(int argc, char* argv[])
 {
     QQuickStyle::setStyle("Fusion");
 
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
     QSurfaceFormat format = QSurfaceFormat::defaultFormat();
     // QTextCodec *codec = QTextCodec::codecForLocale();
     #ifdef OSG_GL3_AVAILABLE
-    format.setVersion(3, 2);
+    format.setVersion(3, 3);
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setRenderableType(QSurfaceFormat::OpenGL);
     format.setOption(QSurfaceFormat::DebugContext);

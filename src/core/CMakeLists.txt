@@ -1,4 +1,4 @@
-set(CORE_TARGET_NAME geoLayer_core)
+set(CORE_TARGET_NAME glx_core)
 
 add_library(${CORE_TARGET_NAME} SHARED
     osgviewerwidget.h
@@ -63,7 +63,8 @@ target_link_libraries(${CORE_TARGET_NAME} PUBLIC
 target_link_libraries(${CORE_TARGET_NAME} PUBLIC
     osgEarth::osgEarth
 )
-if(OSGEARTH_HAVE_CESIUM_NODEKIT)
+if(TARGET osgEarth::osgEarthCesium AND
+   EXISTS "${osgEarth_INCLUDE_DIR}/osgEarthCesium/CesiumLayer")
     target_link_libraries(${CORE_TARGET_NAME} PUBLIC osgEarth::osgEarthCesium)
 endif()
 

@@ -82,8 +82,10 @@
       <string>OE_Tools</string>
      </property>
      <addaction name="actionSky"/>
+     <addaction name="actionViewpoints"/>
     </widget>
     <addaction name="menuOE_Tools"/>
+    <addaction name="actionExtrusion3D"/>
    </widget>
    <widget class="QMenu" name="menuData">
     <property name="title">
@@ -209,6 +211,16 @@
    </property>
    <property name="text">
     <string>Sky</string>
+   </property>
+  </action>
+  <action name="actionViewpoints">
+   <property name="text">
+    <string>Viewpoints...</string>
+   </property>
+  </action>
+  <action name="actionExtrusion3D">
+   <property name="text">
+    <string>3D Extrusion...</string>
    </property>
   </action>
   <action name="actionNew_project">

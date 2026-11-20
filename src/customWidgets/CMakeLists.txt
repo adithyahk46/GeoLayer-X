@@ -3,6 +3,7 @@ set(CUSTOMWIDGETS_TARGET_NAME customWidgets)
 add_library(${CUSTOMWIDGETS_TARGET_NAME} STATIC
     colorpickercheckbox.cpp
     colorpickercheckbox.h
+    ImGuiSlider.cpp ImGuiSlider.h
 )
 
 generate_export_header(${CUSTOMWIDGETS_TARGET_NAME}

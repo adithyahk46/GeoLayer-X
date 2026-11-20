@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Extrusion3D</class>
+ <widget class="QDialog" name="Extrusion3D">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>481</width>
+    <height>488</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Extrusion3D</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout_2">
+   <item>
+    <widget class="QGroupBox" name="extrusionSymbolGroupBox">
+     <property name="title">
+      <string>Extrusion 3D</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QComboBox" name="comboBox">
+          <item>
+           <property name="text">
+            <string>Select Feature Layer</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton">
+          <property name="maximumSize">
+           <size>
+            <width>80</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Browse...</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="extrusionHeightLayout">
+        <item row="0" column="1">
+         <widget class="QRadioButton" name="extrusionFieldHeightRadioButton">
+          <property name="text">
+           <string>Field Attribute</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QComboBox" name="extrusionHeightAttributeComboBox"/>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Fill Color:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QComboBox" name="extrusionDirectionComboBox">
+          <item>
+           <property name="text">
+            <string>DIRECTION_UP</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>DIRECTION_DOWN</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QDoubleSpinBox" name="extrusionFixedHeightSpinBox">
+          <property name="suffix">
+           <string> m</string>
+          </property>
+          <property name="minimum">
+           <double>-1000000.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>1000000.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>10.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QRadioButton" name="extrusionFixedHeightRadioButton">
+          <property name="text">
+           <string>Fixed Height</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="extrusionMethodLabel">
+          <property name="text">
+           <string>Extrusion Method:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="extrusionDirectionLabel">
+          <property name="text">
+           <string>Direction:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="extrusionHeightValueLabel">
+          <property name="text">
+           <string>Select / Set Height:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QCheckBox" name="checkBox_enableOutLine">
+          <property name="text">
+           <string>OutLine:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QPushButton" name="pushButton_fillColor">
+          <property name="text">
+           <string>#Color</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QPushButton" name="pushButton_OutLineColor">
+          <property name="text">
+           <string>#Color</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="2">
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_outlineWidth"/>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton_2">
+        <property name="text">
+         <string>Apply Changes</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

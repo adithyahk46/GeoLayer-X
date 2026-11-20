@@ -1,23 +1,22 @@
 #pragma once
 
-#include <QDialog>
 #include <QScopedPointer>
-#include <QColor>
 
 #include <osg/observer_ptr>
-#include <osgEarth/Ephemeris>
-#include <osgEarth/Sky>
-#include <osgEarth/ShaderLoader>
-#include <osgEarth/Shadowing>
-#include <osgEarth/VirtualProgram>
-#include <osgEarth/WindLayer>
-
+#include <osg/NodeCallback>
+#include <osg/Timer>
 #include <osgEarth/MapNode>
+#include <osgEarth/Shadowing>
+#include <osgEarth/Sky>
+#include <osgEarth/WindLayer>
 
 #include "DockWidgetPanels.h"
 
-using namespace osgEarth::Util;
+#include <functional>
+#include <atomic>
 
+class QShowEvent;
+class QTimer;
 
 namespace Ui {
     class EnvironmentGUI;
@@ -34,25 +33,47 @@ public:
 protected:
     void setWindowTitle(const QString &title) override { QDockWidget::setWindowTitle(title); }
     void setObjectName(const QString &name) override { QDockWidget::setObjectName(name); }
+    void showEvent(QShowEvent *event) override;
 
- private:
+private:
+    struct TimeCycle : public osg::NodeCallback
+    {
+        std::atomic<bool> playing{ false };
+        std::atomic<float> hoursPerSecond{ 0.25f };
+
+        void operator()(osg::Node* node, osg::NodeVisitor* nv) override;
+
+    private:
+        osg::Timer_t _lastTick = osg::Timer::instance()->tick();
+        double _seconds = 0.0;
+        bool _wasPlaying = false;
+    };
+
+    osgEarth::MapNode *currentMapNode() const;
+    osgEarth::SkyNode *currentSkyNode() const;
+    bool queueUpdate(const std::function<void(osgViewer::Viewer&)> &operation);
+    void changeSky(const std::function<void(osgEarth::SkyNode&)> &change);
+    void toggleEnvironment();
+    void detachEnvironment();
+    void installShadows();
+    void applyCloudOptions();
+    void resetEnvironment();
+    void syncFromScene();
+    void syncFromSceneLater();
+    void refreshSunColorButton(const osg::Vec4& color, bool remember = true);
+
     QScopedPointer<Ui::EnvironmentGUI> ui;
-
-        osg::observer_ptr<MapNode> _mapNode;
-        osg::observer_ptr<SkyNode> _skyNode;
-        osg::observer_ptr<ShadowCaster> _shadowCaster;
-        osg::observer_ptr<WindLayer> _windLayer;
-        bool _showDetails = false;
-        float _hour;
-        int _day, _month, _year;
-        float _exposure = 3.5f;
-        float _contrast = 1.0f;
-        float _ambient = 0.033f;
-        float _max_ambient_intensity = 0.75;
-        bool _first = true;
-        bool _shadows = false;
-        float _haze_cutoff = 0.0f, _haze_strength = 16.0f;
-        float _shadow_darkness = 0.5f, _shadow_blur = 0.001f;
-        float _wind_power = 1.0f;
-
+    osg::observer_ptr<osgEarth::MapNode> _mapNode;
+    osg::observer_ptr<osgEarth::SkyNode> _skyNode;
+    osg::observer_ptr<osgEarth::Util::ShadowCaster> _shadowCaster;
+    osg::observer_ptr<osgEarth::WindLayer> _windLayer;
+    osg::ref_ptr<TimeCycle> _timeCycle;
+    QTimer* _cycleUiTimer = nullptr;
+    float _timeCycleSpeed = 0.25f;
+    float _groundReflectance = 0.15f;
+    float _hazeCutoff = 0.0f;
+    float _hazeStrength = 16.0f;
+    osg::Vec4 _sunColor = osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    bool _updatingControls = false;
+    bool _windDebug = false;
 };

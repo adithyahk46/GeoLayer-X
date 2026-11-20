@@ -36,11 +36,19 @@ public:
 
     static void LoadXYZTiles(osgEarth::MapNode* mapNode, QString url, QString LayerName  = "XYZ Tiles");
 
-    static void LoadTMSLayer(osgEarth::MapNode* mapNode, QString url, QString LayerName = "TMS Layer");
+    static void LoadTMSLayer(osgEarth::MapNode* mapNode,
+                             QString url,
+                             QString LayerName = "TMS Layer",
+                             bool treatAsElevation = false);
+
+    static void LoadWMSLayer(osgEarth::MapNode* mapNode,
+                             QString url,
+                             QString wmsLayerName,
+                             QString LayerName = "");
     
     static void Load3Dbuildings(osgEarth::MapNode *mapNode, QString FilePath, QString heightText, QString LayerName= " 3d scene", QString TexResPath =" ");
     
-#if OSGEARTH_HAVE_CESIUM_NODEKIT
+#ifdef OSGEARTH_HAVE_CESIUM_NODEKIT
     static void LoadCesiumLayer(osgEarth::MapNode* mapNode,
                                  const QString& accessToken,
                                  CesiumLayerType type,

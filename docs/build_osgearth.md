@@ -21,6 +21,8 @@ vcpkg install osg[*]:x64-windows
 or
 vcpkg install osg[collada,core,docs,examples,fontconfig,freetype,nvtt,openexr,packages,plugins,sdl,tools]:x64-windows-static
 
+vcpkg.exe install basisu:x64-windows
+
 
 #build cesium-native
 cd ..

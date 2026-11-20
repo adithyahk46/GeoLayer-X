@@ -9,10 +9,15 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QAbstractItemView>
+#include <QHeaderView>
 #include <QHBoxLayout>
 #include <QListWidget>
 #include <QListView>
 #include <QStackedWidget>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
+#include <QUrl>
+#include <QUrlQuery>
 #include <QtConcurrent/QtConcurrentRun>
 
 auto future = QtConcurrent::run([]()
@@ -23,6 +28,51 @@ auto future = QtConcurrent::run([]()
 #include "gdal_priv.h"
 #include "ogrsf_frmts.h"
 
+#include <osgEarth/WMS>
+
+namespace
+{
+    void addWMSLayerItems(QTreeWidget* tree,
+                          QTreeWidgetItem* parent,
+                          const osgEarth::WMS::Layer::LayerList& layers)
+    {
+        for (const auto& layer : layers) {
+            if (!layer.valid())
+                continue;
+
+            QTreeWidgetItem* item = parent
+                ? new QTreeWidgetItem(parent)
+                : new QTreeWidgetItem(tree);
+            item->setText(0, QString::fromStdString(layer->getName()));
+            item->setText(1, QString::fromStdString(layer->getTitle()));
+            item->setText(2, QString::fromStdString(layer->getAbstract()));
+
+            const auto& children = layer->getLayers();
+            if (children.empty()) {
+                item->setData(0, Qt::UserRole, QString::fromStdString(layer->getName()));
+            }
+            else {
+                item->setFlags(item->flags() & ~Qt::ItemIsSelectable);
+                addWMSLayerItems(tree, item, children);
+            }
+        }
+    }
+
+    QUrl makeWMSCapabilitiesUrl(const QString& serviceUrl)
+    {
+        QUrl url(serviceUrl);
+        QUrlQuery query(url);
+        if (!query.hasQueryItem(QStringLiteral("SERVICE")))
+            query.addQueryItem(QStringLiteral("SERVICE"), QStringLiteral("WMS"));
+        if (!query.hasQueryItem(QStringLiteral("VERSION")))
+            query.addQueryItem(QStringLiteral("VERSION"), QStringLiteral("1.1.1"));
+        if (!query.hasQueryItem(QStringLiteral("REQUEST")))
+            query.addQueryItem(QStringLiteral("REQUEST"), QStringLiteral("GetCapabilities"));
+        url.setQuery(query);
+        return url;
+    }
+}
+
 MapLoadModuleDialog::MapLoadModuleDialog( QWidget* parent )
     :QDialog(parent)
     ,ui(new Ui::MapLoadModuleDialog)
@@ -31,6 +81,9 @@ MapLoadModuleDialog::MapLoadModuleDialog( QWidget* parent )
     setupHorizontalTabs();
     setWindowTitle("Open Layers");
     setWindowIcon(QIcon(":/new/prefix1/icons/Layers/layers.png"));
+    ui->tree_wmsLayers->setHeaderLabels({ tr("Name"), tr("Title"), tr("Abstract") });
+    ui->tree_wmsLayers->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->tree_wmsLayers->header()->setSectionResizeMode(2, QHeaderView::Stretch);
 
   _initConnections();
 
@@ -115,6 +168,50 @@ void MapLoadModuleDialog::_initConnections()
     ui->fromServer_radioButton->setChecked(true);
     ui->le_xyzLayername->setEnabled(!ui->cb_xyzLayerName->isChecked());
     ui->le_xyzLayername->setReadOnly(ui->cb_xyzLayerName->isChecked());
+
+    connect(ui->pb_cancel, &QPushButton::clicked, this, &QDialog::reject);
+    connect(ui->le_wmsUrl, &QLineEdit::textChanged, this, [this] {
+        ui->tree_wmsLayers->clear();
+        ui->le_wmsLayerName->clear();
+        ui->wmsWarningLabel->clear();
+    });
+    connect(ui->tree_wmsLayers, &QTreeWidget::currentItemChanged, this,
+        [this](QTreeWidgetItem* current) {
+            if (!current)
+                return;
+            const QString serviceLayerName = current->data(0, Qt::UserRole).toString();
+            if (serviceLayerName.isEmpty())
+                return;
+
+            const QString title = current->text(1).trimmed();
+            ui->le_wmsLayerName->setText(title.isEmpty() ? serviceLayerName : title);
+        });
+    connect(ui->pb_wmsFetchLayers, &QPushButton::clicked, this, [this] {
+        const QString serviceUrl = ui->le_wmsUrl->text().trimmed();
+        const QUrl parsedUrl(serviceUrl);
+        if (!parsedUrl.isValid() || parsedUrl.isEmpty()) {
+            ui->wmsWarningLabel->setText(tr("Enter a valid WMS service URL."));
+            return;
+        }
+
+        ui->tree_wmsLayers->clear();
+        ui->le_wmsLayerName->clear();
+        ui->wmsWarningLabel->clear();
+
+        const QUrl capabilitiesUrl = makeWMSCapabilitiesUrl(serviceUrl);
+        osg::ref_ptr<osgEarth::WMS::Capabilities> capabilities =
+            osgEarth::WMS::CapabilitiesReader::read(
+                capabilitiesUrl.toString(QUrl::FullyEncoded).toStdString(), nullptr);
+        if (!capabilities.valid()) {
+            ui->wmsWarningLabel->setText(tr("Could not read WMS capabilities from this service."));
+            return;
+        }
+
+        addWMSLayerItems(ui->tree_wmsLayers, nullptr, capabilities->getLayers());
+        ui->tree_wmsLayers->expandAll();
+        if (ui->tree_wmsLayers->topLevelItemCount() == 0)
+            ui->wmsWarningLabel->setText(tr("The WMS service did not advertise any layers."));
+    });
 
     QObject::connect(ui->pb_rasterUrl,&QPushButton::clicked,this,[=](){
         QString filePath = OpenFiles(FileType::RASTER);
@@ -405,7 +502,7 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
             ui->warning_label->clear();
             MapLoadModule::LoadXYZTiles(App::getThreedWindow()->getMapNode(),LayerUrl, ui->le_xyzLayername->text());
         }
-#if OSGEARTH_HAVE_CESIUM_NODEKIT
+#ifdef OSGEARTH_HAVE_CESIUM_NODEKIT
     else if(_tabSelector->currentRow() == 5)
     {
         OSGViewerWidget* viewer = App::getThreedWindow();
@@ -451,4 +548,50 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
             layerName);
     }
 #endif
+    else if(_tabSelector->currentRow() == 6)
+    {
+        OSGViewerWidget* viewer = App::getThreedWindow();
+        if (!viewer || !viewer->getMapNode()) {
+            ui->tmsWarningLabel->setText(tr("The map is not available."));
+            return;
+        }
+
+        const QString url = ui->le_tmsUrl->text().trimmed();
+        const QString layerName = ui->le_tmsLayerName->text().trimmed();
+        if (url.isEmpty() || layerName.isEmpty()) {
+            ui->tmsWarningLabel->setText(tr("Enter a TMS URL and layer name."));
+            return;
+        }
+
+        ui->tmsWarningLabel->clear();
+        MapLoadModule::LoadTMSLayer(
+            viewer->getMapNode(), url, layerName, ui->cb_tmsElevation->isChecked());
+    }
+    else if(_tabSelector->currentRow() == 7)
+    {
+        OSGViewerWidget* viewer = App::getThreedWindow();
+        if (!viewer || !viewer->getMapNode()) {
+            ui->wmsWarningLabel->setText(tr("The map is not available."));
+            return;
+        }
+
+        QTreeWidgetItem* selectedItem = ui->tree_wmsLayers->currentItem();
+        const QString serviceLayerName = selectedItem
+            ? selectedItem->data(0, Qt::UserRole).toString()
+            : QString();
+        const QString layerName = ui->le_wmsLayerName->text().trimmed();
+        if (ui->le_wmsUrl->text().trimmed().isEmpty() ||
+            serviceLayerName.isEmpty() || layerName.isEmpty()) {
+            ui->wmsWarningLabel->setText(
+                tr("Fetch and select a WMS service layer, then enter a map layer name."));
+            return;
+        }
+
+        ui->wmsWarningLabel->clear();
+        MapLoadModule::LoadWMSLayer(
+            viewer->getMapNode(),
+            ui->le_wmsUrl->text().trimmed(),
+            serviceLayerName,
+            layerName);
+    }
 }

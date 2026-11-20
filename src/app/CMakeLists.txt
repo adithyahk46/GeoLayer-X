@@ -1,4 +1,4 @@
-set(TARGET_APP_NAME geoLayer_app)
+set(TARGET_APP_NAME glx_app)
 
 
 set(UI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../ui)
@@ -12,13 +12,23 @@ set(RESOURCES_FILES
 set(CMAKE_AUTOUIC_SEARCH_PATHS
     ${UI_DIR}
     ${UI_DIR}/OE_Tools
+    ${CMAKE_CURRENT_SOURCE_DIR}/plugins/Extrusion3D
 )
 
-# 2. Add Executable (Include UI_GENERATED_HEADERS, NOT just UI_SOURCE_FILES)
-add_executable(${TARGET_APP_NAME}
-    main.cpp
+#App plugins source files
+set(PLUGIN_SRC_FILES
+    plugins/Extrusion3D/Extrusion3D.h plugins/Extrusion3D/Extrusion3D.cpp plugins/Extrusion3D/Extrusion3D.ui
+)
 
+# Add main exicutable that set and prepares all the env before main screen Application start
+add_executable(GeoLayer-X WIN32 mainwin.cpp)
+
+# 2. Add mainscreen (Include UI_GENERATED_HEADERS, NOT just UI_SOURCE_FILES)
+add_library(${TARGET_APP_NAME} SHARED
+    main.cpp
+    ${PLUGIN_SRC_FILES}
     Tools/EnvironmentGUI.cpp Tools/EnvironmentGUI.h
+    Tools/ViewpointsGUI.cpp Tools/ViewpointsGUI.h
 
     qgis/GLXNewVectorLayerDialog.cpp qgis/GLXNewVectorLayerDialog.h
 
@@ -35,16 +45,8 @@ add_executable(${TARGET_APP_NAME}
     ${RESOURCES_FILES}
 
 )
-# add_executable(GeoLayer-X WIN32 mainwin.cpp)
-
 
 target_link_libraries(${TARGET_APP_NAME} PUBLIC UiFiles resources)
-
-# # 1. Turn AUTOUIC OFF so CMake doesn't search for .ui files inside src/app/
-# set_target_properties(OsgEarthViewer PROPERTIES
-#     AUTOMOC ON    # Keep ON so Qt processes Q_OBJECT macros
-#     AUTOUIC OFF   # Disable so AUTOUIC doesn't conflict with qt_wrap_ui
-# )
 
 
 # 3. Include Directories
@@ -70,7 +72,7 @@ target_link_libraries(${TARGET_APP_NAME} PRIVATE
     ${GDAL_LIBRARY}
     GDAL::GDAL
 
-    geoLayer_core
+    glx_core
     customWidgets
 )
 
@@ -86,3 +88,9 @@ target_include_directories(${TARGET_APP_NAME} PUBLIC ${OPENSCENEGRAPH_INCLUDE_DI
 # Link osgEarth (required)
 target_link_libraries(${TARGET_APP_NAME} PUBLIC osgEarth::osgEarth)
 target_include_directories(${TARGET_APP_NAME} PUBLIC ${OSGEARTH_INCLUDE_DIRS})
+
+if(TARGET osgEarth::osgEarthPrestige)
+    target_link_libraries(${TARGET_APP_NAME} PRIVATE osgEarth::osgEarthPrestige)
+elseif(TARGET osgEarthPrestige)
+    target_link_libraries(${TARGET_APP_NAME} PRIVATE osgEarthPrestige)
+endif()

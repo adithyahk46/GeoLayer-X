@@ -39,6 +39,7 @@ public:
     osgViewer::Viewer* getViewer()  { return _viewer.get(); }
 
     void setViewerColor(const osg::Vec4& color);
+    const osg::Vec4& getViewerColor() const { return _viewerColor; }
 
     explicit OSGViewerWidget(QWidget* parent = nullptr);
     ~OSGViewerWidget() override;

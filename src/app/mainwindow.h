@@ -15,11 +15,16 @@
 #include "LayerManagerWidget.h"
 #include "StatusbarHandlerWidget.h"
 
+#include "Tools/EnvironmentGUI.h"
+#include "Tools/ViewpointsGUI.h"
+
+
 class QActionGroup;
 class QAction;
 class QCloseEvent;
 class QString;
 class PluginsDockWidget;
+class Extrusion3D;
 class ProjectWelcomeScreen;
 class ProjectManager;
 class QSplitter;
@@ -76,6 +81,11 @@ private:
     bool m_allowApplicationClose = false;
     QActionGroup* m_drawingActionGroup = nullptr;
     QList<QAction*> _pluginActions;
+
+    //Tools menubar actions widgets
+     EnvironmentGUI* envGui = nullptr;
+     ViewpointsGUI* viewpointsGui = nullptr;
+     Extrusion3D* extrusion3D = nullptr;
 
 //declare private functions here
     void initCore();
