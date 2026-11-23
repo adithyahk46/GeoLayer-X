@@ -57,6 +57,7 @@ private slots:
     void osgViewerSetup();
 
     void createShapeFile();
+    void setMapProjection(bool flat);
 
 private:
     void closeEvent(QCloseEvent* event) override;
@@ -79,6 +80,7 @@ private:
     ProjectManager* m_projectManager = nullptr;
     ProjectWelcomeScreen* m_ProjectWelcomeScreen = nullptr;
     bool m_allowApplicationClose = false;
+    bool m_flatMapProjection = false;
     QActionGroup* m_drawingActionGroup = nullptr;
     QList<QAction*> _pluginActions;
 

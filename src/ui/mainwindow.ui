@@ -64,8 +64,7 @@
      <property name="title">
       <string>Map View</string>
      </property>
-     <addaction name="actionShow_2D"/>
-     <addaction name="actionShow_3D"/>
+     <addaction name="actionToggleMapProjection"/>
     </widget>
     <addaction name="actionFullScreen"/>
     <addaction name="menuMap_View"/>
@@ -416,26 +415,12 @@
     <string>Manage Plugins...</string>
    </property>
   </action>
-  <action name="actionShow_2D">
+  <action name="actionToggleMapProjection">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show 2D</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+2</string>
-   </property>
-  </action>
-  <action name="actionShow_3D">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Show 3D</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+3</string>
+    <string>2D / Earth Projection</string>
    </property>
   </action>
   <action name="actionClose_Project">

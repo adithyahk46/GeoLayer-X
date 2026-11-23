@@ -76,6 +76,11 @@ ProjectManager::ProjectManager(osgEarth::MapNode* mapNode, QObject* parent)
 
 ProjectManager::~ProjectManager() = default;
 
+void ProjectManager::setMapNode(osgEarth::MapNode* mapNode)
+{
+    m_mapNode = mapNode;
+}
+
 bool ProjectManager::createNewProject(const QString& name,
                                       const QString& projectFilePath,
                                       const QString& templateId,

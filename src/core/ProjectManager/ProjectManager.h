@@ -19,6 +19,8 @@ public:
     explicit ProjectManager(osgEarth::MapNode* mapNode, QObject* parent = nullptr);
     ~ProjectManager() override;
 
+    void setMapNode(osgEarth::MapNode* mapNode);
+
     bool createNewProject(const QString& name,
                           const QString& projectFilePath,
                           const QString& templateId = QStringLiteral("empty"),

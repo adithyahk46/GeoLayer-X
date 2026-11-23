@@ -9,6 +9,7 @@ using namespace std;
 #include <osg/Notify>
 #include <osgDB/FileUtils>
 #include <osgEarth/Registry>
+#include <osgEarth/Profile>
 
 
 #include <QActionGroup>
@@ -138,6 +139,59 @@ void MainWindow::createShapeFile()
     dialog.exec();
 }
 
+void MainWindow::setMapProjection(bool flat)
+{
+    const auto restoreActionState = [this]() {
+        const QSignalBlocker blocker(ui->actionToggleMapProjection);
+        ui->actionToggleMapProjection->setChecked(m_flatMapProjection);
+    };
+
+    if (flat == m_flatMapProjection)
+        return;
+
+    if (!osgwidget3D || !osgwidget3D->getMapNode()
+        || !osgwidget3D->getMapNode()->getMap() || !osgwidget3D->getManipulator())
+    {
+        QMessageBox::warning(this, tr("Map Projection"),
+                             tr("The map view is not available."));
+        restoreActionState();
+        return;
+    }
+
+    osg::ref_ptr<osgEarth::MapNode> currentMapNode = osgwidget3D->getMapNode();
+    osgEarth::Map* map = currentMapNode->getMap();
+    osg::ref_ptr<const osgEarth::Profile> previousProfile = map->getProfile();
+    const osgEarth::Profile* targetProfile = osgEarth::Profile::create(
+        flat ? osgEarth::Profile::SPHERICAL_MERCATOR
+             : osgEarth::Profile::GLOBAL_GEODETIC);
+    if (!targetProfile || !targetProfile->isOK())
+    {
+        QMessageBox::warning(this, tr("Map Projection"),
+                             tr("Could not create the requested map projection."));
+        restoreActionState();
+        return;
+    }
+
+    const osgEarth::Viewpoint viewpoint = osgwidget3D->getManipulator()->getViewpoint();
+    osg::ref_ptr<osgEarth::MapNode> projectedMapNode = new osgEarth::MapNode(map);
+    projectedMapNode->externalConfig() = currentMapNode->externalConfig();
+
+    map->setProfile(targetProfile);
+    if (!projectedMapNode->open() || !projectedMapNode->getTerrainEngine())
+    {
+        map->setProfile(previousProfile.get());
+        QMessageBox::warning(this, tr("Map Projection"),
+                             tr("Could not initialize the requested map projection."));
+        restoreActionState();
+        return;
+    }
+
+    m_projectManager->setMapNode(projectedMapNode.get());
+    osgwidget3D->setMapNode(projectedMapNode.get());
+    osgwidget3D->getManipulator()->setViewpoint(viewpoint, 0.5);
+    m_flatMapProjection = flat;
+}
+
 void MainWindow::initLogs()
 {
 }
@@ -192,21 +246,22 @@ void MainWindow::initCore()
             m_projectManager->openEarthFile(path);
     });
 
+    if (!viewpointsGui)
+    {
+        viewpointsGui = new ViewpointsGUI(this);
+        addDockWidget(Qt::RightDockWidgetArea, viewpointsGui);
+        // viewpointsGui->setFloating(true);
+        // viewpointsGui->hide();
+    }
+
 }
 
 void MainWindow::initSignalsAndSlots()
 {
     connect(ui->actionExit, &QAction::triggered, this, &QWidget::close);
 
-    //menubar "VIEW"
-    {
-      QObject::connect(ui->actionShow_3D, &QAction::triggered, this, [this](bool checked){
-            osgwidget3D->setVisible(!osgwidget3D->isVisible());
-            ui->actionShow_3D->setChecked(osgwidget3D->isVisible());
-      });
-    }
-    //connect signals and slots here
-
+    connect(ui->actionToggleMapProjection, &QAction::toggled,
+            this, &MainWindow::setMapProjection);
 
     QObject::connect(ui->actionTheame, &QAction::toggled, this, [=](bool dark){
         setApplicationTheme(dark);
@@ -300,13 +355,6 @@ void MainWindow::initSignalsAndSlots()
     });
 
     connect(ui->actionViewpoints, &QAction::triggered, this, [this] {
-        if (!viewpointsGui)
-        {
-            viewpointsGui = new ViewpointsGUI(this);
-            addDockWidget(Qt::RightDockWidgetArea, viewpointsGui);
-            viewpointsGui->setFloating(true);
-            viewpointsGui->hide();
-        }
 
         if (viewpointsGui->isVisible()) {
             viewpointsGui->hide();
