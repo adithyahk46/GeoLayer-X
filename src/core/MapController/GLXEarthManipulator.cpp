@@ -27,6 +27,14 @@ bool GLXEarthManipulator::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIAct
         eventType == osgGA::GUIEventAdapter::SCROLL;
     auto* view = needsGeoPoint ? dynamic_cast<osgViewer::View*>(&aa) : nullptr;
     const bool hasGeoPoint = view && getGeoPointFromScreen(view, ea.getX(), ea.getY());
+    if (!hasGeoPoint &&
+        (eventType == osgGA::GUIEventAdapter::MOVE ||
+         eventType == osgGA::GUIEventAdapter::DRAG))
+    {
+        _currentGeoPos = osgEarth::GeoPoint();
+        _currentWorldNormal.set(0.0, 0.0, 0.0);
+        emit mousePositionLostEvent();
+    }
     emit defaultHandleEvent(ea, aa);
 
     if (hasGeoPoint)
@@ -131,6 +139,7 @@ bool GLXEarthManipulator::getGeoPointFromScreen(osgViewer::View* view, float x, 
 
     const auto& hit = *intersections.begin();
     _currentWorldPos = hit.getWorldIntersectPoint();
+    _currentWorldNormal = hit.getWorldIntersectNormal();
     _currentGeoPos.fromWorld(_mapNode->getMapSRS(), _currentWorldPos);
     return _currentGeoPos.isValid();
 }

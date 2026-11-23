@@ -29,6 +29,7 @@ add_library(${TARGET_APP_NAME} SHARED
     ${PLUGIN_SRC_FILES}
     Tools/EnvironmentGUI.cpp Tools/EnvironmentGUI.h
     Tools/ViewpointsGUI.cpp Tools/ViewpointsGUI.h
+    Tools/MapReadoutsDockWidget.cpp Tools/MapReadoutsDockWidget.h
 
     qgis/GLXNewVectorLayerDialog.cpp qgis/GLXNewVectorLayerDialog.h
 

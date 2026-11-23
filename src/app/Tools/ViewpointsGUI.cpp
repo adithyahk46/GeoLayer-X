@@ -8,15 +8,72 @@
 #include "osgviewerwidget.h"
 
 #include <QListWidgetItem>
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QLabel>
 #include <QMessageBox>
+#include <QPushButton>
+#include <QResource>
+#include <QSize>
+#include <QSizePolicy>
 #include <QShowEvent>
 
 #include <algorithm>
+#include <functional>
+
+namespace
+{
+/**
+ * Displays one saved viewpoint and its individual zoom and delete actions.
+ */
+class ViewpointListItem final : public QWidget
+{
+public:
+    /**
+     * Builds a viewpoint row with icon actions.
+     * @param name Display name of the viewpoint.
+     * @param zoomAction Action invoked by the zoom button.
+     * @param deleteAction Action invoked by the delete button.
+     * @param parent Parent widget.
+     */
+    ViewpointListItem(const QString& name,
+                      std::function<void()> zoomAction,
+                      std::function<void()> deleteAction,
+                      QWidget* parent = nullptr)
+        : QWidget(parent)
+    {
+        auto* layout = new QHBoxLayout(this);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(2);
+
+        auto* nameLabel = new QLabel(name, this);
+        nameLabel->setToolTip(name);
+        nameLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+        layout->addWidget(nameLabel, 1);
+
+        auto* deleteButton = new QPushButton(this);
+        deleteButton->setIcon(
+            QIcon(QStringLiteral(":/images/themes/default/mIconDelete.svg")));
+        deleteButton->setIconSize(QSize(18, 18));
+        deleteButton->setFixedSize(18, 18);
+        deleteButton->setToolTip(tr("Delete viewpoint"));
+        deleteButton->setAccessibleName(tr("Delete viewpoint"));
+
+        layout->addWidget(deleteButton);
+        // setFixedHeight(32);
+
+        connect(deleteButton, &QPushButton::clicked, this,
+                [action = std::move(deleteAction)] { action(); });
+    }
+};
+}
 
 ViewpointsGUI::ViewpointsGUI(QWidget* parent)
     : DockWidgetPanels(parent)
     , ui(new Ui::ViewpointsGUI)
 {
+    Q_INIT_RESOURCE(images);
+
     ui->setupUi(this);
     setObjectName(QStringLiteral("ViewpointsDock"));
 
@@ -28,10 +85,6 @@ ViewpointsGUI::ViewpointsGUI(QWidget* parent)
             this, [this](QListWidgetItem*) { zoomToSelectedViewpoint(); });
     connect(ui->pushButtonAdd, &QPushButton::clicked,
             this, &ViewpointsGUI::addCurrentViewpoint);
-    connect(ui->pushButtonZoom, &QPushButton::clicked,
-            this, &ViewpointsGUI::zoomToSelectedViewpoint);
-    connect(ui->pushButtonDelete, &QPushButton::clicked,
-            this, &ViewpointsGUI::deleteSelectedViewpoint);
 
     if (auto* projectManager = parent ? parent->findChild<ProjectManager*>() : nullptr)
     {
@@ -103,15 +156,30 @@ void ViewpointsGUI::reloadViewpoints()
     }
 
     ui->listWidgetViewpoints->clear();
-    for (const osgEarth::Viewpoint& viewpoint : _viewpoints)
+    for (std::size_t index = 0; index < _viewpoints.size(); ++index)
     {
+        const osgEarth::Viewpoint& viewpoint = _viewpoints[index];
         const std::string name = viewpoint.name().isSet()
             ? viewpoint.name().get()
             : std::string();
         const QString label = name.empty()
             ? tr("<Unnamed viewpoint>")
             : QString::fromStdString(name);
-        ui->listWidgetViewpoints->addItem(label);
+
+        auto* item = new QListWidgetItem;
+        ui->listWidgetViewpoints->addItem(item);
+        auto* itemWidget = new ViewpointListItem(
+            label,
+            [this, index] {
+                ui->listWidgetViewpoints->setCurrentRow(static_cast<int>(index));
+                zoomToSelectedViewpoint();
+            },
+            [this, index] {
+                ui->listWidgetViewpoints->setCurrentRow(static_cast<int>(index));
+                deleteSelectedViewpoint();
+            });
+        item->setSizeHint(itemWidget->sizeHint());
+        ui->listWidgetViewpoints->setItemWidget(item, itemWidget);
     }
     ui->labelEmpty->setVisible(_viewpoints.empty());
     updateButtonStates();
@@ -143,8 +211,8 @@ void ViewpointsGUI::addCurrentViewpoint()
     }
     if (name.isEmpty())
     {
-        QMessageBox::warning(this, tr("Viewpoints"),
-                             tr("Enter a name for the viewpoint."));
+        // QMessageBox::warning(this, tr("Viewpoints"),
+        //                      tr("Enter a name for the viewpoint."));
         return;
     }
 
@@ -194,12 +262,10 @@ void ViewpointsGUI::deleteSelectedViewpoint()
     if (row < 0 || row >= static_cast<int>(_viewpoints.size()))
         return;
 
-    const QString name = ui->listWidgetViewpoints->item(row)->text();
-    if (QMessageBox::question(this, tr("Delete viewpoint"),
-                              tr("Delete \"%1\"?").arg(name),
-                              QMessageBox::Yes | QMessageBox::No,
-                              QMessageBox::No) != QMessageBox::Yes)
-        return;
+    const osgEarth::Viewpoint& viewpoint = _viewpoints[static_cast<std::size_t>(row)];
+    const QString name = viewpoint.name().isSet()
+        ? QString::fromStdString(viewpoint.name().get())
+        : tr("<Unnamed viewpoint>");
 
     _viewpoints.erase(_viewpoints.begin() + row);
     persistViewpoints(currentMapNode());
@@ -211,11 +277,4 @@ void ViewpointsGUI::deleteSelectedViewpoint()
 
 void ViewpointsGUI::updateButtonStates()
 {
-    const int row = ui->listWidgetViewpoints->currentRow();
-    const bool hasSelection = row >= 0 && row < static_cast<int>(_viewpoints.size());
-    const bool hasMapAndManipulator = currentMapNode() && currentManipulator();
-    ui->pushButtonAdd->setEnabled(hasMapAndManipulator &&
-                                  !ui->lineEditViewpointName->text().trimmed().isEmpty());
-    ui->pushButtonZoom->setEnabled(hasSelection && currentManipulator());
-    ui->pushButtonDelete->setEnabled(hasSelection);
 }

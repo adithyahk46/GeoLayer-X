@@ -17,6 +17,7 @@
 
 #include "Tools/EnvironmentGUI.h"
 #include "Tools/ViewpointsGUI.h"
+#include "Tools/MapReadoutsDockWidget.h"
 
 
 class QActionGroup;
@@ -87,6 +88,7 @@ private:
     //Tools menubar actions widgets
      EnvironmentGUI* envGui = nullptr;
      ViewpointsGUI* viewpointsGui = nullptr;
+     MapReadoutsDockWidget* mapReadoutsDock = nullptr;
      Extrusion3D* extrusion3D = nullptr;
 
 //declare private functions here

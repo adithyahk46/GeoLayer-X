@@ -1,6 +1,7 @@
 
 add_library(resources STATIC
     resources.qrc
+    images/images.qrc
 )
 
 target_link_libraries(resources PUBLIC

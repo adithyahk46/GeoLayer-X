@@ -29,32 +29,37 @@
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEditViewpointName">
-      <property name="placeholderText">
-       <string>Name for current view</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="buttonLayout">
+     <layout class="QHBoxLayout" name="viewpointEntryLayout">
+      <item>
+       <widget class="QLineEdit" name="lineEditViewpointName">
+        <property name="placeholderText">
+         <string>Name for current view</string>
+        </property>
+       </widget>
+      </item>
       <item>
        <widget class="QPushButton" name="pushButtonAdd">
-        <property name="text">
-         <string>Add Current</string>
+        <property name="maximumSize">
+         <size>
+          <width>25</width>
+          <height>25</height>
+         </size>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButtonZoom">
-        <property name="text">
-         <string>Zoom to</string>
+        <property name="toolTip">
+         <string>Add current viewpoint</string>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButtonDelete">
         <property name="text">
-         <string>Delete</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="../../../resources/images/images.qrc">
+          <normaloff>:/images/themes/default/mActionAdd.svg</normaloff>:/images/themes/default/mActionAdd.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>30</width>
+          <height>30</height>
+         </size>
         </property>
        </widget>
       </item>
@@ -63,6 +68,8 @@
    </layout>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../../resources/images/images.qrc"/>
+ </resources>
  <connections/>
 </ui>

@@ -37,12 +37,20 @@ public:
     osgEarth::Viewpoint currentViewpoint() const;
     const osgEarth::GeoPoint& currentGeoPosition() const { return _currentGeoPos; }
     const osg::Vec3d& currentWorldPosition() const { return _currentWorldPos; }
+    /**
+     * Returns the world-space normal at the most recent mouse intersection.
+     */
+    const osg::Vec3d& currentWorldNormal() const { return _currentWorldNormal; }
 
 signals:
     void defaultHandleEvent(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa);
     void mouseClickEvent(osgEarth::GeoPoint mapPoint);
     void mouseDoubleClickEvent(osgEarth::GeoPoint mapPoint);
     void mouseMoveEvent(osgEarth::GeoPoint mapPoint);
+    /**
+     * Notifies consumers that the pointer no longer intersects the map.
+     */
+    void mousePositionLostEvent();
     void mouseScrollEvent(osgEarth::GeoPoint mapPoint);
 
 protected:
@@ -54,6 +62,7 @@ private:
     osg::ref_ptr<osgEarth::MapNode> _mapNode;
     osgEarth::GeoPoint _currentGeoPos;
     osg::Vec3d _currentWorldPos;
+    osg::Vec3d _currentWorldNormal;
     bool _disableMouseAction = false;
 };
 

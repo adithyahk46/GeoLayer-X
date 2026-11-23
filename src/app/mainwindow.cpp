@@ -254,6 +254,12 @@ void MainWindow::initCore()
         // viewpointsGui->hide();
     }
 
+    if (!mapReadoutsDock)
+    {
+        mapReadoutsDock = new MapReadoutsDockWidget(this);
+        addDockWidget(Qt::RightDockWidgetArea, mapReadoutsDock);
+    }
+
 }
 
 void MainWindow::initSignalsAndSlots()
