@@ -85,7 +85,7 @@ private:
      * Populates geographic and map-local coordinate fields.
      * @param point Point to display.
      * @param geographicValues Latitude, longitude, and altitude values.
-     * @param localValues X, Y, and Z values in the map SRS.
+     * @param localValues X, Y, and Z OSG world coordinates in meters.
      */
     void setCoordinateValues(const osgEarth::GeoPoint& point,
                              const std::array<QLabel*, 3>& geographicValues,

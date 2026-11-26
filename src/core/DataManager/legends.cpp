@@ -3,6 +3,7 @@
 
 #include <QMenu>
 #include <QDebug>
+#include <QInputDialog>
 
 #include <osgEarth/Notify>
 #include <osgEarth/GeoMath>
@@ -36,6 +37,22 @@ Legends::Legends(osgEarth::Layer* mapLayer, MapNode* mapNode, EarthManipulator* 
     }
 
     // Context menu
+    menu.addAction("Rename Layer", [this]() {
+        if (!m_mapLayer)
+            return;
+
+        const QString currentName = QString::fromStdString(m_mapLayer->getName());
+        bool accepted = false;
+        const QString newName = QInputDialog::getText(
+            this, tr("Rename Layer"), tr("Layer name:"),
+            QLineEdit::Normal, currentName, &accepted).trimmed();
+        if (!accepted || newName.isEmpty())
+            return;
+
+        m_mapLayer->setName(newName.toStdString());
+        setText(newName);
+    });
+
     menu.addAction("Zoom to Layer", [=]() {
         if (!m_mapLayer || !_mapNode || !_manip)
             return;
