@@ -1,0 +1,50 @@
+QWidget {
+    background-color: #f5f5f5;
+    color: #202020;
+    selection-background-color: #0078d4;
+    selection-color: #ffffff;
+}
+
+QMainWindow,
+QDialog {
+    background-color: #f5f5f5;
+}
+
+QLineEdit,
+QTextEdit,
+QPlainTextEdit,
+QComboBox,
+QSpinBox,
+QDoubleSpinBox {
+    background-color: #ffffff;
+    color: #202020;
+}
+
+QTreeView,
+QTreeWidget,
+QTableView,
+QTableWidget,
+QListView,
+QListWidget {
+    background-color: #ffffff;
+    alternate-background-color: #f0f0f0;
+    color: #202020;
+    selection-background-color: #0078d4;
+    selection-color: #ffffff;
+}
+
+QPushButton,
+QToolButton {
+    background-color: #e5e5e5;
+    color: #202020;
+}
+
+QToolTip {
+    background-color: #ffffff;
+    color: #202020;
+}
+
+QLabel,
+QStatusBar {
+    color: #202020;
+}

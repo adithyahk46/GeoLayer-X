@@ -1,4 +1,5 @@
 set(TARGET_APP_NAME glx_app)
+include(GNUInstallDirs)
 
 
 set(UI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../ui)
@@ -95,3 +96,9 @@ if(TARGET osgEarth::osgEarthPrestige)
 elseif(TARGET osgEarthPrestige)
     target_link_libraries(${TARGET_APP_NAME} PRIVATE osgEarthPrestige)
 endif()
+
+install(TARGETS GeoLayer-X ${TARGET_APP_NAME}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_BINDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)

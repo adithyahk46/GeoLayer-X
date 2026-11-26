@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(GeoLayer-X CXX)
+include(GNUInstallDirs)
 set(APP_NAME GLX)
 
 option(GLX_BUILD_2D_MAP "Build the 2D map view" OFF)
