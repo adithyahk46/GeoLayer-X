@@ -7,7 +7,6 @@
 *.lai
 *.so
 *.so.*
-*.dll
 *.dylib
 
 # Qt-es
@@ -35,8 +34,11 @@ Makefile*
 #debug and release folders
 debug/
 release/
-build-*/
+build*/
 install/
+/build/
+build/
+deployment/
 
 .vs/
 

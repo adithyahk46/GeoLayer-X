@@ -1,0 +1,52 @@
+/* Light Theme Palette */
+#CustomTitleBar {
+    background-color: #4f97e0; /* Light title bar color */
+    height: 30px;
+}
+
+#TitleLabel {
+    color: #24292f;
+    font-weight: bold;
+}
+
+QWidget {
+    background-color: #f3f3f3;
+    color: #000000;
+    selection-background-color: #0969da;
+    selection-color: #ffffff;
+}
+
+
+
+QToolBar {
+    background-color: #ffffff;
+}
+
+QStatusBar {
+    background-color: #ffffff;
+}
+
+QMenu {
+    background-color: #fbfbfb;
+    padding: 5px;
+}
+
+QMenu::item {
+    padding: 3px 30px 3px 20px;
+    border: 1px solid transparent;
+}
+
+QMenu::item::selected {
+    background-color: #ededed;
+    border: 1px solid transparent;
+}
+
+QMenu::item::checked {
+    background-color: #CCE8FF;
+    border: 1px solid #BADEFD;
+}
+
+QMenu::indicator {
+    width: 13px;
+    height: 13px;
+}

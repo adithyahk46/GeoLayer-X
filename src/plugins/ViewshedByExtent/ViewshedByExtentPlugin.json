@@ -1,0 +1,10 @@
+{
+    "id": "viewshed.by.extent",
+    "name": "Viewshed by Extent",
+    "version": "0.1.0",
+    "description": "Viewshed by extent dialog plugin.",
+    "category": "Analysis",
+    "vendor": "GeoLayer X",
+    "tags": ["viewshed", "extent", "analysis", "terrain"],
+    "dependencies": []
+}

@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SymbologyEditorDialog</class>
+ <widget class="QDialog" name="SymbologyEditorDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>520</width>
+    <height>732</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>520</width>
+    <height>560</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Symbology Editor</string>
+  </property>
+  <layout class="QVBoxLayout" name="dialogLayout">
+   <item>
+    <layout class="QHBoxLayout" name="layerSelectionLayout">
+     <item>
+      <widget class="QLabel" name="layerLabel">
+       <property name="text">
+        <string>Feature layer:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="layerComboBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="geometryLabel">
+     <property name="text">
+      <string>Geometry type: Unknown</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QScrollArea" name="symbolsScrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="symbolsScrollAreaContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>496</width>
+        <height>606</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="symbolsLayout">
+       <item>
+        <widget class="QCheckBox" name="enablePointSymbolCheckBox">
+         <property name="text">
+          <string>Enable Point Symbol</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="pointSymbolGroupBox">
+         <property name="title">
+          <string>Point Symbol</string>
+         </property>
+         <layout class="QHBoxLayout" name="pointSymbolLayout">
+          <item>
+           <widget class="QLabel" name="pointFillColorLabel">
+            <property name="text">
+             <string>Fill color</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="pointFillColorLayout"/>
+          </item>
+          <item>
+           <spacer name="pointSymbolSpacer">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="pointSizeLabel">
+            <property name="text">
+             <string>Size</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="pointSizeSpinBox">
+            <property name="minimum">
+             <double>0.010000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>10000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>1.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="pointSmoothingSpacer">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="pointSmoothingLabel">
+            <property name="text">
+             <string>Smoothing</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="pointSmoothingCheckBox">
+            <property name="text">
+             <string>Enabled</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="enableLineSymbolCheckBox">
+         <property name="text">
+          <string>Enable Line Symbol</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="lineSymbolGroupBox">
+         <property name="title">
+          <string>Line Symbol</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <layout class="QHBoxLayout" name="lineStyleLayout">
+            <item>
+             <layout class="QHBoxLayout" name="lineColorLayoutContainer">
+              <item>
+               <widget class="QLabel" name="lineColorLabel">
+                <property name="text">
+                 <string>Stroke color</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="lineColorLayout"/>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <layout class="QHBoxLayout" name="lineWidthLayout">
+              <item>
+               <widget class="QLabel" name="lineWidthLabel">
+                <property name="text">
+                 <string>Width</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QDoubleSpinBox" name="lineWidthSpinBox">
+                <property name="minimum">
+                 <double>0.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>1000000.000000000000000</double>
+                </property>
+                <property name="value">
+                 <double>1.000000000000000</double>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QLabel" name="lineWidthUnitsLabel">
+              <property name="text">
+               <string>Width unit</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="lineTessellationUnitsComboBox">
+              <item>
+               <property name="text">
+                <string>METERS</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>KILOMETERS</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <layout class="QHBoxLayout" name="lineTessellationSizeLayout">
+              <item>
+               <widget class="QLabel" name="lineTessellationSizeLabel">
+                <property name="text">
+                 <string>Tessellation size</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QDoubleSpinBox" name="lineTessellationSizeSpinBox">
+                <property name="minimum">
+                 <double>0.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>1000000.000000000000000</double>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QLabel" name="lineTessellationUnitsLabel">
+              <property name="text">
+               <string>Tessellation unit:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="lineWidthUnitsComboBox">
+              <item>
+               <property name="text">
+                <string>PIXELS</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>METERS</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>KILOMETERS</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="enablePolygonSymbolCheckBox">
+         <property name="text">
+          <string>Enable Polygon Symbol</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="polygonSymbolGroupBox">
+         <property name="title">
+          <string>Polygon Symbol</string>
+         </property>
+         <layout class="QVBoxLayout" name="polygonSymbolLayout">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <layout class="QHBoxLayout" name="polygonAppearanceLayout">
+            <item>
+             <layout class="QHBoxLayout" name="polygonFillLayout">
+              <item>
+               <widget class="QLabel" name="polygonFillColorLabel">
+                <property name="text">
+                 <string>Fill color</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="polygonFillColorLayout"/>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="polygonOutlineCheckBox">
+              <property name="text">
+               <string>Draw outline</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="altitudeSymbolGroupBox">
+         <property name="title">
+          <string>Altitude Symbol</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <layout class="QHBoxLayout" name="altitudeClampingLayout">
+            <item>
+             <widget class="QLabel" name="altitudeClampingLabel">
+              <property name="text">
+               <string>Clamping</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="altitudeClampingComboBox">
+              <item>
+               <property name="text">
+                <string>CLAMP_TO_TERRAIN</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>CLAMP_ABSOLUTE</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>CLAMP_RELATIVE_TO_TERRAIN</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>CLAMP_NONE</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="altitudeTechniqueLayout">
+            <item>
+             <widget class="QLabel" name="altitudeTechniqueLabel">
+              <property name="text">
+               <string>Technique</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="altitudeTechniqueComboBox">
+              <item>
+               <property name="text">
+                <string>TECHNIQUE_DRAPE</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TECHNIQUE_GPU</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TECHNIQUE_SCENE</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>TECHNIQUE_MAP</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="altitudeBindingLayout">
+            <item>
+             <widget class="QLabel" name="altitudeBindingLabel">
+              <property name="text">
+               <string>Binding</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="altitudeBindingComboBox">
+              <item>
+               <property name="text">
+                <string>BINDING_VERTEX</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>BINDING_CENTROID</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>BINDING_ENDPOINT</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="dialogButtonLayout">
+     <item>
+      <spacer name="buttonSpacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="applyButton">
+       <property name="text">
+        <string>Apply</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="cancelButton">
+       <property name="text">
+        <string>Close</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>cancelButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SymbologyEditorDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

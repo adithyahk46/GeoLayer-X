@@ -1,0 +1,33 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/mActionAddPoints.png</file>
+        <file>icons/mActionAddPolygon.svg</file>
+        <file>icons/mActionAddPolyline.svg</file>
+        <file>icons/mActionAddRectangle.png</file>
+        <file>icons/mActionAddRing.svg</file>
+        <file>icons/mActionFileExit.svg</file>
+        <file>icons/mActionFileNew.svg</file>
+        <file>icons/mActionFileOpen.svg</file>
+        <file>icons/mActionFilePrint.svg</file>
+        <file>icons/mActionFileSave.svg</file>
+        <file>icons/mActionFileSaveAs.svg</file>
+        <file>icons/mActionZoomFullExtent.svg</file>
+        <file>icons/mActionZoomIn.svg</file>
+        <file>icons/mActionZoomLast.svg</file>
+        <file>icons/mActionZoomNext.svg</file>
+        <file>icons/mActionZoomOut.svg</file>
+        <file>icons/mActionZoomToArea.svg</file>
+        <file>icons/mActionZoomToLayer.svg</file>
+        <file>icons/sync.png</file>
+        <file>icons/sync.svg</file>
+        <file>icons/mActionOpenEarthFile.png</file>
+        <file>images/tiles/EsriWorldImagery.png</file>
+        <file>images/tiles/googlehybrid.png</file>
+        <file>images/tiles/googlesatellite.png</file>
+        <file>images/tiles/openstreetmap.png</file>
+        <file>icons/mActionToggleEditing.svg</file>
+        <file>icons/mActionEditCut.svg</file>
+        <file>icons/mActionEditPaste.svg</file>
+        <file>icons/mActionEditCopy.svg</file>
+    </qresource>
+</RCC>

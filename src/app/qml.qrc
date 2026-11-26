@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/qml">
+        <file alias="WelcomeScreen.qml">qml/WelcomeScreen.qml</file>
+        <file alias="newProject.qml">qml/newProject.qml</file>
+    </qresource>
+    <qresource prefix="/images/tiles">
+        <file alias="openstreetmap.png">../../resources/images/tiles/openstreetmap.png</file>
+        <file alias="googlesatellite.png">../../resources/images/tiles/googlesatellite.png</file>
+        <file alias="googlehybrid.png">../../resources/images/tiles/googlehybrid.png</file>
+        <file alias="EsriWorldImagery.png">../../resources/images/tiles/EsriWorldImagery.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,25 @@
+/* Layout, shapes, and sizes only */
+/* Compact Menu Bar */
+QMenuBar {
+    font-size: 12px;
+    padding: 0px 4px;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    padding: 2px 8px 2px ;
+    margin: 1px;
+    border-radius: 4px;
+}
+
+QMenu {
+    font-size: 11px;
+    padding: 2px 2px;
+    border: 1px solid;
+    border-radius: 3px;
+}
+
+QMenu::item {
+    padding: 2px 0px 0px 0px;
+    border-radius: 1px;
+}

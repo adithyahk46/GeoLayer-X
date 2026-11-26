@@ -1,0 +1,54 @@
+cmake_minimum_required(VERSION 3.16)
+project(GeoLayer-X CXX)
+set(APP_NAME GLX)
+
+option(GLX_BUILD_2D_MAP "Build the 2D map view" OFF)
+
+# C++ Standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Qt Configuration
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+#cmake module path
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+set(CMAKE_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/deployment")
+
+foreach(CONFIG Debug Release RelWithDebInfo MinSizeRel)
+    string(TOUPPER ${CONFIG} CONFIG_UPPER)
+
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_OUTPUT_DIR}/bin")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_OUTPUT_DIR}/bin")
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_OUTPUT_DIR}/lib")
+endforeach()
+
+list(APPEND CMAKE_PREFIX_PATH
+    "C:/vcpkg/installed/x64-windows"
+    "C:/Users/pnmt1054/Adithya_working_directory/osgearth_dev/OSGEARTH_DEPS/install/Release"
+)
+
+#GDAL Configuration
+find_package(GDAL REQUIRED)
+
+# Auto-detect available Qt version (Qt6 preferred, fallback to Qt5)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets OpenGL OpenGLWidgets Concurrent Sql Qml Quick QuickControls2 REQUIRED)
+find_package(OpenSceneGraph REQUIRED COMPONENTS osg osgDB osgGA osgUtil osgViewer OpenThreads)
+find_package(osgEarth CONFIG REQUIRED)
+
+qt_standard_project_setup()
+
+message(STATUS "Using Qt${QT_VERSION_MAJOR}")
+
+include(GenerateExportHeader)
+
+# Add subdirectories
+add_subdirectory(src)
+add_subdirectory(resources)
+
+
+
