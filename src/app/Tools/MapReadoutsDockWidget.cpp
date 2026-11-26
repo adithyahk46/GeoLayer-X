@@ -130,7 +130,7 @@ void MapReadoutsDockWidget::buildInterface()
             grid->addWidget(geographicValues[static_cast<std::size_t>(column)], 2, column);
         }
 
-        grid->addWidget(makePropertyLabel(QObject::tr("Local")), 3, 0, 1, 3);
+        grid->addWidget(makePropertyLabel(QObject::tr("OSG World")), 3, 0, 1, 3);
         grid->addWidget(makePropertyLabel(QStringLiteral("X")), 4, 0);
         grid->addWidget(makePropertyLabel(QStringLiteral("Y")), 4, 1);
         grid->addWidget(makePropertyLabel(QStringLiteral("Z")), 4, 2);
@@ -255,12 +255,12 @@ void MapReadoutsDockWidget::setCoordinateValues(
             label->setText(QStringLiteral("--"));
     }
 
-    osgEarth::GeoPoint localPoint;
-    if (point.transform(mapSRS, localPoint))
+    osg::Vec3d worldPoint;
+    if (point.toWorld(worldPoint, mapNode->getTerrain()))
     {
-        localValues[0]->setText(formattedValue(localPoint.x(), 2, QString()));
-        localValues[1]->setText(formattedValue(localPoint.y(), 2, QString()));
-        localValues[2]->setText(formattedValue(localPoint.z(), 2, QStringLiteral(" m")));
+        localValues[0]->setText(formattedValue(worldPoint.x(), 2, QStringLiteral(" m")));
+        localValues[1]->setText(formattedValue(worldPoint.y(), 2, QStringLiteral(" m")));
+        localValues[2]->setText(formattedValue(worldPoint.z(), 2, QStringLiteral(" m")));
     }
     else
     {

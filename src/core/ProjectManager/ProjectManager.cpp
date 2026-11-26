@@ -199,7 +199,15 @@ bool ProjectManager::saveProjectAs(const QString& newFilePath)
 void ProjectManager::closeProject()
 {
     if (m_mapNode && m_mapNode->getMap())
-        m_mapNode->getMap()->clear();
+    {
+        osgEarth::Map* map = m_mapNode->getMap();
+        osgEarth::LayerVector layers;
+        map->getLayers(layers);
+        for (const osg::ref_ptr<osgEarth::Layer>& layer : layers) {
+            if (layer)
+                map->removeLayer(layer.get());
+        }
+    }
     if (m_mapNode)
         m_mapNode->externalConfig() = osgEarth::Config();
     m_currentProjectName.clear();
