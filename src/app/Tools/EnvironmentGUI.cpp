@@ -1,5 +1,6 @@
 #include "EnvironmentGUI.h"
 #include "ui_EnvironmentGUI.h"
+#include "App.h"
 #include "OSGViewerWidget.h"
 
 #include <QColorDialog>

@@ -7,7 +7,6 @@
 #include <QFormLayout>
 #include <QGridLayout>
 #include <QFrame>
-#include <QFormLayout>
 #include <QFont>
 #include <QGroupBox>
 #include <QHideEvent>

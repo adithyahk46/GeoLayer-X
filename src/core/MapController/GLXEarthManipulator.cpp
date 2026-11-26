@@ -13,7 +13,14 @@ GLXEarthManipulator::GLXEarthManipulator(osgEarth::MapNode* mapNode, QObject* pa
 
 void GLXEarthManipulator::setMapNode(osgEarth::MapNode* mapNode)
 {
+    if (_mapNode.get() == mapNode)
+        return;
+
     _mapNode = mapNode;
+    _currentGeoPos = osgEarth::GeoPoint();
+    _currentWorldPos.set(0.0, 0.0, 0.0);
+    _currentWorldNormal.set(0.0, 0.0, 0.0);
+    emit mousePositionLostEvent();
 }
 
 bool GLXEarthManipulator::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa)
@@ -32,6 +39,7 @@ bool GLXEarthManipulator::handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIAct
          eventType == osgGA::GUIEventAdapter::DRAG))
     {
         _currentGeoPos = osgEarth::GeoPoint();
+        _currentWorldPos.set(0.0, 0.0, 0.0);
         _currentWorldNormal.set(0.0, 0.0, 0.0);
         emit mousePositionLostEvent();
     }
@@ -117,12 +125,6 @@ void GLXEarthManipulator::flyTo(double lon,
     flyTo(osgEarth::Viewpoint("", lon, lat, altitude, heading, pitch, range), duration);
 }
 
-void GLXEarthManipulator::zoomToExtent(osgEarth::GeoExtent extent, double duration)
-{
-
-}
-
-
 osgEarth::Viewpoint GLXEarthManipulator::currentViewpoint() const
 {
     return getViewpoint();
@@ -130,7 +132,11 @@ osgEarth::Viewpoint GLXEarthManipulator::currentViewpoint() const
 
 bool GLXEarthManipulator::getGeoPointFromScreen(osgViewer::View* view, float x, float y)
 {
-    if (!_mapNode.valid())
+    _currentGeoPos = osgEarth::GeoPoint();
+    _currentWorldPos.set(0.0, 0.0, 0.0);
+    _currentWorldNormal.set(0.0, 0.0, 0.0);
+
+    if (!_mapNode.valid() || !_mapNode->getMapSRS())
         return false;
 
     osgUtil::LineSegmentIntersector::Intersections intersections;
@@ -140,6 +146,6 @@ bool GLXEarthManipulator::getGeoPointFromScreen(osgViewer::View* view, float x, 
     const auto& hit = *intersections.begin();
     _currentWorldPos = hit.getWorldIntersectPoint();
     _currentWorldNormal = hit.getWorldIntersectNormal();
-    _currentGeoPos.fromWorld(_mapNode->getMapSRS(), _currentWorldPos);
-    return _currentGeoPos.isValid();
+    return _currentGeoPos.fromWorld(_mapNode->getMapSRS(), _currentWorldPos)
+        && _currentGeoPos.isValid();
 }

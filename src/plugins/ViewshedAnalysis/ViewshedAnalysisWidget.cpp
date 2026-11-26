@@ -24,16 +24,6 @@ ViewshedAnalysisWidget::ViewshedAnalysisWidget(QWidget *parent) :
     ui->vl_hiddenAreaColor->addWidget(cb_hiddenColor);
     ui->vl_boundaryColor->addWidget(cb_boundaryColor);
 
-    // connect(cb_boundaryColor, &ColorPickerCheckBox::colorChanged,this, [this](const QColor& c)
-    // {
-    //     if(viewShed){
-    //         float alpha = static_cast<float>(ui->sb_boundarylineOpacity->value()) / 100.0f;
-    //          osg::Vec4 osgColor(c.redF(), c.greenF(), c.blueF(), alpha);
-    //             // viewShed->setBorderLineColor(osgColor);
-    //     }
-
-    // });
-
     connect(cb_visibleColor, &ColorPickerCheckBox::colorChanged,this, [this](const QColor& c)
     {
 

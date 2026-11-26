@@ -98,11 +98,6 @@ osgEarth::Color getNextFeatureColor()
 }
 }
 
-MapLoadModule::MapLoadModule()
-{
-
-}
-
 bool MapLoadModule::LoadEarthFile(const QString& FilePath)
 {
     osg::ref_ptr<osg::Node> node = osgDB::readRefNodeFile(FilePath.toStdString());
@@ -171,8 +166,6 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
     features->setURL(FilePath.toStdString());
     features->setName(displayName.toStdString());
 
-    qDebug() << "Loading ShapeFile =" << FilePath;
-
     const auto openStatus = features->open();
     if (openStatus.isError())
     {
@@ -182,8 +175,6 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
     }
 
     const osgEarth::Color featureColor = getNextFeatureColor();
-    // qDebug() << "New feature color:" << QString::fromStdString(featureColor.toHTML());
-
     osgEarth::Style style;
     QString geomTypeStr = "UNKNOWN";
 
@@ -298,9 +289,6 @@ void MapLoadModule::LoadVectors(osgEarth::MapNode* mapNode, QString FilePath , Q
     if (mapProfile)
         featureImageLayer->options().profile() = mapProfile->toProfileOptions();
 
-    if (mapProfile && mapProfile->getSRS())
-        qDebug() << "FeatureImage profile SRS:" << QString::fromStdString(mapProfile->getSRS()->getName());
-
     mapNode->getMap()->addLayer(featureImageLayer.get());
 
     if (featureImageLayer->getStatus().isError())
@@ -330,25 +318,11 @@ void MapLoadModule::LoadElevation(osgEarth::MapNode* mapNode,QString FilePath, Q
 
 void MapLoadModule::LoadXYZTiles(osgEarth::MapNode* mapNode, QString url , QString LayerName){
 
-    // QString url = "http://[abc].tile.openstreetmap.org/{z}/{x}/{y}.png";
-    //              // QString url = "http://172.22.22.213:8000/{z}/{x}/{y}.png";
-    // QString url = "http://[a].tile.openstreetmap.org/{z}/{x}/{y}.png";
-
      osg::ref_ptr<osgEarth::XYZImageLayer> remoteTiles = new osgEarth::XYZImageLayer();
      remoteTiles->setURL(url.toStdString());
      remoteTiles->setName(LayerName.toStdString().c_str());
      remoteTiles->setProfile(osgEarth::Profile::create(osgEarth::Profile::SPHERICAL_MERCATOR));
      remoteTiles->setOpacity(1.0f);
-     // osm->setMinLevel(8);
-     // osm->setMaxLevel(21);
-
-     // if (ui->fromLocal_radioButton->isChecked()) {
-     //     connect(remoteTiles, &osgEarth::XYZImageLayer::removedFromMap,
-     //             this, [url]() {
-     //                 XYZServerManager::instance().releaseServer(url);
-     //             });
-     // }
-
      mapNode->getMap()->addLayer(remoteTiles.get());
 }
 
@@ -513,7 +487,6 @@ void MapLoadModule::LoadCesiumLayer(osgEarth::MapNode* mapNode,
             // layer->setToken(token);
             mapNode->getMap()->addLayer(layer.get());
 
-            qDebug()<<layer->getToken();
             break;
         }
         case CesiumLayerType::IonImagery:

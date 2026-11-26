@@ -34,15 +34,12 @@ namespace {
 bool resolveCrs(const QString& text, OGRSpatialReference& srs)
 {
     const QString crsText = text.trimmed();
-    qDebug().noquote() << "[CRS] Resolving:" << crsText;
 
     if (crsText.isEmpty())
         return false;
 
     if (crsText.compare(QStringLiteral("EPSG:4326"), Qt::CaseInsensitive) == 0) {
-        const bool ok = srs.SetWellKnownGeogCS("WGS84") == OGRERR_NONE;
-        qDebug().noquote() << "[CRS] WGS84 construction result:" << ok;
-        return ok;
+        return srs.SetWellKnownGeogCS("WGS84") == OGRERR_NONE;
     }
 
     if (crsText.startsWith(QStringLiteral("EPSG:"), Qt::CaseInsensitive)) {
@@ -54,22 +51,14 @@ bool resolveCrs(const QString& text, OGRSpatialReference& srs)
         // These UTM entries can be constructed directly and do not depend on EPSG lookup tables.
         if (epsgCode >= 32601 && epsgCode <= 32660) {
             const int zone = epsgCode - 32600;
-            const bool ok = srs.SetUTM(zone, TRUE) == OGRERR_NONE
-                         && srs.SetWellKnownGeogCS("WGS84") == OGRERR_NONE;
-            qDebug().noquote() << "[CRS] Direct UTM" << zone << "result:" << ok;
-            return ok;
+            return srs.SetUTM(zone, TRUE) == OGRERR_NONE
+                && srs.SetWellKnownGeogCS("WGS84") == OGRERR_NONE;
         }
 
-        const OGRErr result = srs.importFromEPSG(epsgCode);
-        qDebug().noquote() << "[CRS] importFromEPSG(" << epsgCode << ") result:" << result
-                           << "lastError:" << CPLGetLastErrorMsg();
-        return result == OGRERR_NONE;
+        return srs.importFromEPSG(epsgCode) == OGRERR_NONE;
     }
 
-    const OGRErr result = srs.SetFromUserInput(crsText.toUtf8().constData());
-    qDebug().noquote() << "[CRS] SetFromUserInput result:" << result
-                       << "lastError:" << CPLGetLastErrorMsg();
-    return result == OGRERR_NONE;
+    return srs.SetFromUserInput(crsText.toUtf8().constData()) == OGRERR_NONE;
 }
 
 }
@@ -135,10 +124,6 @@ GLXNewVectorLayerDialog::GLXNewVectorLayerDialog(QWidget *parent)
     mCrsComboBox->addItem(QStringLiteral("EPSG:32643 — WGS 84 / UTM zone 43N"), QStringLiteral("EPSG:32643"));
     mCrsComboBox->addItem(QStringLiteral("EPSG:32644 — WGS 84 / UTM zone 44N"), QStringLiteral("EPSG:32644"));
     mCrsComboBox->setCurrentIndex(0);
-    qDebug().noquote() << "[CRS] Dialog default index:" << mCrsComboBox->currentIndex()
-                       << "text:" << mCrsComboBox->currentText()
-                       << "data:" << mCrsComboBox->currentData(Qt::UserRole).toString();
-
     connect(mGeometryTypeBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int) {
         updateExtension();
         checkOk();
@@ -339,8 +324,6 @@ bool GLXNewVectorLayerDialog::CreateEmptyShapefile(
 {
     GDALAllRegister();
 
-    qDebug().noquote() << "[CRS] CreateEmptyShapefile input:" << QString::fromStdString(crs);
-
     const QString qtPath = QString::fromStdString(filepath);
     const QFileInfo shapefileInfo(qtPath);
     if (!shapefileInfo.absolutePath().isEmpty())
@@ -358,8 +341,6 @@ bool GLXNewVectorLayerDialog::CreateEmptyShapefile(
         qWarning() << "[CRS] ESRI Shapefile GDAL driver is unavailable";
         return false;
     }
-    qDebug().noquote() << "[CRS] ESRI Shapefile GDAL driver found:" << driver->GetDescription();
-
     GDALDataset* dataset = driver->Create(filepath.c_str(), 0, 0, 0, GDT_Unknown, nullptr);
     if (!dataset) {
         qWarning() << "[CRS] GDAL could not create the shapefile:" << CPLGetLastErrorMsg();
@@ -422,10 +403,6 @@ bool GLXNewVectorLayerDialog::CreateEmptyShapefile(
     const QString shpPath = basePath + QStringLiteral(".shp");
     const QString prjPath = basePath + QStringLiteral(".prj");
 
-    qDebug().noquote() << "[CRS] GDAL outputs - SHP:" << QFileInfo::exists(shpPath)
-                       << "PRJ:" << QFileInfo::exists(prjPath)
-                       << "SHP path:" << shpPath;
-
     if (!QFileInfo::exists(shpPath)) {
         qWarning() << "[CRS] Shapefile was not created at:" << shpPath;
         return false;
@@ -437,9 +414,8 @@ bool GLXNewVectorLayerDialog::CreateEmptyShapefile(
         if (srs.exportToWkt(&wkt) == OGRERR_NONE && wkt && wkt[0] != '\0') {
             QFile prj(prjPath);
             if (prj.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
-                const qint64 written = prj.write(wkt);
+                prj.write(wkt);
                 prj.close();
-                qDebug().noquote() << "[CRS] Fallback .prj written, bytes:" << written;
             } else {
                 qWarning() << "[CRS] Could not open fallback .prj for writing:" << prjPath;
             }
@@ -447,13 +423,9 @@ bool GLXNewVectorLayerDialog::CreateEmptyShapefile(
             qWarning() << "[CRS] Could not export CRS WKT:" << CPLGetLastErrorMsg();
         }
         CPLFree(wkt);
-    } else {
-        qDebug().noquote() << "[CRS] GDAL created .prj automatically:" << prjPath;
     }
 
-    const bool success = QFileInfo::exists(shpPath) && QFileInfo::exists(prjPath);
-    qDebug().noquote() << "[CRS] Final shapefile result:" << success;
-    return success;
+    return QFileInfo::exists(shpPath) && QFileInfo::exists(prjPath);
 }
 void GLXNewVectorLayerDialog::updateExtension()
 {
@@ -512,10 +484,6 @@ void GLXNewVectorLayerDialog::accept()
         crsText = QStringLiteral("EPSG:4326");
         setCrs(crsText);
     }
-
-    qDebug().noquote() << "[CRS] Selected combo index:" << mCrsComboBox->currentIndex()
-                       << "text:" << mCrsComboBox->currentText()
-                       << "passed CRS:" << crsText;
 
     // The UI supplies predefined EPSG codes, so validate the code syntax instead of
     // depending on GDAL's optional EPSG database lookup here.

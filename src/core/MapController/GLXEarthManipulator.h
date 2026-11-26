@@ -1,14 +1,13 @@
 #ifndef GLXEARTHMANIPULATOR_H
 #define GLXEARTHMANIPULATOR_H
 
-#include <QMetaType>
+#include "GeoPointMetaType.h"
 #include <QObject>
 
 #include <osgEarth/EarthManipulator>
 #include <osgEarth/MapNode>
 #include <osgEarth/Viewpoint>
 #include <osgViewer/View>
-
 
 #include "osgearthcore_global.h"
 
@@ -27,13 +26,6 @@ public:
     void flyTo(const osgEarth::Viewpoint& viewpoint, double duration = 1.0);
     void flyTo(double lon, double lat, double altitude, double range,
                double heading = 0.0, double pitch = -90.0, double duration = 1.0);
-    /**
-     * @brief Zoom to a specific geographic extent.
-     * @param extent The geographic extent to zoom to.
-     * @param duration The duration of the zoom animation in seconds. Default is 1.5 seconds.
-     * @note
-     */
-    void zoomToExtent(osgEarth::GeoExtent extent , double duration = 1.5);
     osgEarth::Viewpoint currentViewpoint() const;
     const osgEarth::GeoPoint& currentGeoPosition() const { return _currentGeoPos; }
     const osg::Vec3d& currentWorldPosition() const { return _currentWorldPos; }
@@ -65,7 +57,5 @@ private:
     osg::Vec3d _currentWorldNormal;
     bool _disableMouseAction = false;
 };
-
-Q_DECLARE_METATYPE(osgEarth::GeoPoint)
 
 #endif // GLXEARTHMANIPULATOR_H

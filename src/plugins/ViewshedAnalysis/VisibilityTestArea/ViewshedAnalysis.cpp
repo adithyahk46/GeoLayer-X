@@ -407,7 +407,6 @@ void  ViewshedAnalysis::buildModel()
     _parentScene->getOrCreateStateSet()->addUniform(_viewDistanceUniform);
     _parentScene->getOrCreateStateSet()->addUniform(_cameraVPUniform);
 
-    // setupDebugHUD();
 }
 
 ViewshedAnalysis::ViewshedAnalysis(osgEarth::MapNode* mapNode, osgEarth::GeoPoint camPos, float distance):
@@ -652,74 +651,5 @@ void  ViewshedAnalysis::clear()
 
 
 }
-
-void ViewshedAnalysis::setupDebugHUD()
-{
-    osg::ref_ptr<osg::Camera> hudCamera = new osg::Camera;
-    hudCamera->setProjectionMatrix(osg::Matrix::ortho2D(0, 1280, 0, 720));
-    hudCamera->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
-    hudCamera->setViewMatrix(osg::Matrix::identity());
-    hudCamera->setClearMask(GL_DEPTH_BUFFER_BIT);
-    hudCamera->setRenderOrder(osg::Camera::POST_RENDER);
-    hudCamera->setAllowEventFocus(false);
-    hudCamera->setNodeMask(0xffffffff);
-
-    osg::ref_ptr<osg::Geode> quadGeode = new osg::Geode;
-    osg::ref_ptr<osg::Geometry> quadBoard = osg::createTexturedQuadGeometry(
-        osg::Vec3(50.0f, 50.0f, 0.0f),
-        osg::Vec3(400.0f, 0.0f, 0.0f),
-        osg::Vec3(0.0f, 400.0f, 0.0f)
-    );
-    quadGeode->addDrawable(quadBoard);
-    hudCamera->addChild(quadGeode);
-
-    osg::StateSet* stateset = quadBoard->getOrCreateStateSet();
-    stateset->setTextureAttributeAndModes(0, depthMap.get(), osg::StateAttribute::ON);
-    stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
-    stateset->setMode(GL_DEPTH_TEST, osg::StateAttribute::OFF);
-
-    osg::ref_ptr<osg::Program> visualProgram = new osg::Program;
-
-    // Vertex Shader (Core Profile)
-    // Note: osg_Vertex and osg_MultiTexCoord0 are automatically
-    // provided by OSG when using setUseModelViewAndProjectionUniforms(true)
-    const char* vertSource =
-        "#version 150\n"
-        "in vec4 osg_Vertex;\n"
-        "in vec4 osg_MultiTexCoord0;\n"
-        "uniform mat4 osg_ModelViewProjectionMatrix;\n"
-        "out vec2 texCoord;\n"
-        "void main() {\n"
-        "  texCoord = osg_MultiTexCoord0.xy;\n"
-        "  gl_Position = osg_ModelViewProjectionMatrix * osg_Vertex;\n"
-        "}\n";
-
-    // Fragment Shader (Core Profile)
-    const char* fragSource =
-        "#version 150\n"
-        "uniform sampler2D depthMap;\n"
-        "uniform float near;\n"
-        "uniform float far;\n"
-        "in vec2 texCoord;\n"
-        "out vec4 fragColor;\n"
-        "void main() {\n"
-        "  float z = texture(depthMap, texCoord).r;\n"
-        "  // Linearization for better visibility\n"
-        "  float lz = (2.0 * near) / (far + near - z * (far - near));\n"
-        "  fragColor = vec4(vec3(lz), 1.0);\n"
-        "}\n";
-
-    visualProgram->addShader(new osg::Shader(osg::Shader::VERTEX, vertSource));
-    visualProgram->addShader(new osg::Shader(osg::Shader::FRAGMENT, fragSource));
-
-    stateset->setAttributeAndModes(visualProgram, osg::StateAttribute::ON);
-    stateset->addUniform(new osg::Uniform("depthMap", 0));
-    stateset->addUniform(new osg::Uniform("near", (float)near_plane));
-    stateset->addUniform(new osg::Uniform("far", (float)far_plane));
-
-    _parentScene->getParent(0)->addChild(hudCamera);
-}
-
-
 
 

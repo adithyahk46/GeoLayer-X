@@ -29,7 +29,6 @@ Legends::Legends(osgEarth::Layer* mapLayer, MapNode* mapNode, EarthManipulator* 
     if (mapLayer)
     {
         setText(QString::fromStdString(mapLayer->getName()));
-        qDebug() << QString::fromStdString(mapLayer->getTypeName());
     }
     else
     {
@@ -50,12 +49,10 @@ Legends::Legends(osgEarth::Layer* mapLayer, MapNode* mapNode, EarthManipulator* 
             modelLayer->getNode()->accept(cbv);
             osg::BoundingBox bbox = cbv.getBoundingBox();
             if (!bbox.valid()) {
-                qDebug() << "Invalid bounding box!";
+                qWarning() << "Invalid bounding box for model layer:"
+                           << QString::fromStdString(modelLayer->getName());
                 return;
             }
-            qDebug() << "Model layer extent (local):"
-                     << bbox.xMin() << bbox.yMin() << bbox.zMin()
-                     << bbox.xMax() << bbox.yMax() << bbox.zMax();
 
             // Transform to world coordinates
             osg::Matrix localToWorld;
@@ -77,10 +74,6 @@ Legends::Legends(osgEarth::Layer* mapLayer, MapNode* mapNode, EarthManipulator* 
                 srs,
                 std::min(geoMin.x(), geoMax.x()), std::min(geoMin.y(), geoMax.y()),
                 std::max(geoMin.x(), geoMax.x()), std::max(geoMin.y(), geoMax.y()));
-
-            qDebug() << "Extent (geographic):"
-                     << extent.xMin() << extent.yMin()
-                     << extent.xMax() << extent.yMax();
 
             // Compute the geographic center of the extent
             double centerX = (extent.xMin() + extent.xMax()) / 2.0;
@@ -111,7 +104,8 @@ Legends::Legends(osgEarth::Layer* mapLayer, MapNode* mapNode, EarthManipulator* 
             GeoExtent extent = m_mapLayer->getExtent().transform(wgs84);
             if (!extent.isValid())
             {
-                qDebug() << "Error: Layer extent is invalid.";
+                qWarning() << "Layer extent is invalid:"
+                           << QString::fromStdString(m_mapLayer->getName());
                 return;
             }
 
@@ -200,20 +194,15 @@ void Legends::modelLayerPropertyDialog(osgEarth::ModelLayer* modelLayer, const o
 {
     if (!modelLayer || !modelLayer->getNode())
         return;
-    qDebug() << "dailog 1";
-
-
     osgEarth::GeoTransform* geoRaw = dynamic_cast<osgEarth::GeoTransform*>(modelLayer->getNode());
     if (!geoRaw) {
-        qDebug() << "GeoTransform not found!";
+        qWarning() << "Model layer has no GeoTransform:"
+                   << QString::fromStdString(modelLayer->getName());
         return;
     }
 
     // Wrap in ref_ptr safely if needed
     osg::ref_ptr<osgEarth::GeoTransform> geoXform = geoRaw;
-
-    qDebug() << "GeoTransform found!";
-
 
     QString name = QString::fromStdString(modelLayer->getName());
 

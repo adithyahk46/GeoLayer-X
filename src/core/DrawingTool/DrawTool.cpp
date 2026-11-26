@@ -18,13 +18,3 @@ DrawTool::DrawTool(QObject* parent)
     _style.getOrCreate<osgEarth::RenderSymbol>()->depthOffset()->range() = osgEarth::Distance(1.0, osgEarth::Units::KILOMETERS);
 
 }
-
-DrawTool::~DrawTool()
-{
-}
-
-// void DrawTool::pickPoint(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa)
-// {
-//     // Implement the logic to handle the picked point
-//     // For example, you can emit a signal or store the point for further processing
-// }

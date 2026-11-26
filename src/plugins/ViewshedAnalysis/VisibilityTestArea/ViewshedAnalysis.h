@@ -53,7 +53,6 @@ protected:
     osg::AutoTransform *makeIndicator(osg::Vec3 eye);
 
     void updateProjectionMatrix();
-    void setupDebugHUD();
     void updateViewMatrix();
 private:
     osg::ref_ptr<osgEarth::MapNode> _mapNode;

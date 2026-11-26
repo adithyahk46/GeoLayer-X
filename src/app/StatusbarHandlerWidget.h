@@ -1,8 +1,9 @@
 #ifndef STATUSBARHANDLERWIDGET_H
 #define STATUSBARHANDLERWIDGET_H
 
+#include "MapController/GeoPointMetaType.h"
+
 #include <QWidget>
-#include <osgEarth/GeoData>
 
 namespace Ui {
 class StatusbarHandlerWidget;
@@ -18,6 +19,7 @@ public:
 
 public slots:
     void updateGeoCoordinates(osgEarth::GeoPoint mapPoint);
+    void clearGeoCoordinates();
 
 private:
     Ui::StatusbarHandlerWidget *ui;

@@ -2,12 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QList>
-#include <memory>
 
 #include <PluginManager/PluginManager.h>
-
-#include "MapController/GLXEarthManipulator.h"
 
 #include "osgviewerwidget.h"
 
@@ -20,8 +16,6 @@
 #include "Tools/MapReadoutsDockWidget.h"
 
 
-class QActionGroup;
-class QAction;
 class QCloseEvent;
 class QString;
 class PluginsDockWidget;
@@ -29,7 +23,6 @@ class Extrusion3D;
 class ProjectWelcomeScreen;
 class ProjectManager;
 class QSplitter;
-class QUrl;
 
 namespace Ui {
 class MainWindow;
@@ -49,8 +42,6 @@ public:
 
     void setApplicationTheme(bool dark);
 
-    void saveAllSettings();
-
     QMenu* dockPanelsMenu() const;
 
     void restoreAllSettings();
@@ -65,7 +56,6 @@ private:
     void handleProjectTransition(const QString& action, const QString& filePath);
 
     Ui::MainWindow *ui;
-    std::ofstream *_log;
 
     OSGViewerWidget* osgwidget3D= nullptr;
 #if GLX_BUILD_2D_MAP
@@ -73,7 +63,6 @@ private:
     QSplitter* mapViewSplitter = nullptr;
 #endif
     StatusbarHandlerWidget* mStatusBarWidget = nullptr;
-    osg::ref_ptr<GLXEarthManipulator> _earthManipulator = nullptr;
     osgEarth::MapCallback* _layerManagerCallback = nullptr;
     PluginManager* _pluginManager = nullptr;
     LayerManagerWidget* layerManager = nullptr;
@@ -82,19 +71,13 @@ private:
     ProjectWelcomeScreen* m_ProjectWelcomeScreen = nullptr;
     bool m_allowApplicationClose = false;
     bool m_flatMapProjection = false;
-    QActionGroup* m_drawingActionGroup = nullptr;
-    QList<QAction*> _pluginActions;
-
-    //Tools menubar actions widgets
      EnvironmentGUI* envGui = nullptr;
      ViewpointsGUI* viewpointsGui = nullptr;
      MapReadoutsDockWidget* mapReadoutsDock = nullptr;
      Extrusion3D* extrusion3D = nullptr;
 
-//declare private functions here
     void initCore();
     void initSignalsAndSlots();
-    void initLogs();
     void initPlugins();
 };
 

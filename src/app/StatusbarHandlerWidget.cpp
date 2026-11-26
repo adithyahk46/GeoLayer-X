@@ -15,14 +15,23 @@ StatusbarHandlerWidget::~StatusbarHandlerWidget()
 
 void StatusbarHandlerWidget::updateGeoCoordinates(osgEarth::GeoPoint mapPoint)
 {
+    if (!mapPoint.isValid())
+    {
+        clearGeoCoordinates();
+        return;
+    }
+
     const osgEarth::SpatialReference* srs4326 = osgEarth::SpatialReference::get("epsg:4326");
     const osgEarth::SpatialReference* srs3857 = osgEarth::SpatialReference::get("epsg:3857");
 
     osgEarth::GeoPoint transformed;
-    if ( ui->comboBox->currentIndex() == 0) {
-        mapPoint.transform(srs4326, transformed);
-    } else {
-        mapPoint.transform(srs3857, transformed);
+    const osgEarth::SpatialReference* targetSRS =
+        ui->comboBox->currentIndex() == 0 ? srs4326 : srs3857;
+    if (!targetSRS || !mapPoint.transform(targetSRS, transformed)
+        || !transformed.isValid() || !transformed.getSRS())
+    {
+        clearGeoCoordinates();
+        return;
     }
 
     QString latUnit = (transformed.getSRS()->isGeographic()) ? "°" : "m";
@@ -36,4 +45,11 @@ void StatusbarHandlerWidget::updateGeoCoordinates(osgEarth::GeoPoint mapPoint)
     ui->lat->setText(latText);
     ui->lon->setText(lonText);
     ui->alt->setText(heightText);
+}
+
+void StatusbarHandlerWidget::clearGeoCoordinates()
+{
+    ui->lat->setText(QStringLiteral("--"));
+    ui->lon->setText(QStringLiteral("--"));
+    ui->alt->setText(QStringLiteral("--"));
 }

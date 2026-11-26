@@ -20,10 +20,6 @@
 #include <QUrlQuery>
 #include <QtConcurrent/QtConcurrentRun>
 
-auto future = QtConcurrent::run([]()
-{
-    // background work
-});
 #include "gdal.h"
 #include "gdal_priv.h"
 #include "ogrsf_frmts.h"
@@ -451,8 +447,6 @@ void MapLoadModuleDialog::on_pb_openMap_clicked()
 
     else if(_tabSelector->currentRow() == 4)
         {
-            qDebug() << "entered XYZ tab";
-
             if(ui->le_xyzLayername->text().isEmpty() || ui->le_xyzUrl->text().isEmpty()) {
                 ui->warning_label->setText("⚠️ Warning: Please enter url or Layer Name");
                 return;

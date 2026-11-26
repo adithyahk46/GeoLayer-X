@@ -1,33 +1,19 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <iostream>
-#include <string>
-#include <fstream>
-using namespace std;
-
-#include <osg/Notify>
-#include <osgDB/FileUtils>
-#include <osgEarth/Registry>
+#include <osgEarth/Map>
 #include <osgEarth/Profile>
 
 
 #include <QActionGroup>
 #include <QCloseEvent>
 #include <QFileDialog>
-#include <QKeyEvent>
 #include <QMessageBox>
-#include <QSplitter>
 #include <QSignalBlocker>
-#include <QToolButton>
-
-#include <optional>
-#include <utility>
 
 #include "App.h"
 #include "plugins/Extrusion3D/Extrusion3D.h"
 #include "SettingsManager/SettingsManager.h"
-#include "DrawingTool/PolygonDrawTool.h"
 #include "PluginsDockWidget.h"
 #include "qgis/GLXNewVectorLayerDialog.h"
 #include "ProjectManager/ProjectManager.h"
@@ -69,18 +55,12 @@ MainWindow::~MainWindow()
         _layerManagerCallback = nullptr;
     }
 
-    saveAllSettings();
-
     SettingsManager::instance()
            .saveMainWindowState(this);
 
        SettingsManager::instance().sync();
        delete ui;
 
-}
-
-void MainWindow::saveAllSettings()
-{
 }
 
 void MainWindow::restoreAllSettings()
@@ -95,8 +75,6 @@ void MainWindow::restoreAllSettings()
 
 void MainWindow::initAll()
 {
-    // initLogs();
-
     initCore();
 
     initSignalsAndSlots();
@@ -192,10 +170,6 @@ void MainWindow::setMapProjection(bool flat)
     m_flatMapProjection = flat;
 }
 
-void MainWindow::initLogs()
-{
-}
-
 void MainWindow::initCore()
 {
 
@@ -219,6 +193,7 @@ void MainWindow::initCore()
     statusBar()->setMinimumHeight(20);
     statusBar()->layout()->setContentsMargins(0, 0, 0, 0);
     QObject::connect(osgwidget3D->getManipulator(), &GLXEarthManipulator::mouseMoveEvent, mStatusBarWidget, &StatusbarHandlerWidget::updateGeoCoordinates);
+    QObject::connect(osgwidget3D->getManipulator(), &GLXEarthManipulator::mousePositionLostEvent, mStatusBarWidget, &StatusbarHandlerWidget::clearGeoCoordinates);
 
     m_projectManager = new ProjectManager(osgwidget3D->getMapNode(), this);
     m_ProjectWelcomeScreen = new ProjectWelcomeScreen(m_projectManager, this);
@@ -250,8 +225,6 @@ void MainWindow::initCore()
     {
         viewpointsGui = new ViewpointsGUI(this);
         addDockWidget(Qt::RightDockWidgetArea, viewpointsGui);
-        // viewpointsGui->setFloating(true);
-        // viewpointsGui->hide();
     }
 
     if (!mapReadoutsDock)
@@ -296,31 +269,31 @@ void MainWindow::initSignalsAndSlots()
      * manipulatorButton text shows which manipulators receive the changes
      */
     {
-        const auto applyToCheckedManipulators = [this](auto operation) {
+        const auto applyToManipulator = [this](auto operation) {
             operation(osgwidget3D->getManipulator());
         };
 
-        QObject::connect(ui->mActionZoomIn, &QAction::triggered, this, [applyToCheckedManipulators]() {
-            applyToCheckedManipulators([](GLXEarthManipulator *manipulator) {
+        QObject::connect(ui->mActionZoomIn, &QAction::triggered, this, [applyToManipulator]() {
+            applyToManipulator([](GLXEarthManipulator *manipulator) {
                 manipulator->zoomIn();
             });
         });
 
-        QObject::connect(ui->mActionZoomOut, &QAction::triggered, this, [applyToCheckedManipulators]() {
-            applyToCheckedManipulators([](GLXEarthManipulator *manipulator) {
+        QObject::connect(ui->mActionZoomOut, &QAction::triggered, this, [applyToManipulator]() {
+            applyToManipulator([](GLXEarthManipulator *manipulator) {
                 manipulator->zoomOut();
             });
         });
 
-        QObject::connect(ui->mActionZoomToFullExtent, &QAction::triggered, this, [applyToCheckedManipulators]() {
-            applyToCheckedManipulators([](GLXEarthManipulator *manipulator) {
+        QObject::connect(ui->mActionZoomToFullExtent, &QAction::triggered, this, [applyToManipulator]() {
+            applyToManipulator([](GLXEarthManipulator *manipulator) {
                 manipulator->zoomToFullExtent();
             });
         });
 
-        QObject::connect(ui->mActionZoomToArea, &QAction::triggered, this, [applyToCheckedManipulators]() {
+        QObject::connect(ui->mActionZoomToArea, &QAction::triggered, this, [applyToManipulator]() {
             //allow user to select a rectangle on the map and zoom to that area
-            applyToCheckedManipulators([](GLXEarthManipulator *manipulator) {
+            applyToManipulator([](GLXEarthManipulator *manipulator) {
                 // manipulator->zoomToExtent(1.5);
             });
         });
@@ -386,39 +359,14 @@ void MainWindow::initSignalsAndSlots()
         extrusion3D->activateWindow();
     });
 
-    m_drawingActionGroup = new QActionGroup(this);
-    m_drawingActionGroup->setExclusive(true);
+    auto* drawingActionGroup = new QActionGroup(this);
+    drawingActionGroup->setExclusive(true);
 
-    m_drawingActionGroup->addAction(ui->actionDrawCircle);
-    m_drawingActionGroup->addAction(ui->actionDrawPolygon);
-    m_drawingActionGroup->addAction(ui->actionDrawPolyLine);
-    m_drawingActionGroup->addAction(ui->actionDrawRectangle);
-    m_drawingActionGroup->addAction(ui->actionAddPoints);
-
-
-    QObject::connect(ui->actionDrawCircle, &QAction::triggered, this, [this](bool checked) {
-
-    });
-
-    QObject::connect(ui->actionDrawPolygon, &QAction::triggered, this, [this](bool checked) {
-
-    });
-
-    QObject::connect(ui->actionDrawPolyLine, &QAction::triggered, this, [this](bool checked) {
-
-    });
-
-    QObject::connect(ui->actionDrawRectangle, &QAction::triggered, this, [this](bool checked) {
-
-    });
-
-    QObject::connect(ui->actionAddPoints, &QAction::triggered, this, [this](bool checked) {
-
-    });
-
-    QObject::connect(m_drawingActionGroup, &QActionGroup::triggered, this, [this](QAction*) {
-
-    });
+    drawingActionGroup->addAction(ui->actionDrawCircle);
+    drawingActionGroup->addAction(ui->actionDrawPolygon);
+    drawingActionGroup->addAction(ui->actionDrawPolyLine);
+    drawingActionGroup->addAction(ui->actionDrawRectangle);
+    drawingActionGroup->addAction(ui->actionAddPoints);
 
     QObject::connect(ui->actionNew_Shapefile_Layer, &QAction::triggered, this, &MainWindow::createShapeFile);
 

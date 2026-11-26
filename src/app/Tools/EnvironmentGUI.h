@@ -18,6 +18,10 @@
 class QShowEvent;
 class QTimer;
 
+namespace osgViewer {
+class Viewer;
+}
+
 namespace Ui {
     class EnvironmentGUI;
 }

@@ -3,7 +3,7 @@
 
 #include <array>
 
-#include <osgEarth/GeoData>
+#include "MapController/GeoPointMetaType.h"
 
 #include "DockWidgetPanels.h"
 
@@ -12,6 +12,10 @@ class QShowEvent;
 class QHideEvent;
 class QTimer;
 class GLXEarthManipulator;
+
+namespace osgEarth {
+class MapNode;
+}
 
 class MapReadoutsDockWidget : public DockWidgetPanels
 {

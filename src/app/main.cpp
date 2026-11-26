@@ -1,45 +1,11 @@
 #include <QApplication>
 #include "mainwindow.h"
-#include <QFile>
-#include <QTextStream>
-#include <QStyleHints>
-
-#include <QApplication>
-#include <QStyle>
-#include <QPalette>
-#include <QStyleFactory>
 #include <QSurfaceFormat>
 #include <QTimer>
 #include <QQuickStyle>
 
-#include <osgEarth/MapNode>
-
-QString loadFile(const QString& path) {
-    QFile file(path);
-    if (file.open(QFile::ReadOnly | QFile::Text)) {
-        return QString::fromUtf8(file.readAll());
-    }
-    return QString();
-}
-
-
-#define LC "[osgearth_windows] "
-
-using namespace osgEarth;
-using namespace osgEarth::Util;
-
-// int usage(const char* name)
-// {
-//     OE_NOTICE
-//         << "\nUsage: " << name << " file.earth"
-//         << "\n          --views [num] : Number of windows to open"
-//         << "\n          --shared      : Share a single OSG graphics context across all windows (forces SingleThreaded mode)"
-//         << "\n          --updates [num] : Number of update traversals"
-//         << "\n"
-//         << MapNodeHelper().usage() << std::endl;
-
-//     return 0;
-// }
+#include <osg/Notify>
+#include <osgEarth/Registry>
 
 extern "C" __declspec(dllexport) int glx_main(int argc, char* argv[])
 {
@@ -52,7 +18,6 @@ extern "C" __declspec(dllexport) int glx_main(int argc, char* argv[])
     osgEarth::Registry::instance()->unRefImageDataAfterApply() = false;
 
     QSurfaceFormat format = QSurfaceFormat::defaultFormat();
-    // QTextCodec *codec = QTextCodec::codecForLocale();
     #ifdef OSG_GL3_AVAILABLE
     format.setVersion(3, 3);
     format.setProfile(QSurfaceFormat::CoreProfile);
@@ -87,8 +52,6 @@ extern "C" __declspec(dllexport) int glx_main(int argc, char* argv[])
     window.initAll();
     window.showMaximized();
     QTimer::singleShot(0, &window, &MainWindow::showWelcomeScreen);
-
-    qDebug() << qApp->styleSheet();
 
     return app.exec();
 }

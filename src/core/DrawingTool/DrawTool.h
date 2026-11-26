@@ -3,15 +3,6 @@
 
 #include <QObject>
 #include <osgEarth/Style>
-#include <osgEarth/GeometryFactory>
-
-#include <osg/Group>
-#include <osgEarth/MapNode>
-#include <osgEarth/Feature>
-
-using namespace osgEarth;
-using namespace osgEarth::Util;
-using namespace osgEarth::Util;
 
 
 class DrawTool : public QObject
@@ -20,7 +11,7 @@ class DrawTool : public QObject
 
 public:
     explicit DrawTool(QObject* parent = nullptr) ;
-    virtual ~DrawTool();
+    virtual ~DrawTool() = default;
 
     osgEarth::Style getStyle() const { return _style; }
 

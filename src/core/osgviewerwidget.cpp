@@ -5,17 +5,7 @@
 #include <QObject>
 #include <osgEarth/GLUtils>
 
-#include <osgEarth/Map>
-#include <osgEarth/Profile>
-#include <osgEarth/XYZ>
 #include <osgEarth/LogarithmicDepthBuffer>
-#include <osgUtil/Optimizer>
-
-void OSGViewerWidget::setRoot(osg::Group *root)
-{
-    _root = nullptr;
-    _root = root;
-}
 
 void OSGViewerWidget::setMapNode(osgEarth::MapNode *mapNode)
 {
@@ -31,29 +21,6 @@ void OSGViewerWidget::setMapNode(osgEarth::MapNode *mapNode)
     
 }
 
-void OSGViewerWidget::setManipulator(GLXEarthManipulator* manipulator)
-{
-    if (!manipulator)
-    {
-        qWarning() << "Cannot set a null earth manipulator.";
-        return;
-    }
-
-    _manipulator = manipulator;
-    _manipulator->setMapNode(_mapNode.get());
-    _manipulator->getSettings()->setThrowingEnabled(true);
-    if (_viewer)
-    {
-        _viewer->setCameraManipulator(_manipulator.get());
-    }
-}
-
-void OSGViewerWidget::setViewer(osgViewer::Viewer *viewer)
-{
-    _viewer = nullptr;
-    _viewer = viewer;
-}
-
 OSGViewerWidget::OSGViewerWidget(QWidget* parent)
     : osgQOpenGLWidget(parent)
 {
@@ -64,13 +31,6 @@ OSGViewerWidget::OSGViewerWidget(QWidget* parent)
 
     _manipulator = new GLXEarthManipulator(_mapNode.get());
     _manipulator->getSettings()->setThrowingEnabled(true);
-
-    // osgUtil::Optimizer optimizer;
-    // if (_root.valid())
-    // {
-    //     optimizer.optimize(_root);
-    // }
-    // optimizer.reset();
 
     QObject::connect(this, &osgQOpenGLWidget::initialized, [this] {
         setupOsgEarth();

@@ -24,8 +24,6 @@ public:
         IonTerrain
     };
 
-    MapLoadModule();
-
     static bool LoadEarthFile(const QString& FilePath);
 
     static void LoadRasters(osgEarth::MapNode* mapNode, QString FilePath, QString LayerName ="");

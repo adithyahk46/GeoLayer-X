@@ -77,10 +77,6 @@ ViewpointsGUI::ViewpointsGUI(QWidget* parent)
     ui->setupUi(this);
     setObjectName(QStringLiteral("ViewpointsDock"));
 
-    connect(ui->lineEditViewpointName, &QLineEdit::textChanged,
-            this, &ViewpointsGUI::updateButtonStates);
-    connect(ui->listWidgetViewpoints, &QListWidget::currentRowChanged,
-            this, &ViewpointsGUI::updateButtonStates);
     connect(ui->listWidgetViewpoints, &QListWidget::itemDoubleClicked,
             this, [this](QListWidgetItem*) { zoomToSelectedViewpoint(); });
     connect(ui->pushButtonAdd, &QPushButton::clicked,
@@ -182,7 +178,6 @@ void ViewpointsGUI::reloadViewpoints()
         ui->listWidgetViewpoints->setItemWidget(item, itemWidget);
     }
     ui->labelEmpty->setVisible(_viewpoints.empty());
-    updateButtonStates();
 }
 
 void ViewpointsGUI::persistViewpoints(osgEarth::MapNode* mapNode)
@@ -210,11 +205,7 @@ void ViewpointsGUI::addCurrentViewpoint()
         return;
     }
     if (name.isEmpty())
-    {
-        // QMessageBox::warning(this, tr("Viewpoints"),
-        //                      tr("Enter a name for the viewpoint."));
         return;
-    }
 
     const auto duplicate = std::find_if(
         _viewpoints.begin(), _viewpoints.end(),
@@ -273,8 +264,4 @@ void ViewpointsGUI::deleteSelectedViewpoint()
     if (!_viewpoints.empty())
         ui->listWidgetViewpoints->setCurrentRow(
             std::min(row, static_cast<int>(_viewpoints.size()) - 1));
-}
-
-void ViewpointsGUI::updateButtonStates()
-{
 }
